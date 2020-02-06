@@ -5,108 +5,134 @@
 #include <stdint.h>
 #include <math.h>
 
+//#define ARM_CORTEX_M
+//#define B3L_ARM_GCC
+//#define B3L_ARM_IAR
+
+
 //#define B3L_DEBUG
 /*Config area----------------------------------------------------------------*/
-//z buff level 0: uint8_t, level 1: uint16_t, level 2: f32_t
-//RGBA -> at 0
-//ARGB -> at 3
-#define B3L_ALPHA_CHANNEL_SHIFT   0
-
-#define B3L_MATH_TABLE_SIZE     128
+//vect buff is limited the max vectors in single obj
 #define VECT_BUFF_SIZE          512
 #define OBJ_BUFF_SIZE           64
+//Zbuffer level 2: f32, 1:u16, 0: u8
 #define Z_BUFF_LEVEL            2
-
+/*
+Type 0: 32bit 8:8:8:8 ARGB  
+type 1: 16bit 4:4:4:4 ARGB
+type 2: 16bit 8:8     AL
+*/
+//current only type 0 tested
+#define FRAME_BUFF_COLOR_TYPE   0
 
 #define RENDER_RESOLUTION_X     160
 #define RENDER_RESOLUTION_Y     120
-#define BUFF_LENTH              (160*120)
+#define BUFF_LENTH              ((RENDER_RESOLUTION_X)*(RENDER_RESOLUTION_Y))
 
 #define HALF_RESOLUTION_X       79.5f
 #define HALF_RESOLUTION_Y       59.5f
 #define DEFAULT_ASPECT_RATIO    ((4.0f)/(3.0f))
-//1.0f == 90 degree fov
+//1.0f == 90 degree fov,smaller is larger fov
 #define DEFAULT_FOCUS_LENGTH    (1.0f)
+
 #define FAR_PLANE               500.0f
-#define NEAR_PLANE              5.0f
+#define NEAR_PLANE              1.0f
 #define LEVEL_0_DISTANCE        300.0f
 #define LEVEL_1_DISTANCE        500.0f
 //level 0, calculate light, texture
 //level 1, calculate texture
 //level 2, calculate color only
-#define USING_LIGHT             1
+
+
   
+/*bit defines and setting area-----------------------------------------------*/
+
+//the obj buff at least has 1 slot
+#if OBJ_BUFF_SIZE<=0
+#undef OBJ_BUFF_SIZE
+#define OBJ_BUFF_SIZE            1
+#endif
 
 #define B3L_IN_SPACE             (0u)
 #define B3L_NEAR_PLANE_CLIP      (1u)
+
+#define B3L_MATH_TABLE_SIZE      128
 /*Type defines---------------------------------------------------------------*/
 
-typedef float f32_t;
-typedef  int32_t s32;
+typedef float    f32;
+typedef int32_t  s32;
+typedef uint32_t u32;
+typedef uint16_t u16;
+typedef int16_t  s16;
+typedef uint8_t  u8;
+typedef int8_t   s8;
+
 #if Z_BUFF_LEVEL == 0
-#define Z_buff_t uint8_t
+#define Z_buff_t u8
 #endif
 
 
 #if Z_BUFF_LEVEL == 1
-#define Z_buff_t uint16_t
+#define Z_buff_t u16
 #endif
 
 #if Z_BUFF_LEVEL == 2
-typedef f32_t Z_buff_t;
+typedef f32 Z_buff_t;
+#endif
+
+#if (FRAME_BUFF_COLOR_TYPE  == 0)
+typedef  u32 frameBuffData_t;
+typedef  u32 texLUTData_t;
+#define LIGHT_BIT           8
+#endif
+#if (FRAME_BUFF_COLOR_TYPE  == 1)
+typedef  u16 frameBuffData_t;
+typedef  u16 texLUTData_t;
+#define LIGHT_BIT           4
+#endif
+#if (FRAME_BUFF_COLOR_TYPE  == 2)
+typedef  u16 frameBuffData_t;
+typedef  u8  texLUTData_t;
+#define LIGHT_BIT           8
 #endif
 
 
-typedef  uint32_t frameBuffData_t;
-
 typedef struct{
-    f32_t x;
-    f32_t y;   
+    f32 x;
+    f32 y;   
 }vect2_t;
 
 typedef struct{
-    f32_t x;
-    f32_t y;  
-    f32_t z; 
+    f32 x;
+    f32 y;  
+    f32 z; 
 }vect3_t;
 
+//screen3_t is for 2d screen drawing step, it has same length as vect4_t
 
 typedef struct{
     int32_t x;
     int32_t y; 
-    f32_t z;
-    uint32_t test;
+    f32 z;
+    u32 test;
 }screen3_t;
 
 
 typedef struct{
-    f32_t x;
-    f32_t y; 
-    f32_t z;
-    f32_t w;  
+    f32 x;
+    f32 y; 
+    f32 z;
+    f32 w;  
 }vect4_t;
 
-
-
-
+//in column first order, mxy -- x is column num, y is the row number
 typedef struct{
-    f32_t m00;
-    f32_t m01;
-    f32_t m02;
-    f32_t m03;
-    f32_t m10;
-    f32_t m11;
-    f32_t m12;
-    f32_t m13;
-    f32_t m20;
-    f32_t m21;
-    f32_t m22;
-    f32_t m23;
-    f32_t m30;
-    f32_t m31;
-    f32_t m32;
-    f32_t m33;
+    f32 m00;f32 m01;f32 m02;f32 m03;
+    f32 m10;f32 m11;f32 m12;f32 m13;
+    f32 m20;f32 m21;f32 m22;f32 m23;
+    f32 m30;f32 m31;f32 m32;f32 m33;
 }mat4_t;
+
 typedef struct{
     vect3_t rotation;
     vect3_t scale;
@@ -114,43 +140,43 @@ typedef struct{
 }transform3D_t;
 
 typedef struct{
-    f32_t          aspectRate;
-    f32_t          focalLength;
+    f32            aspectRate;
+    f32            focalLength;
     transform3D_t  transform;
     mat4_t         camMat;
 }camera_t;
 
 typedef struct {
-    uint32_t        id;
-    uint16_t        vectNum;
-    uint16_t        triNum;
-    f32_t           *pVect;
-    uint16_t        *pTri;
-    uint8_t         *pUv;
-    f32_t           *pNormal;
+    u32        id;
+    u16        vectNum;
+    u16        triNum;
+    f32        *pVect;
+    u16        *pTri;
+    u8    *pUv;
+    f32        *pNormal;
 }B3L_Mesh_t;
 
 
 #define LUT4         0
 #define LUT16        1
 #define LUT256       2
-#define RGB565       3
-#define RGBX32       4
 typedef struct{
-    uint32_t        id;
-    uint16_t        type;
-    uint16_t        uvSize;
-    frameBuffData_t *pLUT;
-    uint8_t         *pData;
+    u32            id;
+    u16            type;
+    u16            uvSize;
+    texLUTData_t   *pLUT;
+    u8        *pData;
+    u8        transColorIdx;
 }B3L_texture_t ;
 
+//obj->state config bits
 //obj type information
 #define OBJ_TYPE_MASK            0x000000FF
 #define MESH_OBJ                    (0)
 #define TEXTURE2D_OBJ               (1)
 #define POLYGON_OBJ                 (2)
 #define NOTEX_MESH_OBJ              (3)
-//obj visualizable information
+//obj visualizable control
 #define OBJ_VISUALIZABLE            (8)
 #define OBJ_BACK_CULLING            (9)
 #define OBJ_IGNORE_RENDER_LEVEL     (10)
@@ -158,21 +184,21 @@ typedef struct{
 #define OBJ_RENDER_LEVEL_MASK    0x00030000
 #define OBJ_FIX_RENDER_LEVEL_SHIFT  (16)
 
-
+//all different obj types's size is <= sizeof(B3LObj_t)
 typedef struct B3LOBJ{
     struct B3LOBJ   *privous;
     struct B3LOBJ   *next;
-    uint32_t        state;
-    f32_t           *pBoundBox;
+    u32             state;
+    f32             *pBoundBox;
     transform3D_t   transform;    
-    uint32_t        dummy[4];
+    u32             dummy[4];
 }B3LObj_t;
 
 typedef struct{
     B3LObj_t        *privous;
     B3LObj_t        *next;
-    uint32_t        state;
-    f32_t           *pBoundBox;
+    u32             state;
+    f32             *pBoundBox;
     transform3D_t   transform; 
     B3L_Mesh_t      *pMesh;
     B3L_texture_t   *pTexture;   
@@ -181,25 +207,20 @@ typedef struct{
 typedef struct{
     B3LObj_t       objBuff[OBJ_BUFF_SIZE];    
     B3LObj_t       *pActiveObjs;
-    //B3LObj_t       *pViewableObjs;
     B3LObj_t       *pInactiveObjs;
-
 }scene_t;
 
+
+//color value is the 0xFFFFFF - light color
 typedef struct{
     vect3_t      pointToLight;
-    f32_t        strongth;
-    uint32_t     color;
-    f32_t        factor_0;
-    f32_t        factor_1;
+    f32          strongth;
+    u32          color;
+    f32          factor_0;
+    f32          factor_1;
 }light_t;
 
-#define NOT_DRAW_TRI            (0u)
-#define TRI_NEAR_PLANE_CLIP     (1u)
-#define TRI_NEAR_PLANE_1_POINT  (2u)
-#define TRI_NEAR_PLANE_2_POINT  (3u)
-typedef struct{
-    
+typedef struct{   
     frameBuffData_t  *pFrameBuff;
     Z_buff_t         *pZBuff;
     camera_t         camera;
@@ -207,56 +228,73 @@ typedef struct{
     scene_t          scene;
     screen3_t        *pVectBuff;
 }render_t;
+/*Useful macros--------------------------------------------------------------*/
+#define B3L_SET(PIN,N)  (PIN |=  (1u<<N))
+#define B3L_CLR(PIN,N)  (PIN &= ~(1u<<N))
+#define B3L_TEST(PIN,N) (PIN & (1u<<N))
+#define B3L_logVec2(v)\
+  printf("Vec3: %.3f %.3f\n",((v).x),((v).y))
+#define B3L_logVec3(v)\
+  printf("Vec3: %.3f %.3f %.3f\n",((v).x),((v).y),((v).z))
+#define B3L_logVec4(v)\
+  printf("Vec4: %.3f %.3f %.3f %.3f\n",((v).x),((v).y),((v).z),((v).w))
+#define B3L_logMat4(m)\
+  printf("Mat4:\n  %.3f %.3f %.3f %.3f\n  %.3f %.3f %.3f %.3f\n  %.3f %.3f %.3f %.3f\n  %.3f %.3f %.3f %.3f\n"\
+   ,(m).m00,(m).m10,(m).m20,(m).m30,\
+    (m).m01,(m).m11,(m).m21,(m).m31,\
+    (m).m02,(m).m12,(m).m22,(m).m32,\
+    (m).m03,(m).m13,(m).m23,(m).m33)
 
 /*Function declear-----------------------------------------------------------*/
-extern f32_t B3L_sin(f32_t in);
-extern f32_t B3L_cos(f32_t in);
-extern f32_t B3L_asin(f32_t in);
+//math functions
+extern f32 B3L_sin(f32 in);
+extern f32 B3L_cos(f32 in);
+extern f32 B3L_asin(f32 in);
 extern void B3L_NormalizeVec3(vect3_t *pV);
-extern f32_t B3L_Vec2Length(vect2_t *pV);
-extern f32_t B3L_Vec3Length(vect3_t *pV);
+extern vect2_t B3L_Vect2(f32 x,f32 y);
+extern vect3_t B3L_Vect3(f32 x,f32 y,f32 z);
+extern vect4_t B3L_Vect4(f32 x,f32 y,f32 z,f32 w);
+extern f32 B3L_Vec2Length(vect2_t *pV);
+extern f32 B3L_Vec3Length(vect3_t *pV);
 extern void B3L_Vec3Add(vect3_t *pVa,vect3_t *pVb,vect3_t *pVc);
-extern void B3L_VecInterp(vect3_t *pVa,vect3_t *pVb,vect3_t *pVc,f32_t t);
+extern void B3L_VecInterp(vect3_t *pVa,vect3_t *pVb,vect3_t *pVc,f32 t);
 extern void B3L_CrossProductVect3(vect3_t *pA, vect3_t *pB, vect3_t *pResult);
-extern f32_t B3L_DotProductVect3(vect3_t *pA, vect3_t *pB);
+extern f32 B3L_DotProductVect3(vect3_t *pA, vect3_t *pB);
 extern void B3L_InitMat4(mat4_t *pMat);
 extern void B3L_TransposeMat4(mat4_t *pMat);
 extern void B3L_Mat4Xmat4(mat4_t *pMat1, mat4_t *pMat2);
-
+extern void B3L_MakeRotationMatrixZXY(f32 byX,f32 byY,f32 byZ,mat4_t *pMat);
+extern void B3L_MakeScaleMatrix(f32 scaleX,f32 scaleY,f32 scaleZ,mat4_t *pMat);
+extern void B3L_MakeTranslationMat(f32 offsetX,f32 offsetY,f32 offsetZ,mat4_t *pMat);
+extern void B3L_MakeWorldMatrix(transform3D_t *pWorldTransform, mat4_t *pMat);
+//camera functions
 extern void B3L_InitCamera(camera_t *pCam);
+extern void B3L_CameraMoveTo(vect3_t position,camera_t *pCam);
 extern void B3L_SetCameraMatrix(camera_t *pCam);
 extern void B3L_CameraLookAt(camera_t *pCam, vect3_t *pAt);
-
-extern void B3L_MakeRotationMatrixZXY(f32_t byX,f32_t byY,f32_t byZ,mat4_t *pMat);
-extern void B3L_MakeScaleMatrix(f32_t scaleX,f32_t scaleY,f32_t scaleZ,mat4_t *pMat);
-extern void B3L_MakeTranslationMat(f32_t offsetX,f32_t offsetY,f32_t offsetZ,mat4_t *pMat);
-extern void B3L_MakeWorldMatrix(transform3D_t *pWorldTransform, mat4_t *pMat);
-
-
-
-
+//extern void B3L_CameraUpDirection(camera_t *pCam, vect3_t *pUp);
+//render functions
 extern void B3L_RenderInit(render_t *pRender,frameBuffData_t *pFrameBuff);
 extern void B3L_NewFrame(render_t *pRender);
-
+extern void B3L_RenderScence(render_t *pRender);
+extern void B3L_ResetScene(scene_t *pScene);
+//light functions
+extern void B3L_ResetLight(light_t *pLight);
+//extern void B3L_SetLightDirction(light_t *pLight, vect3_t *To);
 //render obj functions
-B3LObj_t * B3L_GetFreeObj(render_t *pRender);
+extern B3LObj_t *B3L_GetFreeObj(render_t *pRender);
 extern void B3L_AddObjToRenderList(B3LObj_t *pObj, render_t *pRender);
 extern void B3L_PopObjFromRenderList(B3LObj_t *pObj, render_t *pRender);
 extern void B3L_ReturnObjToInactiveList(B3LObj_t *pObj,  render_t *pRender);
-extern void B3L_DrawObjs(render_t *pRender);
-extern void B3L_InitBoxObj(B3LMeshObj_t *pObj,f32_t size);
-extern void B3L_ResetLight(light_t *pLight);
-extern void B3L_ResetScene(scene_t *pScene);
-extern void B3L_RenderScence(render_t *pRender);
+extern void B3L_InitBoxObj(B3LMeshObj_t *pObj,f32 size);
+
+//extern void B3L_DrawObjs(render_t *pRender);
 /*
 void B3L_DrawTriTexture(
-s32 x0,s32 y0,s32 u0,s32 v0,f32_t z0,
-s32 x1,s32 y1,s32 u1,s32 v1,f32_t z1,
-s32 x2,s32 y2,s32 u2,s32 v2,f32_t z2,
-uint32_t renderLevel,uint16_t lightFactor,B3L_texture_t *pTexture,
+s32 x0,s32 y0,s32 u0,s32 v0,f32 z0,
+s32 x1,s32 y1,s32 u1,s32 v1,f32 z1,
+s32 x2,s32 y2,s32 u2,s32 v2,f32 z2,
+u32 renderLevel,u16 lightFactor,B3L_texture_t *pTexture,
 frameBuffData_t *pFrameBuff,Z_buff_t *pZbuff);
 */
-
-
-
 #endif
