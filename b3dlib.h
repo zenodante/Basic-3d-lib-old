@@ -117,6 +117,12 @@ typedef struct{
     u32 test;
 }screen3_t;
 
+typedef struct{
+    f32 x;
+    f32 y; 
+    f32 z;
+    u32 test;
+}screen3f_t;
 
 typedef struct{
     f32 x;
