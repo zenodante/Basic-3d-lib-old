@@ -5,13 +5,14 @@
 #include <stdint.h>
 #include <math.h>
 
-//#define ARM_CORTEX_M
-//#define B3L_ARM_GCC
-//#define B3L_ARM_IAR
+//#define  B3L_ARM
+
 
 
 //#define B3L_DEBUG
 /*Config area----------------------------------------------------------------*/
+
+#define B3L_FIX_BITS            10
 //vect buff is limited the max vectors in single obj
 #define VECT_BUFF_SIZE          512
 #define OBJ_BUFF_SIZE           64
@@ -56,7 +57,7 @@ type 2: 16bit 8:8     AL
 #define B3L_IN_SPACE             (0u)
 #define B3L_NEAR_PLANE_CLIP      (1u)
 
-#define B3L_MATH_TABLE_SIZE      128
+#define B3L_MATH_TABLE_SIZE      256
 /*Type defines---------------------------------------------------------------*/
 
 typedef float    f32;
@@ -66,6 +67,10 @@ typedef uint16_t u16;
 typedef int16_t  s16;
 typedef uint8_t  u8;
 typedef int8_t   s8;
+typedef uint32_t q32;
+
+#define B3L_FIX_0_5        (1<<(B3L_FIX_BITS-1))
+#define B3L_FIX_1          (1<<B3L_FIX_BITS)
 
 #if Z_BUFF_LEVEL == 0
 #define Z_buff_t u8

@@ -150,9 +150,17 @@ B3L_texture_t B3L_boxTexture = { .id      = 0,
                                  .transColorIdx = 16
 };
 /*Private Fuction declare ---------------------------------------------------*/ 
-#ifdef B3L_ARM_GCC
+#ifdef B3L_ARM
 __attribute__((always_inline)) static  inline f32   B3L_Sqrtf(f32 in);
+__attribute__((always_inline)) static  inline f32   B3L_Absf(f32 in);
+
+#else
+#define B3L_Sqrtf   sqrtf
+#define B3L_Absf    abs
 #endif
+__attribute__((always_inline)) static  inline s32   B3L_VcvtF32ToS32_Fix(f32 in);
+__attribute__((always_inline)) static  inline f32   B3L_VcvtS32ToF32_Fix(s32 in);
+
 __attribute__((always_inline)) static  inline f32   B3L_nonZero  (f32 value);
 __attribute__((always_inline)) static  inline f32   B3L_interp(f32 x1, f32 x2, f32 t);
 __attribute__((always_inline)) static  inline s32   B3L_IntClamp(s32 v, s32 v1, s32 v2);
@@ -180,7 +188,7 @@ __attribute__((always_inline)) static  inline void  B3L_DrawTriTexture(
                                                                         s32 x2,s32 y2,s32 u2,s32 v2,f32 z2,
                                                                         u32 renderLevel,u8 lightFactor,B3L_texture_t *pTexture,
                                                                         frameBuffData_t *pFrameBuff,Z_buff_t *pZbuff);
-__attribute__((always_inline)) static  inline void  B3L_DrawTriTexture2(
+__attribute__((always_inline)) static  inline void  B3L_DrawTriTexture_float(
                                                                         f32 x0,f32 y0,f32 u0,f32 v0,f32 z0,
                                                                         f32 x1,f32 y1,f32 u1,f32 v1,f32 z1,
                                                                         f32 x2,f32 y2,f32 u2,f32 v2,f32 z2,
@@ -190,23 +198,45 @@ __attribute__((always_inline)) static inline void DrawTexHLine(s32 x,s32 y,s32 b
                                                                 s32 aU,s32 aV,s32 bU,s32 bV,u8 lightFactor, 
                                                                 frameBuffData_t *pFrameBuff,Z_buff_t *pZbuff,
                                                                 B3L_texture_t *pTexture);
-__attribute__((always_inline)) static inline void DrawTexHLine2(f32 x,s32 y,f32 b, f32 aZ, f32 bZ,
+__attribute__((always_inline)) static inline void DrawTexHLine_float(f32 x,s32 y,f32 b, f32 aZ, f32 bZ,
                                                                 f32 aU,f32 aV,f32 bU,f32 bV,u8 lightFactor, 
                                                                 frameBuffData_t *pFrameBuff,Z_buff_t *pZbuff,
                                                                 B3L_texture_t *pTexture);
 static void B3L_AddObjToList(B3LObj_t *pObj, B3LObj_t **pStart);
 static void B3L_DrawMesh(B3LMeshObj_t *pObj,render_t *pRender, mat4_t *pMat, u32 renderLevel);
-static void B3L_DrawMesh2(B3LMeshObj_t *pObj,render_t *pRender, mat4_t *pMat,u32 renderLevel);
+static void B3L_DrawMesh_float(B3LMeshObj_t *pObj,render_t *pRender, mat4_t *pMat,u32 renderLevel);
 static void ClearFrameBuff(frameBuffData_t *pFramebuff,frameBuffData_t value,u32 length);
 static void ClearZbuff(Z_buff_t *pZbuff,u32 length);
 static void B3L_DrawObjs(render_t *pRender);
 /*Private Fuction define ----------------------------------------------------*/
-#ifdef B3L_ARM_GCC
+#ifdef B3L_ARM
 __attribute__((always_inline)) static  inline f32 B3L_Sqrtf(f32 in){
-     f32 result;
+    f32 result;
+__ASM("vsqrt.f32 %0,%1" : "=t"(result) : "t"(in));
+  return (result);
+}
+__attribute__((always_inline)) static  inline f32 B3L_Absf(f32 in){
+    f32 result;
+    __ASM("vabs.f32 %0,%1" : "=t"(result) : "t"(in));
+    return (result); 
+}
+__attribute__((always_inline)) static  inline s32   B3L_VcvtF32ToS32_Fix(f32 in){
+    s32 result;
+    __ASM ("vcvt.s32.f32 %0,%1,#B3L_FIX_BITS" : "=t"(result) : "t"(in));
+    return result; 
+}
 
-    __ASM  volatile (“vsqrt.f32 %0, %1″ : “=w” (result) : “w” (in) );
-    return(result); 
+__attribute__((always_inline)) static  inline f32   B3L_VcvtS32ToF32_Fix(s32 in){
+    s32 result;
+    __ASM ("vcvt.f32.s32 %0,%1,#B3L_FIX_BITS" : "=t"(result) : "t"(in));
+    return result; 
+}
+#else
+__attribute__((always_inline)) static  inline s32   B3L_VcvtF32ToS32_Fix(f32 in){
+    return ((s32)(in*((f32)(1<<B3L_FIX_BITS))));
+}
+__attribute__((always_inline)) static  inline f32   B3L_VcvtS32ToF32_Fix(s32 in){
+    return ((f32)in)/((f32)(1<<B3L_FIX_BITS));
 }
 #endif
 
@@ -511,93 +541,85 @@ vect4_t B3L_Vect4(f32 x,f32 y,f32 z,f32 w){
 
 //math functions
 const f32 sinTable_f32[B3L_MATH_TABLE_SIZE + 1] = {
-   0.00000000f, 0.01227154f, 0.02454123f, 0.03680722f, 0.04906767f, 0.06132074f,
-   0.07356456f, 0.08579731f, 0.09801714f, 0.11022221f, 0.12241068f, 0.13458071f,
-   0.14673047f, 0.15885814f, 0.17096189f, 0.18303989f, 0.19509032f, 0.20711138f,
-   0.21910124f, 0.23105811f, 0.24298018f, 0.25486566f, 0.26671276f, 0.27851969f,
-   0.29028468f, 0.30200595f, 0.31368174f, 0.32531029f, 0.33688985f, 0.34841868f,
-   0.35989504f, 0.37131719f, 0.38268343f, 0.39399204f, 0.40524131f, 0.41642956f,
-   0.42755509f, 0.43861624f, 0.44961133f, 0.46053871f, 0.47139674f, 0.48218377f,
-   0.49289819f, 0.50353838f, 0.51410274f, 0.52458968f, 0.53499762f, 0.54532499f,
-   0.55557023f, 0.56573181f, 0.57580819f, 0.58579786f, 0.59569930f, 0.60551104f,
-   0.61523159f, 0.62485949f, 0.63439328f, 0.64383154f, 0.65317284f, 0.66241578f,
-   0.67155895f, 0.68060100f, 0.68954054f, 0.69837625f, 0.70710678f, 0.71573083f,
-   0.72424708f, 0.73265427f, 0.74095113f, 0.74913639f, 0.75720885f, 0.76516727f,
-   0.77301045f, 0.78073723f, 0.78834643f, 0.79583690f, 0.80320753f, 0.81045720f,
-   0.81758481f, 0.82458930f, 0.83146961f, 0.83822471f, 0.84485357f, 0.85135519f,
-   0.85772861f, 0.86397286f, 0.87008699f, 0.87607009f, 0.88192126f, 0.88763962f,
-   0.89322430f, 0.89867447f, 0.90398929f, 0.90916798f, 0.91420976f, 0.91911385f,
-   0.92387953f, 0.92850608f, 0.93299280f, 0.93733901f, 0.94154407f, 0.94560733f,
-   0.94952818f, 0.95330604f, 0.95694034f, 0.96043052f, 0.96377607f, 0.96697647f,
-   0.97003125f, 0.97293995f, 0.97570213f, 0.97831737f, 0.98078528f, 0.98310549f,
-   0.98527764f, 0.98730142f, 0.98917651f, 0.99090264f, 0.99247953f, 0.99390697f,
-   0.99518473f, 0.99631261f, 0.99729046f, 0.99811811f, 0.99879546f, 0.99932238f,
-   0.99969882f, 0.99992470f, 1.00000000f, 
+      0.000000000f,0.024541229f,0.049067674f,0.073564564f,0.098017140f,0.122410675f,0.146730474f,0.170961889f,
+      0.195090322f,0.219101240f,0.242980180f,0.266712757f,0.290284677f,0.313681740f,0.336889853f,0.359895037f,
+      0.382683432f,0.405241314f,0.427555093f,0.449611330f,0.471396737f,0.492898192f,0.514102744f,0.534997620f,
+      0.555570233f,0.575808191f,0.595699304f,0.615231591f,0.634393284f,0.653172843f,0.671558955f,0.689540545f,
+      0.707106781f,0.724247083f,0.740951125f,0.757208847f,0.773010453f,0.788346428f,0.803207531f,0.817584813f,
+      0.831469612f,0.844853565f,0.857728610f,0.870086991f,0.881921264f,0.893224301f,0.903989293f,0.914209756f,
+      0.923879533f,0.932992799f,0.941544065f,0.949528181f,0.956940336f,0.963776066f,0.970031253f,0.975702130f,
+      0.980785280f,0.985277642f,0.989176510f,0.992479535f,0.995184727f,0.997290457f,0.998795456f,0.999698819f,
+      1.000000000f,0.999698819f,0.998795456f,0.997290457f,0.995184727f,0.992479535f,0.989176510f,0.985277642f,
+      0.980785280f,0.975702130f,0.970031253f,0.963776066f,0.956940336f,0.949528181f,0.941544065f,0.932992799f,
+      0.923879533f,0.914209756f,0.903989293f,0.893224301f,0.881921264f,0.870086991f,0.857728610f,0.844853565f,
+      0.831469612f,0.817584813f,0.803207531f,0.788346428f,0.773010453f,0.757208847f,0.740951125f,0.724247083f,
+      0.707106781f,0.689540545f,0.671558955f,0.653172843f,0.634393284f,0.615231591f,0.595699304f,0.575808191f,
+      0.555570233f,0.534997620f,0.514102744f,0.492898192f,0.471396737f,0.449611330f,0.427555093f,0.405241314f,
+      0.382683432f,0.359895037f,0.336889853f,0.313681740f,0.290284677f,0.266712757f,0.242980180f,0.219101240f,
+      0.195090322f,0.170961889f,0.146730474f,0.122410675f,0.098017140f,0.073564564f,0.049067674f,0.024541229f,
+      0.000000000f,-0.024541229f,-0.049067674f,-0.073564564f,-0.098017140f,-0.122410675f,-0.146730474f,-0.170961889f,
+     -0.195090322f,-0.219101240f,-0.242980180f,-0.266712757f,-0.290284677f,-0.313681740f,-0.336889853f,-0.359895037f,
+     -0.382683432f,-0.405241314f,-0.427555093f,-0.449611330f,-0.471396737f,-0.492898192f,-0.514102744f,-0.534997620f,
+     -0.555570233f,-0.575808191f,-0.595699304f,-0.615231591f,-0.634393284f,-0.653172843f,-0.671558955f,-0.689540545f,
+     -0.707106781f,-0.724247083f,-0.740951125f,-0.757208847f,-0.773010453f,-0.788346428f,-0.803207531f,-0.817584813f,
+     -0.831469612f,-0.844853565f,-0.857728610f,-0.870086991f,-0.881921264f,-0.893224301f,-0.903989293f,-0.914209756f,
+     -0.923879533f,-0.932992799f,-0.941544065f,-0.949528181f,-0.956940336f,-0.963776066f,-0.970031253f,-0.975702130f,
+     -0.980785280f,-0.985277642f,-0.989176510f,-0.992479535f,-0.995184727f,-0.997290457f,-0.998795456f,-0.999698819f,
+     -1.000000000f,-0.999698819f,-0.998795456f,-0.997290457f,-0.995184727f,-0.992479535f,-0.989176510f,-0.985277642f,
+     -0.980785280f,-0.975702130f,-0.970031253f,-0.963776066f,-0.956940336f,-0.949528181f,-0.941544065f,-0.932992799f,
+     -0.923879533f,-0.914209756f,-0.903989293f,-0.893224301f,-0.881921264f,-0.870086991f,-0.857728610f,-0.844853565f,
+     -0.831469612f,-0.817584813f,-0.803207531f,-0.788346428f,-0.773010453f,-0.757208847f,-0.740951125f,-0.724247083f,
+     -0.707106781f,-0.689540545f,-0.671558955f,-0.653172843f,-0.634393284f,-0.615231591f,-0.595699304f,-0.575808191f,
+     -0.555570233f,-0.534997620f,-0.514102744f,-0.492898192f,-0.471396737f,-0.449611330f,-0.427555093f,-0.405241314f,
+     -0.382683432f,-0.359895037f,-0.336889853f,-0.313681740f,-0.290284677f,-0.266712757f,-0.242980180f,-0.219101240f,
+     -0.195090322f,-0.170961889f,-0.146730474f,-0.122410675f,-0.098017140f,-0.073564564f,-0.049067674f,-0.024541229f,
+      0.000000000f
 };
 f32 B3L_sin(f32 in){
     f32 sinVal, fract;                   /* Temporary input, output variables */
-    u16 index;                                /* Index variable */
-    f32 a, b;                                /* Two nearest output values */
-    int32_t n;
-    f32 findex;
-    f32 positive = 1.0f;
+  uint16_t index;                                /* Index variable */
+  f32 a, b;                                /* Two nearest output values */
+  int32_t n;
+  f32 findex;
 
-    /* Calculation of floor value of input */
-    n = (int32_t) in;
-
-    /* Make negative values towards -infinity */
-    if (in < 0.0f)
-    {
-        n--;
-    }
-
-    /* Map input value to [0 0.25] */
-    in = in - (f32) n;
-
-    if (in < 0.25f){
-        //do nothing
-    }else if(in < 0.5f){
-        //90degree to 180 degree
-        in = 0.5f - in;
-
-    }else if(in <0.75f){
-        in = in - 0.5f;
-        positive = -1.0f;
-        
-    }else{
-        in = 1.0f - in;
-        positive = -1.0f;
-
-    }
+  /* input x is in radians */
+  /* Scale input to [0 1] range from [0 2*PI] , divide input by 2*pi */
 
 
+  /* Calculation of floor value of input */
+  n = (int32_t) in;
 
-    /* Calculation of index of the table */
-    findex = ((f32)(B3L_MATH_TABLE_SIZE<<2)) * in;
-    index = (u16)findex;
+  /* Make negative values towards -infinity */
+  if (in < 0.0f)
+  {
+    n--;
+  }
 
-    /* when "in" is exactly 1, we need to rotate the index down to 0 */
-    /*
-    if (index >= B3L_MATH_TABLE_SIZE) {
-        index = 0;
-        findex -= (B3L_t)B3L_MATH_TABLE_SIZE;
-    }
-    */
-    /* fractional value calculation */
-    fract = findex - (f32) index;
+  /* Map input value to [0 1] */
+  in = in - (f32) n;
 
-    /* Read two nearest values of input value from the sin table */
+  /* Calculation of index of the table */
+  findex = (f32)B3L_MATH_TABLE_SIZE * in;
+  index = (uint16_t)findex;
 
-        a = sinTable_f32[index];
+  /* when "in" is exactly 1, we need to rotate the index down to 0 */
+  if (index >= B3L_MATH_TABLE_SIZE) {
+    index = 0;
+    findex -= (f32)B3L_MATH_TABLE_SIZE;
+  }
 
-        b = sinTable_f32[index+1];  
+  /* fractional value calculation */
+  fract = findex - (f32) index;
 
+  /* Read two nearest values of input value from the sin table */
+  a = sinTable_f32[index];
+  b = sinTable_f32[index+1];
 
-    /* Linear interpolation process */
-    sinVal = ((1.0f - fract) * a + fract * b)*positive;
-    //sinVal = a*positive;
-    /* Return output value */
-    return (sinVal);
+  /* Linear interpolation process */
+  sinVal = (1.0f - fract) * a + fract * b;
+
+  /* Return output value */
+  return (sinVal);
 
  }
 f32 B3L_cos(f32 in){
@@ -618,11 +640,11 @@ f32 B3L_asin(f32 in){
     ret -= 0.2121144f;
     ret *= in;
     ret += 1.5707288f;
-    #ifdef B3L_ARM_GCC
+    //#ifdef B3L_ARM
     ret = 3.14159265358979f*0.5f - B3L_Sqrtf(1.0 - in)*ret;
-    #else
-    ret = 3.14159265358979f*0.5f - sqrtf(1.0 - in)*ret;
-    #endif
+    //#else
+    //ret = 3.14159265358979f*0.5f - sqrtf(1.0 - in)*ret;
+    //#endif
     ret = (ret - 2 * negate * ret)*0.15915494309f;
     //ret = sign + ret*0.3183098861837f;
     //printf("%.3f\n",ret);
@@ -638,19 +660,19 @@ void B3L_NormalizeVec3(vect3_t *pV){
 
 f32 B3L_Vec2Length(vect2_t *pV){
     
-    #ifdef B3L_ARM_GCC
+    //#ifdef B3L_ARM
     return B3L_Sqrtf(pV->x*pV->x+pV->y*pV->y);
-    #else
-    return sqrtf(pV->x*pV->x+pV->y*pV->y);
-    #endif
+    //#else
+    //return sqrtf(pV->x*pV->x+pV->y*pV->y);
+   // #endif
 }
 
 f32 B3L_Vec3Length(vect3_t *pV){
-    #ifdef B3L_ARM_GCC
-    return B3L_sqrtf(pV->x * pV->x + pV->y * pV->y + pV->z * pV->z);  
-    #else
-    return sqrtf(pV->x * pV->x + pV->y * pV->y + pV->z * pV->z);  
-    #endif
+    //#ifdef B3L_ARM
+    return B3L_Sqrtf(pV->x * pV->x + pV->y * pV->y + pV->z * pV->z);  
+    //#else
+    //return sqrtf(pV->x * pV->x + pV->y * pV->y + pV->z * pV->z);  
+    //#endif
 }
 
 void B3L_Vec3Add(vect3_t *pVa,vect3_t *pVb,vect3_t *pVc){
@@ -835,7 +857,7 @@ void B3L_CameraLookAt(camera_t *pCam, vect3_t *pAt){
     dx = v.x / B3L_nonZero(l);
 
     pCam->transform.rotation.x = B3L_asin(dx);
-    printf("rotation y %.3f,rotation x %.3f\n",pCam->transform.rotation.y,pCam->transform.rotation.x);
+    //printf("rotation y %.3f,rotation x %.3f\n",pCam->transform.rotation.y,pCam->transform.rotation.x);
 }
 
 
@@ -990,11 +1012,11 @@ static void B3L_DrawObjs(render_t *pRender){
         f32 x = mat.m03;
         f32 y = mat.m13;
         f32 z = mat.m23;
-        #ifdef B3L_ARM_GCC
+        //#ifdef B3L_ARM
         distance = B3L_Sqrtf(x*x+y*y+z*z);
-        #else
-        distance = sqrtf(x*x+y*y+z*z);
-        #endif
+        //#else
+        //distance = sqrtf(x*x+y*y+z*z);
+       // #endif
         //decide render level info
         if (B3L_TEST(state ,OBJ_IGNORE_RENDER_LEVEL)){
             renderLevel = (state & OBJ_RENDER_LEVEL_MASK)>>OBJ_FIX_RENDER_LEVEL_SHIFT;
@@ -1010,7 +1032,7 @@ static void B3L_DrawObjs(render_t *pRender){
 
         switch(state & OBJ_TYPE_MASK){
             case (1<<MESH_OBJ):
-                B3L_DrawMesh2((B3LMeshObj_t *)pCurrentObj,pRender,&mat,renderLevel);
+                B3L_DrawMesh_float((B3LMeshObj_t *)pCurrentObj,pRender,&mat,renderLevel);
                 break;
             case (1<<TEXTURE2D_OBJ):
                 break;
@@ -1144,7 +1166,6 @@ void B3L_RenderInit(render_t *pRender,frameBuffData_t *pFrameBuff){
 Testing functions
 -----------------------------------------------------------------------------*/
 void B3L_InitBoxObj(B3LMeshObj_t *pObj,f32 size){
-    u32 i;
     pObj->privous = (B3LObj_t *)NULL;
     pObj->next = (B3LObj_t *)NULL;
     pObj->pMesh = &B3L_box;
@@ -1164,7 +1185,7 @@ void B3L_InitBoxObj(B3LMeshObj_t *pObj,f32 size){
     B3L_SET(pObj->state,OBJ_BACK_CULLING);
 }
 
-static void B3L_DrawMesh2(B3LMeshObj_t *pObj,render_t *pRender, mat4_t *pMat,u32 renderLevel){
+static void B3L_DrawMesh_float(B3LMeshObj_t *pObj,render_t *pRender, mat4_t *pMat,u32 renderLevel){
 #ifdef B3L_DEBUG
 printf("Draw a mesh");
 #endif
@@ -1235,10 +1256,10 @@ printf("Draw a mesh");
         }
 
 
-        B3L_DrawTriTexture2(
-            x0,y0,pUV[i*6],pUV[i*6+1],pVectTarget[vect0Idx].z,
-            x1,y1,pUV[i*6+2],pUV[i*6+3],pVectTarget[vect1Idx].z,
-            x2,y2,pUV[i*6+4],pUV[i*6+5],pVectTarget[vect2Idx].z,
+        B3L_DrawTriTexture_float(
+            x0,y0,(f32)(pUV[i*6]),(f32)(pUV[i*6+1]),pVectTarget[vect0Idx].z,
+            x1,y1,(f32)(pUV[i*6+2]),(f32)(pUV[i*6+3]),pVectTarget[vect1Idx].z,
+            x2,y2,(f32)(pUV[i*6+4]),(f32)(pUV[i*6+5]),pVectTarget[vect2Idx].z,
             renderLevel,lightValue,pObj->pTexture,
             pRender->pFrameBuff,pRender->pZBuff);
 
@@ -1455,7 +1476,8 @@ static void ClearZbuff(Z_buff_t *pZbuff,u32 length){
 
 
 /*draw functions ------------------------------------------------------------*/
-__attribute__((always_inline)) static inline void DrawTexHLine2(f32 x,s32 y,f32 b, f32 aZ, f32 bZ,
+
+__attribute__((always_inline)) static inline void DrawTexHLine_float(f32 x,s32 y,f32 b, f32 aZ, f32 bZ,
 f32 aU,f32 aV,f32 bU,f32 bV, u8 lightFactor, frameBuffData_t *pFrameBuff,Z_buff_t *pZbuff, B3L_texture_t *pTexture) {
     //printf("auv%.2f,%.2f,buv%.2f,%.2f\n",aU,aV,bU,bV);
     s32 intx = (s32)x,inty=y,intb=(s32)b;
@@ -1928,7 +1950,7 @@ frameBuffData_t *pFrameBuff,Z_buff_t *pZbuff){
 
 }
 
-__attribute__((always_inline)) static  inline void  B3L_DrawTriTexture2(
+__attribute__((always_inline)) static  inline void  B3L_DrawTriTexture_float(
                                                                         f32 x0,f32 y0,f32 u0,f32 v0,f32 z0,
                                                                         f32 x1,f32 y1,f32 u1,f32 v1,f32 z1,
                                                                         f32 x2,f32 y2,f32 u2,f32 v2,f32 z2,
@@ -1944,13 +1966,13 @@ __attribute__((always_inline)) static  inline void  B3L_DrawTriTexture2(
     #ifndef _swap_zbuff_t
     #define _swap_zbuff_t(a, b) { Z_buff_t t = a; a = b; b = t; }
     #endif
-    #ifndef B3L_SWAP_DRAW_TRI_VECT(a,b)
+
     #define B3L_SWAP_DRAW_TRI_VECT(a,b) _swap_int32_t(y##a,y##b);\
                                         _swap_int32_t(x##a,x##b);\
                                         _swap_int32_t(u##a,u##b);\
                                         _swap_int32_t(v##a,v##b);\
                                         _swap_zbuff_t(z##a,z##b);  
-    #endif 
+
 
 
     s32 y,last;
@@ -2008,10 +2030,10 @@ __attribute__((always_inline)) static  inline void  B3L_DrawTriTexture2(
     f32  bZ=z0;
     f32  a=x0;
     f32  b=x0;
-    f32 aU=u0;
-    f32 bU=u0;
-    f32 aV=v0;
-    f32 bV=v0;
+    f32  aU=u0;
+    f32  bU=u0;
+    f32  aV=v0;
+    f32  bV=v0;
     //printf("\n",dy01,dy02,dy12);
     //printf("du12,%.3f dv12,%.3f du02,%.3f dv02,%.3f \n",du12,dv12,du02,dv02);
     if(inty1 == inty2) last = inty1;   // Include y1 scanline
@@ -2028,9 +2050,9 @@ __attribute__((always_inline)) static  inline void  B3L_DrawTriTexture2(
         if(!((y<0)||(((s32)a)==((s32)b)))){
         //include a, and b how many pixel
             if(a > b){
-                DrawTexHLine2(b,y,a,bZ,aZ,bU,bV,aU,aV,lightFactor,pFrameBuff,pZbuff,pTexture);
+                DrawTexHLine_float(b,y,a,bZ,aZ,bU,bV,aU,aV,lightFactor,pFrameBuff,pZbuff,pTexture);
             }else{
-                DrawTexHLine2(a,y,b,aZ,bZ,aU,aV,bU,bV,lightFactor,pFrameBuff,pZbuff,pTexture);
+                DrawTexHLine_float(a,y,b,aZ,bZ,aU,aV,bU,bV,lightFactor,pFrameBuff,pZbuff,pTexture);
             } 
         }
         a   += dx01;
@@ -2068,9 +2090,9 @@ __attribute__((always_inline)) static  inline void  B3L_DrawTriTexture2(
         if(!((y<0)||(((s32)a)==((s32)b)))){
         //include a, and b how many pixel
             if(a > b){
-                DrawTexHLine2(b,y,a,bZ,aZ,bU,bV,aU,aV,lightFactor,pFrameBuff,pZbuff,pTexture);
+                DrawTexHLine_float(b,y,a,bZ,aZ,bU,bV,aU,aV,lightFactor,pFrameBuff,pZbuff,pTexture);
             }else{
-                DrawTexHLine2(a,y,b,aZ,bZ,aU,aV,bU,bV,lightFactor,pFrameBuff,pZbuff,pTexture);
+                DrawTexHLine_float(a,y,b,aZ,bZ,aU,aV,bU,bV,lightFactor,pFrameBuff,pZbuff,pTexture);
             } 
         }
         a  += dx12;
