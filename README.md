@@ -14,10 +14,10 @@ At the Render phase, call B3L_NewFrame( &B3Lrender) and B3L_RenderScence(&B3Lren
 All the obj in the lib should in the scene list. Only those in the render.scene.pActiveObjs list will be drawed. The per-defined objs buff number is defined in the h file.
 
 Todo:
-2d Sprite drawing
-Polygon drawing
-3d particles drawing
-fast flat color triangle drawing
+[] 2d Sprite drawing
+[] Polygon drawing
+[] 3d particles drawing
+[] fast flat color triangle drawing
 
 Model swapping system to manage the model loading from nor flash into sram buff.
 Python scripts to convert obj model file to raw hex file which could be easily loaded into sram area.
