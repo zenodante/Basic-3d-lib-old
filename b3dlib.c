@@ -7,7 +7,7 @@
 #endif
 
 //config the ram position if necessary
-screen3_t      vectBuff[VECT_BUFF_SIZE]; //8KB
+screen3f_t      vectBuff[VECT_BUFF_SIZE]; //8KB
 Z_buff_t       zbuff[BUFF_LENTH];        //75KB
 
 
@@ -204,6 +204,7 @@ __attribute__((always_inline)) static  inline s32   B3L_IntMax(s32 v1, s32 v2);
 __attribute__((always_inline)) static  inline void  B3L_MakeClipMatrix(f32 focalLength, f32 aspectRatio,mat4_t *mat);
 __attribute__((always_inline)) static  inline void  B3L_Vect3Xmat4(vect3_t *pV, mat4_t *pMat, vect4_t *pResult);
 __attribute__((always_inline)) static  inline void  B3L_Vect3Xmat4WithTest(vect3_t *pV, mat4_t *pMat, screen3_t *pResult);
+__attribute__((always_inline)) static  inline void  B3L_Vect3Xmat4WithTest_float(vect3_t *pV, mat4_t *pMat, screen3f_t *pResult);
 __attribute__((always_inline)) static  inline void  B3L_Norm3Xmat4(vect3_t *pV, mat4_t *pMat, vect3_t *pResult);
 __attribute__((always_inline)) static  inline void  B3L_Norm3Xmat4Normalize(vect3_t *pV, mat4_t *pMat, vect3_t *pResult);
 __attribute__((always_inline)) static  inline void  B3L_Vect4Xmat4(vect4_t *pV, mat4_t *pMat, vect4_t *pResult);
@@ -233,10 +234,12 @@ __attribute__((always_inline)) static inline void DrawTexHLine(f32 x,s32 y,f32 b
                                                                 B3L_texture_t *pTexture);
 __attribute__((always_inline)) static inline void DrawColorHLine(f32 x,s32 y,f32 b, f32 aZ, f32 bZ,
                                                                 frameBuffData_t color, u8 lightFactor, 
-                                                                frameBuffData_t *pFrameBuff,Z_buff_t *pZbuff);                                                                
+                                                                frameBuffData_t *pFrameBuff,Z_buff_t *pZbuff); 
+__attribute__((always_inline)) static inline void B3L_DrawDepthLine(f32 Ax,f32 Ay,f32 Az,f32 Bx,f32 By,f32 Bz, meshColorData_t color);                                                               
 static void B3L_AddObjToList(B3LObj_t *pObj, B3LObj_t **pStart);
 static void B3L_DrawMesh(B3LMeshObj_t *pObj,render_t *pRender, mat4_t *pMat,u32 renderLevel);
 static void B3L_DrawMeshNoTexture(B3LMeshNoTexObj_t *pObj,render_t *pRender, mat4_t *pMat,u32 renderLevel);
+static void B3L_DrawPolygon(B3LPolygonObj_t *pObj,render_t *pRender, mat4_t *pMat);
 static void ClearFrameBuff(frameBuffData_t *pFramebuff,frameBuffData_t value,u32 length);
 static void ClearZbuff(Z_buff_t *pZbuff,u32 length);
 static void B3L_DrawObjs(render_t *pRender);
@@ -422,7 +425,7 @@ __attribute__((always_inline)) static inline void B3L_Vect3Xmat4(vect3_t *pV, ma
     #undef dotCol
 
 }
-__attribute__((always_inline)) static  inline void  B3L_Vect3Xmat4WithTest2(vect3_t *pV, mat4_t *pMat, screen3f_t *pResult){
+__attribute__((always_inline)) static  inline void  B3L_Vect3Xmat4WithTest_float(vect3_t *pV, mat4_t *pMat, screen3f_t *pResult){
     f32 x,y,z,rx,ry,rz,rw;
     x = pV->x;
     y = pV->y;
@@ -1080,6 +1083,7 @@ static void B3L_DrawObjs(render_t *pRender){
         //distance = sqrtf(x*x+y*y+z*z);
        // #endif
         //decide render level info
+        
         if (B3L_TEST(state ,OBJ_IGNORE_RENDER_LEVEL)){
             renderLevel = (state & OBJ_RENDER_LEVEL_MASK)>>OBJ_FIX_RENDER_LEVEL_SHIFT;
         }else{
@@ -1091,21 +1095,21 @@ static void B3L_DrawObjs(render_t *pRender){
                 renderLevel = 2;
             }            
         }
+        
 
         switch(state & OBJ_TYPE_MASK){
             case (1<<MESH_OBJ):
                 B3L_DrawMesh((B3LMeshObj_t *)pCurrentObj,pRender,&mat,renderLevel);
                 break;
-            case (1<<TEXTURE2D_OBJ):
-                break;
             case (1<<POLYGON_OBJ):
+                B3L_DrawPolygon((B3LPolygonObj_t *)pCurrentObj,pRender,&mat);
                 break;
-            case (1<<NOTEX_MESH_OBJ):
-                
+            case (1<<NOTEX_MESH_OBJ):                
                 B3L_DrawMeshNoTexture((B3LMeshNoTexObj_t *)pCurrentObj,pRender,&mat,renderLevel);
                 break;
-        }
-        
+            case (1<<PARTICLE_OBJ):
+                break;
+        }      
         //point to the next obj
         pCurrentObj = pCurrentObj->next;
     }
@@ -1277,11 +1281,11 @@ printf("Draw a no texture mesh");
     int32_t i;
     B3L_Mesh_NoTex_t *pMesh= pObj->pMesh;
     vect3_t *pVectSource = ((vect3_t *)(pMesh->pVect));
-    screen3f_t *pVectTarget =(screen3f_t *)pRender->pVectBuff;
+    screen3f_t *pVectTarget =pRender->pVectBuff;
     meshColorData_t  *pColor = pMesh->pColor;
 //process all the vectors
     for(i=pMesh->vectNum - 1;i>=0;i--){ 
-        B3L_Vect3Xmat4WithTest2(pVectSource+i, pMat, pVectTarget+i);
+        B3L_Vect3Xmat4WithTest_float(pVectSource+i, pMat, pVectTarget+i);
     }
     vect3_t light;
     f32   lightFactor0;
@@ -1303,7 +1307,7 @@ printf("Draw a no texture mesh");
     f32   normalDotLight;
     frameBuffData_t color;
     //if the render level is not zero, then the lightValue would fix at 0xff
-    u8 lightValue=0xFF;
+    u8 lightValue=B3L_LEVEL_1_DEFAULT_LIGHT;
 //draw tri loop
     for (i=pMesh->triNum -1;i>=0;i--){
         //pTriRenderState[i]=0;
@@ -1352,6 +1356,34 @@ printf("Draw a no texture mesh");
     
 }
 
+static void B3L_DrawPolygon(B3LPolygonObj_t *pObj,render_t *pRender, mat4_t *pMat){
+    int32_t i;
+    B3L_Polygon_t *pPoly = pObj->pPolygon;
+    meshColorData_t color= pPoly->color;
+    vect3_t *pVectSource = ((vect3_t *)(pPoly->pVect));
+    screen3f_t *pVectTarget =pRender->pVectBuff;
+    //project all the vect into screen space
+    for(i=pPoly->vectNum - 1;i>=0;i--){ 
+        B3L_Vect3Xmat4WithTest_float(pVectSource+i, pMat, pVectTarget+i);
+    }
+    u8 *pLine = pPoly->pLine;
+    u8 lineIdxA,lineIdxB;
+    for (i=pPoly->lineNum -1;i>=0;i--){
+        //draw every line
+        lineIdxA = pLine[i*2];
+        lineIdxB = pLine[i*2+1];
+        f32 Ax = pVectTarget[lineIdxA].x;
+        f32 Ay = pVectTarget[lineIdxA].y;
+        f32 Az = pVectTarget[lineIdxA].z;
+        f32 Bx = pVectTarget[lineIdxB].x;
+        f32 By = pVectTarget[lineIdxB].y;
+        f32 Bz = pVectTarget[lineIdxB].z;
+        B3L_DrawDepthLine(Ax,Ay,Az,Bx,By,Bz,color);
+
+    }
+
+
+}
 
 
 static void B3L_DrawMesh(B3LMeshObj_t *pObj,render_t *pRender, mat4_t *pMat,u32 renderLevel){
@@ -1361,12 +1393,12 @@ printf("Draw a mesh");
     int32_t i;
     B3L_Mesh_t *pMesh= pObj->pMesh;
     vect3_t *pVectSource = ((vect3_t *)(pMesh->pVect));
-    screen3f_t *pVectTarget =(screen3f_t *)pRender->pVectBuff;
+    screen3f_t *pVectTarget =pRender->pVectBuff;
     u8 * pUV = pObj->pMesh->pUv;
     B3L_texture_t *pTexture = pObj->pTexture;
 //process all the vectors
     for(i=pMesh->vectNum - 1;i>=0;i--){ 
-        B3L_Vect3Xmat4WithTest2(pVectSource+i, pMat, pVectTarget+i);
+        B3L_Vect3Xmat4WithTest_float(pVectSource+i, pMat, pVectTarget+i);
     }
     vect3_t light;
     f32   lightFactor0;
@@ -1387,7 +1419,7 @@ printf("Draw a mesh");
     vect3_t normalVect;
     f32   normalDotLight;
     //if the render level is not zero, then the lightValue would fix at 0xff
-    u8 lightValue=0xFF;
+    u8 lightValue=B3L_LEVEL_1_DEFAULT_LIGHT;
 //draw tri loop
     for (i=pMesh->triNum -1;i>=0;i--){
         //pTriRenderState[i]=0;
@@ -1400,7 +1432,7 @@ printf("Draw a mesh");
         if(!B3L_TriVisable(result0,result1,result2)){
             continue;
         }
-        //screen3_t *screenVect = pVectTarget;
+        //screen3f_t *screenVect = pVectTarget;
         f32 x0 = pVectTarget[vect0Idx].x;
         f32 y0 = pVectTarget[vect0Idx].y;
         f32 x1 = pVectTarget[vect1Idx].x;
@@ -1563,6 +1595,12 @@ static void ClearZbuff(Z_buff_t *pZbuff,u32 length){
 
 
 /*draw functions ------------------------------------------------------------*/
+__attribute__((always_inline)) static inline void B3L_DrawDepthLine(f32 Ax,f32 Ay,f32 Az,f32 Bx,f32 By,f32 Bz, meshColorData_t color){
+//todo here~
+}
+
+
+
 __attribute__((always_inline)) static inline void DrawColorHLine(f32 x,s32 y,f32 b, f32 aZ, f32 bZ,
 frameBuffData_t color, u8 lightFactor, frameBuffData_t *pFrameBuff,Z_buff_t *pZbuff) {
     //printf("auv%.2f,%.2f,buv%.2f,%.2f\n",aU,aV,bU,bV);
@@ -1999,7 +2037,6 @@ __attribute__((always_inline)) static  inline void  B3L_DrawTriColor(
     #define _swap_zbuff_t(a, b) { Z_buff_t t = a; a = b; b = t; }
     #endif
 
-
     s32 y,last;
     s32 inty0 = (s32)y0,inty1 = (s32)y1,inty2 = (s32)y2;
     if(inty0 > inty1){
@@ -2038,7 +2075,6 @@ __attribute__((always_inline)) static  inline void  B3L_DrawTriColor(
     f32 dz02 = (z2 - z0)*dy02;
     f32 dz12 = (z2 - z1)*dy12;
 
-
     f32  aZ=z0;
     f32  bZ=z0;
     f32  a=x0;
@@ -2066,7 +2102,6 @@ __attribute__((always_inline)) static  inline void  B3L_DrawTriColor(
         }
         a   += dx01;
         b   += dx02;
-
         aZ = aZ + dz01;
         bZ = bZ + dz02;
     }
@@ -2075,19 +2110,16 @@ __attribute__((always_inline)) static  inline void  B3L_DrawTriColor(
     s32 deltaY0 = y-inty0;
     a = x1;
     b = x0 + dx02*deltaY0;
-
     aZ = z1;
 
     if (inty2>=RENDER_RESOLUTION_Y){
         inty2= RENDER_RESOLUTION_Y -1;
     }
-    //printf("aU,%.3f aV,%.3f bU,%.3f bV%.3f \n",aU,aV,bU,bV);
-    
+    //printf("aU,%.3f aV,%.3f bU,%.3f bV%.3f \n",aU,aV,bU,bV);    
     for(; y<=inty2; y++) {
         if ((aZ>1.0f) && (bZ>1.0f)){
             continue;
         }
-
         if(!((y<0)||(((s32)a)==((s32)b)))){
         //include a, and b how many pixel
             if(a > b){
@@ -2100,9 +2132,5 @@ __attribute__((always_inline)) static  inline void  B3L_DrawTriColor(
         b  += dx02;
         aZ += dz12;
         bZ += dz02; 
-
     }
-
-
-
 }

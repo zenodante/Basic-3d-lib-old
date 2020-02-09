@@ -36,13 +36,14 @@ type 2: 16bit 8:8     AL
 //1.0f == 90 degree fov,smaller is larger fov
 #define DEFAULT_FOCUS_LENGTH    (1.0f)
 
-#define FAR_PLANE               500.0f
-#define NEAR_PLANE              1.0f
-#define LEVEL_0_DISTANCE        300.0f
-#define LEVEL_1_DISTANCE        500.0f
+#define FAR_PLANE                    500.0f
+#define NEAR_PLANE                   1.0f
+#define LEVEL_0_DISTANCE             300.0f
+#define LEVEL_1_DISTANCE             500.0f
+#define B3L_LEVEL_1_DEFAULT_LIGHT    0xA0
 //level 0, calculate light, texture
 //level 1, calculate texture
-//level 2, calculate color only
+
 
 
   
@@ -163,6 +164,15 @@ typedef struct{
 typedef struct {
     u32              id;
     u16              vectNum;
+    u16              lineNum;
+    f32              *pVect;
+    u8               *pLine;
+    meshColorData_t  color;
+}B3L_Polygon_t;
+
+typedef struct {
+    u32              id;
+    u16              vectNum;
     u16              triNum;
     f32              *pVect;
     u16              *pTri;
@@ -179,6 +189,21 @@ typedef struct {
     u8         *pUv;
     f32        *pNormal;
 }B3L_Mesh_t;
+
+//36 byte for single particle
+typedef struct B3L_PARTICLE{
+    struct B3L_PARTICLE *next;
+    f32 x;  //f16 may be better for size? -> 24 byte
+    f32 y;
+    f32 z;
+    f32 dx;
+    f32 dy;
+    f32 dz;
+    uint32_t color;
+    uint16_t size;
+    uint16_t life;
+}B3L_Particle_t;
+
 
 
 #define LUT4         0
@@ -197,9 +222,13 @@ typedef struct{
 //obj type information
 #define OBJ_TYPE_MASK            0x000000FF
 #define MESH_OBJ                    (0)
-#define TEXTURE2D_OBJ               (1)
+//the texture 2d obj should be seperated and sorted before draw, then we could use
+//alpha mix correctly
+//so the new plan would be:draw all 3d objs, then 2d objs overthen with z buff check
+//#define TEXTURE2D_OBJ               (1)
 #define POLYGON_OBJ                 (2)
 #define NOTEX_MESH_OBJ              (3)
+#define PARTICLE_OBJ                (4)
 //obj visualizable control
 #define OBJ_VISUALIZABLE            (8)
 #define OBJ_BACK_CULLING            (9)
@@ -228,6 +257,7 @@ typedef struct{
     B3L_texture_t   *pTexture;   
 }B3LMeshObj_t;
 
+
 typedef struct{
     B3LObj_t           *privous;
     B3LObj_t           *next;
@@ -237,6 +267,24 @@ typedef struct{
     B3L_Mesh_NoTex_t   *pMesh; 
 }B3LMeshNoTexObj_t;
 
+typedef struct{
+    B3LObj_t           *privous;
+    B3LObj_t           *next;
+    u32                state;
+    f32                *pBoundBox;
+    transform3D_t      transform; 
+    B3L_Polygon_t      *pPolygon; 
+}B3LPolygonObj_t;
+
+typedef struct{
+    B3LObj_t           *privous;
+    B3LObj_t           *next;
+    u32                state;
+    f32                *pBoundBox;
+    transform3D_t      transform; 
+    B3L_Particle_t     *pParticleActive; 
+    B3L_Particle_t     *pParticleRecycle; 
+}B3LParticleObj_t;
 
 typedef struct{
     B3LObj_t       objBuff[OBJ_BUFF_SIZE];    
@@ -260,7 +308,7 @@ typedef struct{
     camera_t         camera;
     light_t          light;    
     scene_t          scene;
-    screen3_t        *pVectBuff;
+    screen3f_t        *pVectBuff;
 }render_t;
 /*Useful macros--------------------------------------------------------------*/
 #define B3L_SET(PIN,N)  (PIN |=  (1u<<N))
