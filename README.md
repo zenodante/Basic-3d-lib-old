@@ -9,7 +9,7 @@ You could find configs in the b3dlib.h file, currently 32bit framebuff and 32bit
 
 At init phase, call B3L_RenderInit(&B3Lrender,(frameBuffData_t *)pFramebuffAddr); to init the lib
 
-At the Render phase, call B3L_NewFrame( &B3Lrender) and B3L_RenderScence(&B3Lrender) to draw the frame. NewFrame function will clear the z buff and framebuff by default. Later I make change it to call some user callback function to customerize the framebuff cleaning operation.
+At the Render phase, call B3L_NewFrame( &B3Lrender) and B3L_RenderScence(&B3Lrender) to draw the frame. NewFrame function will clear the z buff and framebuff by default. Later I may change it to call some user callback function to customerize the framebuff cleaning operation.
 
 All the obj in the lib should in the scene list. Only those in the render.scene.pActiveObjs list will be drawed. The per-defined objs buff number is defined in the h file.
 
