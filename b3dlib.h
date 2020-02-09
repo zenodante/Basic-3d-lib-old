@@ -87,16 +87,19 @@ typedef f32 Z_buff_t;
 
 #if (FRAME_BUFF_COLOR_TYPE  == 0)
 typedef  u32 frameBuffData_t;
+typedef  u32 meshColorData_t;
 typedef  u32 texLUTData_t;
 #define LIGHT_BIT           8
 #endif
 #if (FRAME_BUFF_COLOR_TYPE  == 1)
 typedef  u16 frameBuffData_t;
+typedef  u16 meshColorData_t;
 typedef  u16 texLUTData_t;
 #define LIGHT_BIT           4
 #endif
 #if (FRAME_BUFF_COLOR_TYPE  == 2)
 typedef  u16 frameBuffData_t;
+typedef  u8 meshColorData_t;
 typedef  u8  texLUTData_t;
 #define LIGHT_BIT           8
 #endif
@@ -158,12 +161,22 @@ typedef struct{
 }camera_t;
 
 typedef struct {
+    u32              id;
+    u16              vectNum;
+    u16              triNum;
+    f32              *pVect;
+    u16              *pTri;
+    meshColorData_t  *pColor;
+    f32              *pNormal;
+}B3L_Mesh_NoTex_t;
+
+typedef struct {
     u32        id;
     u16        vectNum;
     u16        triNum;
     f32        *pVect;
     u16        *pTri;
-    u8    *pUv;
+    u8         *pUv;
     f32        *pNormal;
 }B3L_Mesh_t;
 
@@ -214,6 +227,16 @@ typedef struct{
     B3L_Mesh_t      *pMesh;
     B3L_texture_t   *pTexture;   
 }B3LMeshObj_t;
+
+typedef struct{
+    B3LObj_t           *privous;
+    B3LObj_t           *next;
+    u32                state;
+    f32                *pBoundBox;
+    transform3D_t      transform; 
+    B3L_Mesh_NoTex_t   *pMesh; 
+}B3LMeshNoTexObj_t;
+
 
 typedef struct{
     B3LObj_t       objBuff[OBJ_BUFF_SIZE];    
@@ -298,7 +321,7 @@ extern void B3L_AddObjToRenderList(B3LObj_t *pObj, render_t *pRender);
 extern void B3L_PopObjFromRenderList(B3LObj_t *pObj, render_t *pRender);
 extern void B3L_ReturnObjToInactiveList(B3LObj_t *pObj,  render_t *pRender);
 extern void B3L_InitBoxObj(B3LMeshObj_t *pObj,f32 size);
-
+extern void B3L_InitBoxObjNoTexture(B3LMeshNoTexObj_t *pObj,f32 size);
 //extern void B3L_DrawObjs(render_t *pRender);
 /*
 void B3L_DrawTriTexture(
@@ -307,5 +330,13 @@ s32 x1,s32 y1,s32 u1,s32 v1,f32 z1,
 s32 x2,s32 y2,s32 u2,s32 v2,f32 z2,
 u32 renderLevel,u16 lightFactor,B3L_texture_t *pTexture,
 frameBuffData_t *pFrameBuff,Z_buff_t *pZbuff);
+*/
+/*
+extern void  B3L_DrawTriColor(
+                                                                        f32 x0,f32 y0,f32 z0,
+                                                                        f32 x1,f32 y1,f32 z1,
+                                                                        f32 x2,f32 y2,f32 z2,
+                                                                        u32 renderLevel,u8 lightFactor,frameBuffData_t color,
+                                                                        frameBuffData_t *pFrameBuff,Z_buff_t *pZbuff);
 */
 #endif
