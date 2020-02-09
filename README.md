@@ -14,6 +14,7 @@ At the Render phase, call B3L_NewFrame( &B3Lrender) and B3L_RenderScence(&B3Lren
 All the obj in the lib should in the scene list. Only those in the render.scene.pActiveObjs list will be drawed. The per-defined objs buff number is defined in the h file.
 
 Todo:
+- [x] Texture mapping triangle drawing
 - [ ] 2d Sprite drawing
 - [ ] Polygon drawing
 - [ ] 3d particles drawing
