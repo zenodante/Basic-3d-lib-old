@@ -1251,6 +1251,7 @@ void B3L_InitBoxObj(B3LMeshObj_t *pObj,f32 size){
     B3L_SET(pObj->state,MESH_OBJ); 
     B3L_SET(pObj->state,OBJ_VISUALIZABLE);
     B3L_SET(pObj->state,OBJ_BACK_CULLING);
+    B3L_SET(pObj->state,OBJ_BACK_CULLING_CLOCK);
 }
 void B3L_InitBoxObjNoTexture(B3LMeshNoTexObj_t *pObj,f32 size){
     pObj->privous = (B3LObj_t *)NULL;
@@ -1270,6 +1271,7 @@ void B3L_InitBoxObjNoTexture(B3LMeshNoTexObj_t *pObj,f32 size){
     B3L_SET(pObj->state,NOTEX_MESH_OBJ); 
     B3L_SET(pObj->state,OBJ_VISUALIZABLE);
     B3L_SET(pObj->state,OBJ_BACK_CULLING);
+       B3L_SET(pObj->state,OBJ_BACK_CULLING_CLOCK);
 
 }
 
@@ -1301,7 +1303,13 @@ printf("Draw a no texture mesh");
     }               
 
     u16 *pTriIdx = pMesh->pTri;
-    u32 cullingState = B3L_TEST(pObj->state,OBJ_BACK_CULLING);
+    u32 cullingState;
+    if (B3L_TEST(pObj->state,OBJ_BACK_CULLING)){
+        cullingState = ((pObj->state)&OBJ_CILLING_MASK)>>OBJ_CILLING_SHIFT;
+    }else{
+        cullingState = 0;
+    }
+    
     u32 vect0Idx,vect1Idx,vect2Idx;
     vect3_t normalVect;
     f32   normalDotLight;
@@ -1332,9 +1340,17 @@ printf("Draw a no texture mesh");
 #ifdef B3L_DEBUG
         printf("backFaceCullingResult = %d\n",backFaceCullingResult);
 #endif
-        if (cullingState && backFaceCullingResult){     
-            continue;
+
+        if (cullingState){
+            
+            if ((cullingState==1) && backFaceCullingResult){     
+                continue;
+            }
+            if ((cullingState==2) && (!backFaceCullingResult)){     
+                continue;
+            }
         }
+        
 
         if (renderLevel==0){
             B3L_Norm3Xmat4Normalize(pVectSource+i, pMat, &normalVect); 
@@ -1414,7 +1430,12 @@ printf("Draw a mesh");
     }               
 
     u16 *pTriIdx = pMesh->pTri;
-    u32 cullingState = B3L_TEST(pObj->state,OBJ_BACK_CULLING);
+    u32 cullingState;
+    if (B3L_TEST(pObj->state,OBJ_BACK_CULLING)){
+        cullingState = ((pObj->state)&OBJ_CILLING_MASK)>>OBJ_CILLING_SHIFT;
+    }else{
+        cullingState = 0;
+    }
     u32 vect0Idx,vect1Idx,vect2Idx;
     vect3_t normalVect;
     f32   normalDotLight;
@@ -1444,8 +1465,15 @@ printf("Draw a mesh");
 #ifdef B3L_DEBUG
         printf("backFaceCullingResult = %d\n",backFaceCullingResult);
 #endif
-        if (cullingState && backFaceCullingResult){     
-            continue;
+
+        if (cullingState){
+            
+            if ((cullingState==1) && backFaceCullingResult){    
+                continue;
+            }
+            if ((cullingState==2) && (!backFaceCullingResult)){  
+                continue;
+            }
         }
 
         if (renderLevel==0){

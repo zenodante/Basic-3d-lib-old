@@ -231,8 +231,12 @@ typedef struct{
 #define PARTICLE_OBJ                (4)
 //obj visualizable control
 #define OBJ_VISUALIZABLE            (8)
-#define OBJ_BACK_CULLING            (9)
-#define OBJ_IGNORE_RENDER_LEVEL     (10)
+#define OBJ_BACK_CULLING              (9)
+#define OBJ_BACK_CULLING_CLOCK            (10)
+#define OBJ_BACK_CULLING_ANTICLOCK        (11)
+#define OBJ_CILLING_MASK       0x00000C00  
+#define OBJ_CILLING_SHIFT            10
+#define OBJ_IGNORE_RENDER_LEVEL     (11)
 //render stage information
 #define OBJ_RENDER_LEVEL_MASK    0x00030000
 #define OBJ_FIX_RENDER_LEVEL_SHIFT  (16)

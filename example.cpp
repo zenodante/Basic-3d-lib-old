@@ -2,6 +2,7 @@
 
 extern "C" {
 #include "b3dlib.h"
+#include "cat.h"
 }
 using namespace blit;
 
@@ -22,7 +23,7 @@ void init() {
     pBox = (B3LMeshObj_t *)B3L_GetFreeObj(&B3Lrender);
     B3L_InitBoxObj(&box,50.0f);
     B3L_InitBoxObjNoTexture(pBox2,50.0f); //create a size 10 box   
-    B3L_InitBoxObj(pBox,50.0f); //create a size 10 box  
+    InitCatObj(pBox,4.0f); //create a size 10 box  
     B3L_AddObjToRenderList((B3LObj_t *)&box, &B3Lrender);
     B3L_AddObjToRenderList((B3LObj_t *)pBox, &B3Lrender);
     B3L_AddObjToRenderList((B3LObj_t *)pBox2, &B3Lrender);
@@ -36,14 +37,16 @@ void init() {
     pBox->transform.translation.y = 0.0f;
     pBox->transform.translation.x = 0.0f;
     pBox->transform.translation.z = 0.0f;
-    B3Lrender.camera.transform.translation.x = 50.0f;
-    B3Lrender.camera.transform.translation.y =  50.0f;
+    B3Lrender.camera.transform.translation.x = 0.0f;
+    B3Lrender.camera.transform.translation.y =  0.0f;
     B3Lrender.camera.transform.translation.z =  -200.0f;
     //B3Lrender.camera.transform.rotation.x = -0.125f;
-    //B3Lrender.camera.transform.rotation.y = 0.125f;
+    //B3Lrender.camera.transform.rotation.y = 0.25f;
     //B3Lrender.camera.transform.rotation.z = 0.0f;
     B3L_CameraLookAt(&(B3Lrender.camera), &at);
     //printf("init done\n");
+
+
 }
 
 void update(uint32_t time){
@@ -56,10 +59,10 @@ void update(uint32_t time){
     pBox2->transform.rotation.z -= 0.001f;
     pBox2->transform.rotation.y -= 0.001f;
     if (pressed(DPAD_UP)){
-        B3Lrender.camera.transform.rotation.z +=0.01f;    
+        B3Lrender.camera.transform.translation.z +=1.01f;    
     }
     if (pressed(DPAD_DOWN)){
-        B3Lrender.camera.transform.rotation.z -=0.01f;   
+        B3Lrender.camera.transform.translation.z -=1.01f;   
     }
     if (pressed(DPAD_LEFT)){
         B3Lrender.camera.transform.translation.x += 1.0f;    
