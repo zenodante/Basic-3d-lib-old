@@ -88,19 +88,16 @@ typedef f32 Z_buff_t;
 
 #if (FRAME_BUFF_COLOR_TYPE  == 0)
 typedef  u32 frameBuffData_t;
-typedef  u32 meshColorData_t;
 typedef  u32 texLUTData_t;
 #define LIGHT_BIT           8
 #endif
 #if (FRAME_BUFF_COLOR_TYPE  == 1)
 typedef  u16 frameBuffData_t;
-typedef  u16 meshColorData_t;
 typedef  u16 texLUTData_t;
 #define LIGHT_BIT           4
 #endif
 #if (FRAME_BUFF_COLOR_TYPE  == 2)
 typedef  u16 frameBuffData_t;
-typedef  u8 meshColorData_t;
 typedef  u8  texLUTData_t;
 #define LIGHT_BIT           8
 #endif
@@ -167,7 +164,7 @@ typedef struct {
     u16              lineNum;
     f32              *pVect;
     u8               *pLine;
-    meshColorData_t  color;
+    texLUTData_t  color;
 }B3L_Polygon_t;
 
 typedef struct {
@@ -176,7 +173,7 @@ typedef struct {
     u16              triNum;
     f32              *pVect;
     u16              *pTri;
-    meshColorData_t  *pColor;
+    u8               *pColorIdx;
     f32              *pNormal;
 }B3L_Mesh_NoTex_t;
 
@@ -214,8 +211,8 @@ typedef struct{
     u16            type;
     u16            uvSize;
     texLUTData_t   *pLUT;
-    u8        *pData;
-    u8        transColorIdx;
+    u8             *pData;
+    u8             transColorIdx;
 }B3L_texture_t ;
 
 //obj->state config bits
@@ -231,7 +228,7 @@ typedef struct{
 #define PARTICLE_OBJ                (4)
 //obj visualizable control
 #define OBJ_VISUALIZABLE            (8)
-#define OBJ_BACK_CULLING              (9)
+
 #define OBJ_BACK_CULLING_CLOCK            (10)
 #define OBJ_BACK_CULLING_ANTICLOCK        (11)
 #define OBJ_CILLING_MASK       0x00000C00  
@@ -269,6 +266,7 @@ typedef struct{
     f32                *pBoundBox;
     transform3D_t      transform; 
     B3L_Mesh_NoTex_t   *pMesh; 
+    texLUTData_t       *pLUT;
 }B3LMeshNoTexObj_t;
 
 typedef struct{

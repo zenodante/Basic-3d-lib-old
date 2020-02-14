@@ -57,24 +57,12 @@ const u16 B3L_boxTri[36] ={
   1, 4, 0, /* bottom */
   5, 4, 1
 };
-#if FRAME_BUFF_COLOR_TYPE == 0
-const u32 B3L_boxColor[12]={
-    0XFF1D2B53,0XFF7E2553,0XFF008751,0XFFAB5236,0XFF5F574F,0XFFC2C3C7,
-    0XFFFFF1E8,0XFFFF004D,0XFFFFA300,0XFFFFEC27,0XFF00E436,0XFF29ADFF
+
+const u8 B3L_boxColorIdx[12]={
+    0,1,2,3,4,5,
+    6,7,8,9,10,11
 };
-#endif
-#if FRAME_BUFF_COLOR_TYPE == 1
-const u16 B3L_boxColor[12]={
-    0XF235,0XF825,0XF085,0XFB53,0XF655,0XFCCC,
-    0XFFFF,0XFF05,0XFFA0,0XFFF2,0XF0E3,0XF3BF
-};
-#endif
-#if FRAME_BUFF_COLOR_TYPE == 2
-const u8 B3L_boxColor[12]={
-    1,2,3,4,5,6,
-    7,8,9,10,11,12
-};
-#endif
+
 
 
 #define m 15
@@ -157,7 +145,7 @@ const B3L_Mesh_NoTex_t B3L_box_noTex = {.id      = 0,
                       .triNum  = 12,
                       .pVect   = (f32 *)B3L_boxVect,
                       .pTri    = (u16 *)B3L_boxTri,
-                      .pColor  = (meshColorData_t  *)B3L_boxColor,
+                      .pColorIdx  = (u8  *)B3L_boxColorIdx,
                       .pNormal = (f32 *)B3L_boxNormal
                       };
 
@@ -233,9 +221,9 @@ __attribute__((always_inline)) static inline void DrawTexHLine(f32 x,s32 y,f32 b
                                                                 frameBuffData_t *pFrameBuff,Z_buff_t *pZbuff,
                                                                 B3L_texture_t *pTexture);
 __attribute__((always_inline)) static inline void DrawColorHLine(f32 x,s32 y,f32 b, f32 aZ, f32 bZ,
-                                                                frameBuffData_t color, u8 lightFactor, 
+                                                                frameBuffData_t finalColor, 
                                                                 frameBuffData_t *pFrameBuff,Z_buff_t *pZbuff); 
-__attribute__((always_inline)) static inline void B3L_DrawDepthLine(f32 Ax,f32 Ay,f32 Az,f32 Bx,f32 By,f32 Bz, meshColorData_t color);                                                               
+__attribute__((always_inline)) static inline void B3L_DrawDepthLine(f32 Ax,f32 Ay,f32 Az,f32 Bx,f32 By,f32 Bz, texLUTData_t color);                                                               
 static void B3L_AddObjToList(B3LObj_t *pObj, B3LObj_t **pStart);
 static void B3L_DrawMesh(B3LMeshObj_t *pObj,render_t *pRender, mat4_t *pMat,u32 renderLevel);
 static void B3L_DrawMeshNoTexture(B3LMeshNoTexObj_t *pObj,render_t *pRender, mat4_t *pMat,u32 renderLevel);
@@ -1250,7 +1238,7 @@ void B3L_InitBoxObj(B3LMeshObj_t *pObj,f32 size){
     pObj->pBoundBox = B3L_box.pVect;
     B3L_SET(pObj->state,MESH_OBJ); 
     B3L_SET(pObj->state,OBJ_VISUALIZABLE);
-    B3L_SET(pObj->state,OBJ_BACK_CULLING);
+
     B3L_SET(pObj->state,OBJ_BACK_CULLING_CLOCK);
 }
 void B3L_InitBoxObjNoTexture(B3LMeshNoTexObj_t *pObj,f32 size){
@@ -1268,10 +1256,19 @@ void B3L_InitBoxObjNoTexture(B3LMeshNoTexObj_t *pObj,f32 size){
     pObj->transform.scale.y = size;
     pObj->transform.scale.z = size;
     pObj->pBoundBox = B3L_box.pVect;
+    #if FRAME_BUFF_COLOR_TYPE == 0
+    pObj->pLUT =  (texLUTData_t *)B3L_boxLUT32bit;
+    #endif
+    #if FRAME_BUFF_COLOR_TYPE == 1
+    pObj->pLUT =  (texLUTData_t *)B3L_boxLUT4444;
+    #endif
+    #if FRAME_BUFF_COLOR_TYPE == 2
+    pObj->pLUT =  (texLUTData_t *)B3L_boxLUTL8Idx;
+    #endif
     B3L_SET(pObj->state,NOTEX_MESH_OBJ); 
     B3L_SET(pObj->state,OBJ_VISUALIZABLE);
-    B3L_SET(pObj->state,OBJ_BACK_CULLING);
-       B3L_SET(pObj->state,OBJ_BACK_CULLING_CLOCK);
+
+    B3L_SET(pObj->state,OBJ_BACK_CULLING_CLOCK);
 
 }
 
@@ -1284,7 +1281,8 @@ printf("Draw a no texture mesh");
     B3L_Mesh_NoTex_t *pMesh= pObj->pMesh;
     vect3_t *pVectSource = ((vect3_t *)(pMesh->pVect));
     screen3f_t *pVectTarget =pRender->pVectBuff;
-    meshColorData_t  *pColor = pMesh->pColor;
+    u8  *pColorIdx = pMesh->pColorIdx;
+    texLUTData_t       *pLUT = pObj->pLUT;
 //process all the vectors
     for(i=pMesh->vectNum - 1;i>=0;i--){ 
         B3L_Vect3Xmat4WithTest_float(pVectSource+i, pMat, pVectTarget+i);
@@ -1303,12 +1301,10 @@ printf("Draw a no texture mesh");
     }               
 
     u16 *pTriIdx = pMesh->pTri;
-    u32 cullingState;
-    if (B3L_TEST(pObj->state,OBJ_BACK_CULLING)){
-        cullingState = ((pObj->state)&OBJ_CILLING_MASK)>>OBJ_CILLING_SHIFT;
-    }else{
-        cullingState = 0;
-    }
+
+
+    u32 cullingState = ((pObj->state)&OBJ_CILLING_MASK)>>OBJ_CILLING_SHIFT;
+
     
     u32 vect0Idx,vect1Idx,vect2Idx;
     vect3_t normalVect;
@@ -1341,15 +1337,15 @@ printf("Draw a no texture mesh");
         printf("backFaceCullingResult = %d\n",backFaceCullingResult);
 #endif
 
-        if (cullingState){
+
             
-            if ((cullingState==1) && backFaceCullingResult){     
-                continue;
-            }
-            if ((cullingState==2) && (!backFaceCullingResult)){     
-                continue;
-            }
+        if ((cullingState==1) && backFaceCullingResult){     
+            continue;
         }
+        if ((cullingState==2) && (!backFaceCullingResult)){     
+            continue;
+        }
+
         
 
         if (renderLevel==0){
@@ -1360,7 +1356,12 @@ printf("Draw a no texture mesh");
             lightValue = B3L_CalculateLight(normalDotLight,lightFactor0,lightFactor1);
         }
         //printf("renderLevel %d,lightValue %d\n",renderLevel,lightValue);
-        color = pColor[i];
+        #if (FRAME_BUFF_COLOR_TYPE  == 0) || (FRAME_BUFF_COLOR_TYPE  == 1)
+        color = pLUT[pColorIdx[i]];
+        #endif
+        #if (FRAME_BUFF_COLOR_TYPE  == 2)
+        color = pColorIdx[i];
+        #endif
         B3L_DrawTriColor(
             x0,y0,pVectTarget[vect0Idx].z,
             x1,y1,pVectTarget[vect1Idx].z,
@@ -1375,7 +1376,7 @@ printf("Draw a no texture mesh");
 static void B3L_DrawPolygon(B3LPolygonObj_t *pObj,render_t *pRender, mat4_t *pMat){
     int32_t i;
     B3L_Polygon_t *pPoly = pObj->pPolygon;
-    meshColorData_t color= pPoly->color;
+    texLUTData_t color= pPoly->color;
     vect3_t *pVectSource = ((vect3_t *)(pPoly->pVect));
     screen3f_t *pVectTarget =pRender->pVectBuff;
     //project all the vect into screen space
@@ -1430,12 +1431,10 @@ printf("Draw a mesh");
     }               
 
     u16 *pTriIdx = pMesh->pTri;
-    u32 cullingState;
-    if (B3L_TEST(pObj->state,OBJ_BACK_CULLING)){
-        cullingState = ((pObj->state)&OBJ_CILLING_MASK)>>OBJ_CILLING_SHIFT;
-    }else{
-        cullingState = 0;
-    }
+
+
+    u32 cullingState = ((pObj->state)&OBJ_CILLING_MASK)>>OBJ_CILLING_SHIFT;
+
     u32 vect0Idx,vect1Idx,vect2Idx;
     vect3_t normalVect;
     f32   normalDotLight;
@@ -1466,15 +1465,15 @@ printf("Draw a mesh");
         printf("backFaceCullingResult = %d\n",backFaceCullingResult);
 #endif
 
-        if (cullingState){
+
             
-            if ((cullingState==1) && backFaceCullingResult){    
-                continue;
-            }
-            if ((cullingState==2) && (!backFaceCullingResult)){  
-                continue;
-            }
+        if ((cullingState==1) && backFaceCullingResult){    
+            continue;
         }
+        if ((cullingState==2) && (!backFaceCullingResult)){  
+            continue;
+        }
+
 
         if (renderLevel==0){
             B3L_Norm3Xmat4Normalize(pVectSource+i, pMat, &normalVect); 
@@ -1623,14 +1622,14 @@ static void ClearZbuff(Z_buff_t *pZbuff,u32 length){
 
 
 /*draw functions ------------------------------------------------------------*/
-__attribute__((always_inline)) static inline void B3L_DrawDepthLine(f32 Ax,f32 Ay,f32 Az,f32 Bx,f32 By,f32 Bz, meshColorData_t color){
+__attribute__((always_inline)) static inline void B3L_DrawDepthLine(f32 Ax,f32 Ay,f32 Az,f32 Bx,f32 By,f32 Bz, texLUTData_t color){
 //todo here~
 }
 
 
 
 __attribute__((always_inline)) static inline void DrawColorHLine(f32 x,s32 y,f32 b, f32 aZ, f32 bZ,
-frameBuffData_t color, u8 lightFactor, frameBuffData_t *pFrameBuff,Z_buff_t *pZbuff) {
+frameBuffData_t finalColor, frameBuffData_t *pFrameBuff,Z_buff_t *pZbuff) {
     //printf("auv%.2f,%.2f,buv%.2f,%.2f\n",aU,aV,bU,bV);
     s32 intx = (s32)x,inty=y,intb=(s32)b;
     //s32 b = x + length -1;//correct
@@ -1694,18 +1693,7 @@ frameBuffData_t color, u8 lightFactor, frameBuffData_t *pFrameBuff,Z_buff_t *pZb
             //if(intv>15){intv=15;}
             
             *pCurrentPixelZ = compZ;
-            
-            #if FRAME_BUFF_COLOR_TYPE == 0
-                
-                *pixel = (color&0x00FFFFFF)|(((u32)lightFactor)<<24);
-            #endif
-            #if FRAME_BUFF_COLOR_TYPE == 1
-
-                *pixel = (color&0x0FFF)|(((u16)lightFactor)<<12);
-            #endif
-            #if FRAME_BUFF_COLOR_TYPE == 2
-                *pixel = (color&0x00FF)|(((u16)lightFactor)<<8);
-            #endif
+            *pixel =finalColor;
             
         }
 
@@ -2065,6 +2053,18 @@ __attribute__((always_inline)) static  inline void  B3L_DrawTriColor(
     #define _swap_zbuff_t(a, b) { Z_buff_t t = a; a = b; b = t; }
     #endif
 
+    #if FRAME_BUFF_COLOR_TYPE == 0
+                
+            frameBuffData_t  finalColor = (color&0x00FFFFFF)|(((u32)lightFactor)<<24);
+    #endif
+    #if FRAME_BUFF_COLOR_TYPE == 1
+
+            frameBuffData_t  finalColor  = (color&0x0FFF)|(((u16)lightFactor)<<12);
+    #endif
+    #if FRAME_BUFF_COLOR_TYPE == 2
+            frameBuffData_t  finalColor  = (color&0x00FF)|(((u16)lightFactor)<<8);
+    #endif
+
     s32 y,last;
     s32 inty0 = (s32)y0,inty1 = (s32)y1,inty2 = (s32)y2;
     if(inty0 > inty1){
@@ -2123,9 +2123,9 @@ __attribute__((always_inline)) static  inline void  B3L_DrawTriColor(
         if(!((y<0)||(((s32)a)==((s32)b)))){
         //include a, and b how many pixel
             if(a > b){
-                DrawColorHLine(b,y,a,bZ,aZ,color,lightFactor,pFrameBuff,pZbuff);
+                DrawColorHLine(b,y,a,bZ,aZ,finalColor,pFrameBuff,pZbuff);
             }else{
-                DrawColorHLine(a,y,b,aZ,bZ,color,lightFactor,pFrameBuff,pZbuff);
+                DrawColorHLine(a,y,b,aZ,bZ,finalColor,pFrameBuff,pZbuff);
             } 
         }
         a   += dx01;
@@ -2151,9 +2151,9 @@ __attribute__((always_inline)) static  inline void  B3L_DrawTriColor(
         if(!((y<0)||(((s32)a)==((s32)b)))){
         //include a, and b how many pixel
             if(a > b){
-                DrawColorHLine(b,y,a,bZ,aZ,color,lightFactor,pFrameBuff,pZbuff);
+                DrawColorHLine(b,y,a,bZ,aZ,finalColor,pFrameBuff,pZbuff);
             }else{
-                DrawColorHLine(a,y,b,aZ,bZ,color,lightFactor,pFrameBuff,pZbuff);
+                DrawColorHLine(a,y,b,aZ,bZ,finalColor,pFrameBuff,pZbuff);
             } 
         }
         a  += dx12;
