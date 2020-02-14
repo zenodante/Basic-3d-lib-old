@@ -294,11 +294,19 @@ typedef struct{
     B3LObj_t       *pInactiveObjs;
 }scene_t;
 
+//state
+typedef enum {   
+    parallelLight = 0,
+    dotLight = 1,
+}lightType_e;
 
-//color value is the 0xFFFFFF - light color
+#define LIGHT_TYPE_BIT         (0)
+//POINT_LIGHT            (1)
+//PARALLEL_LIGHT         (0)
 typedef struct{
-    vect3_t      pointToLight;
-    f32          strongth;
+    u32          state;
+    vect3_t      lightVect;
+    vect4_t      pointLightVectInCamSpaceBuff;
     u32          color;
     f32          factor_0;
     f32          factor_1;
@@ -364,6 +372,7 @@ extern void B3L_RenderScence(render_t *pRender);
 extern void B3L_ResetScene(scene_t *pScene);
 //light functions
 extern void B3L_ResetLight(light_t *pLight);
+extern void B3L_SetLightType(render_t *pRender,lightType_e type);
 //extern void B3L_SetLightDirction(light_t *pLight, vect3_t *To);
 //render obj functions
 extern B3LObj_t *B3L_GetFreeObj(render_t *pRender);

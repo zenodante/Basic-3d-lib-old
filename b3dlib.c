@@ -198,9 +198,10 @@ __attribute__((always_inline)) static  inline void  B3L_Norm3Xmat4Normalize(vect
 __attribute__((always_inline)) static  inline void  B3L_Vect4Xmat4(vect4_t *pV, mat4_t *pMat, vect4_t *pResult);
 __attribute__((always_inline)) static  inline bool  B3L_Vect4BoundTest(vect4_t *pV);
 __attribute__((always_inline)) static  inline f32   B3L_FastInvertSqrt(f32 x);
-__attribute__((always_inline)) static  inline u8    B3L_CalculateLight(f32 normalDotLight, f32 lightFactor0,f32 lightFactor1);
+__attribute__((always_inline)) static  inline void  B3L_UpdateLightVect(render_t *pRender);
+__attribute__((always_inline)) static  inline u8    B3L_CalLightFactor(f32 normalDotLight, f32 lightFactor0,f32 lightFactor1);
 __attribute__((always_inline)) static  inline bool  B3L_TriangleFaceToViewer(s32 x0, s32 y0, s32 x1, s32 y1, s32 x2, s32 y2);
-__attribute__((always_inline)) static inline  bool  B3L_TriangleFaceToViewer2(f32 x0, f32 y0, f32 x1, f32 y1, f32 x2, f32 y2);
+__attribute__((always_inline)) static  inline bool  B3L_TriangleFaceToViewer2(f32 x0, f32 y0, f32 x1, f32 y1, f32 x2, f32 y2);
 __attribute__((always_inline)) static  inline bool  B3L_TriVisable(u32 r0,u32 r1,u32 r2);
 __attribute__((always_inline)) static  inline void  B3L_DrawTriTexture(
                                                                         f32 x0,f32 y0,f32 u0,f32 v0,f32 z0,
@@ -223,7 +224,8 @@ __attribute__((always_inline)) static inline void DrawTexHLine(f32 x,s32 y,f32 b
 __attribute__((always_inline)) static inline void DrawColorHLine(f32 x,s32 y,f32 b, f32 aZ, f32 bZ,
                                                                 frameBuffData_t finalColor, 
                                                                 frameBuffData_t *pFrameBuff,Z_buff_t *pZbuff); 
-__attribute__((always_inline)) static inline void B3L_DrawDepthLine(f32 Ax,f32 Ay,f32 Az,f32 Bx,f32 By,f32 Bz, texLUTData_t color);                                                               
+__attribute__((always_inline)) static inline void B3L_DrawDepthLine(f32 Ax,f32 Ay,f32 Az,f32 Bx,f32 By,f32 Bz, texLUTData_t color);           
+
 static void B3L_AddObjToList(B3LObj_t *pObj, B3LObj_t **pStart);
 static void B3L_DrawMesh(B3LMeshObj_t *pObj,render_t *pRender, mat4_t *pMat,u32 renderLevel);
 static void B3L_DrawMeshNoTexture(B3LMeshNoTexObj_t *pObj,render_t *pRender, mat4_t *pMat,u32 renderLevel);
@@ -836,13 +838,46 @@ void B3L_Mat4Xmat4(mat4_t *pMat1, mat4_t *pMat2){
 /*-----------------------------------------------------------------------------
 light functions
 -----------------------------------------------------------------------------*/
-__attribute__((always_inline)) static inline u8 B3L_CalculateLight(f32 normalDotLight, f32 lightFactor0,f32 lightFactor1){
+void B3L_ResetLight(light_t *pLight){
+    B3L_CLR(pLight->state,LIGHT_TYPE_BIT); //parallel light
+    pLight->lightVect.x = 0.0f;
+    pLight->lightVect.y = 1.0f;
+    pLight->lightVect.z = 0.0f;
+    pLight->color = 0xFF000000;
+    pLight->factor_0 = 1.01f; //make sure it is larger than 0, now the range is 0.01~2.01
+
+#if LIGHT_BIT == 8
+    pLight->factor_1 =126.7f;
+#endif
+#if LIGHT_BIT == 4
+    pLight->factor_1 =7.91f;
+#endif
+}
+
+__attribute__((always_inline)) static inline u8 B3L_CalLightFactor(f32 normalDotLight, f32 lightFactor0,f32 lightFactor1){
     u8 lightValue;
     normalDotLight += lightFactor0;
     lightValue = (u8)(normalDotLight*lightFactor1);
     return lightValue;
 }
 
+__attribute__((always_inline)) static  inline void  B3L_UpdateLightVect(render_t *pRender){
+    //if it is a point light type, then we need to calculate the current light position in camera space 
+    if (B3L_TEST((pRender->light.state),LIGHT_TYPE_BIT)){
+        B3L_Vect3Xmat4(&(pRender->light.lightVect), &(pRender->camera.camMat), &(pRender->light.pointLightVectInCamSpaceBuff));
+    }else{
+        B3L_Norm3Xmat4Normalize(&(pRender->light.lightVect), &(pRender->camera.camMat) , (vect3_t *)&(pRender->light.pointLightVectInCamSpaceBuff)); 
+    }
+}
+
+void B3L_SetLightType(render_t *pRender,lightType_e type){
+    if (parallelLight == type ){
+        B3L_CLR(pRender->light.state,LIGHT_TYPE_BIT);
+    }
+    if (dotLight == type ){
+        B3L_SET(pRender->light.state,LIGHT_TYPE_BIT);
+    }
+}
 /*-----------------------------------------------------------------------------
 Camera functions
 -----------------------------------------------------------------------------*/
@@ -1110,8 +1145,7 @@ void B3L_RenderScence(render_t *pRender){
     //set world to clip matrix
     B3L_SetCameraMatrix(&(pRender->camera));
 
-    //draw background
-    
+    B3L_UpdateLightVect(pRender);
 
     B3L_DrawObjs(pRender);
 
@@ -1193,21 +1227,7 @@ void B3L_ReturnObjToInactiveList(B3LObj_t *pObj,  render_t *pRender){
     B3L_AddObjToList(pObj, &(pRender->scene.pInactiveObjs));
 }
 
-void B3L_ResetLight(light_t *pLight){
-    pLight->strongth = 0.5f;
-    pLight->pointToLight.x = 0.0f;
-    pLight->pointToLight.y = 1.0f;
-    pLight->pointToLight.z = 0.0f;
-    pLight->color = 0xFF000000;
-    pLight->factor_0 = 1.01f; //make sure it is larger than 0, now the range is 0.01~2.01
 
-#if LIGHT_BIT == 8
-    pLight->factor_1 =126.7f;
-#endif
-#if LIGHT_BIT == 4
-    pLight->factor_1 =7.91f;
-#endif
-}
 
 void B3L_RenderInit(render_t *pRender,frameBuffData_t *pFrameBuff){
     pRender->pFrameBuff = pFrameBuff;
@@ -1287,15 +1307,28 @@ printf("Draw a no texture mesh");
     for(i=pMesh->vectNum - 1;i>=0;i--){ 
         B3L_Vect3Xmat4WithTest_float(pVectSource+i, pMat, pVectTarget+i);
     }
-    vect3_t light;
+    f32 lightX,lightY,lightZ;
+    f32 normalFact;
     f32   lightFactor0;
     f32   lightFactor1;
     if (renderLevel==0){//light calculation is needed, so normalized the normal
 
         pVectSource = ((vect3_t *)(pMesh->pNormal));// now the vectsource point to the normal vect
-        //calculate the toLight vect in clip space;       
-        B3L_Norm3Xmat4Normalize(&(pRender->light.pointToLight), &(pRender->camera.camMat) , &light); 
-
+        //calculate the Light vect in clip space;      
+        if(B3L_TEST(pRender->light.state,LIGHT_TYPE_BIT)){
+            lightX = pRender->light.pointLightVectInCamSpaceBuff.x - pMat->m03;
+            lightY = pRender->light.pointLightVectInCamSpaceBuff.y - pMat->m13;
+            lightZ = pRender->light.pointLightVectInCamSpaceBuff.z - pMat->m23;
+            normalFact = B3L_FastInvertSqrt(lightX*lightX+lightY*lightY+lightZ*lightZ);
+            lightX = lightX * normalFact;
+            lightY = lightY * normalFact;
+            lightZ = lightZ * normalFact;
+        }else{
+            lightX = pRender->light.pointLightVectInCamSpaceBuff.x;
+            lightY = pRender->light.pointLightVectInCamSpaceBuff.y;
+            lightZ = pRender->light.pointLightVectInCamSpaceBuff.z;
+        }
+        
         lightFactor0 = pRender->light.factor_0;
         lightFactor1 = pRender->light.factor_1;
     }               
@@ -1351,9 +1384,9 @@ printf("Draw a no texture mesh");
         if (renderLevel==0){
             B3L_Norm3Xmat4Normalize(pVectSource+i, pMat, &normalVect); 
             //dot multi light and normalvect to get the light factor
-            normalDotLight = normalVect.x*light.x + normalVect.y*light.y + normalVect.z*light.z;
+            normalDotLight = normalVect.x*lightX + normalVect.y*lightY + normalVect.z*lightZ;
             //normalDotLight is in the range -1.0f to 1.0f
-            lightValue = B3L_CalculateLight(normalDotLight,lightFactor0,lightFactor1);
+            lightValue = B3L_CalLightFactor(normalDotLight,lightFactor0,lightFactor1);
         }
         //printf("renderLevel %d,lightValue %d\n",renderLevel,lightValue);
         #if (FRAME_BUFF_COLOR_TYPE  == 0) || (FRAME_BUFF_COLOR_TYPE  == 1)
@@ -1417,15 +1450,30 @@ printf("Draw a mesh");
     for(i=pMesh->vectNum - 1;i>=0;i--){ 
         B3L_Vect3Xmat4WithTest_float(pVectSource+i, pMat, pVectTarget+i);
     }
-    vect3_t light;
+    f32 lightX,lightY,lightZ;
+    f32 normalFact;
     f32   lightFactor0;
     f32   lightFactor1;
     if (renderLevel==0){//light calculation is needed, so normalized the normal
 
         pVectSource = ((vect3_t *)(pMesh->pNormal));// now the vectsource point to the normal vect
-        //calculate the toLight vect in clip space;       
-        B3L_Norm3Xmat4Normalize(&(pRender->light.pointToLight), &(pRender->camera.camMat) , &light); 
-
+        //calculate the Light vect in clip space;      
+        if(B3L_TEST(pRender->light.state,LIGHT_TYPE_BIT)){  
+             //dot light, calculate the vect point  to light from obj (both already in camera space)
+            lightX = pRender->light.pointLightVectInCamSpaceBuff.x - pMat->m03;
+            lightY = pRender->light.pointLightVectInCamSpaceBuff.y - pMat->m13;
+            lightZ = pRender->light.pointLightVectInCamSpaceBuff.z - pMat->m23;
+            normalFact = B3L_FastInvertSqrt(lightX*lightX+lightY*lightY+lightZ*lightZ);
+            lightX = lightX * normalFact;
+            lightY = lightY * normalFact;
+            lightZ = lightZ * normalFact;
+        }else{
+            //parallel light, the point to light vect is already in camera space
+            lightX = pRender->light.pointLightVectInCamSpaceBuff.x;
+            lightY = pRender->light.pointLightVectInCamSpaceBuff.y;
+            lightZ = pRender->light.pointLightVectInCamSpaceBuff.z;
+        }
+        
         lightFactor0 = pRender->light.factor_0;
         lightFactor1 = pRender->light.factor_1;
     }               
@@ -1478,9 +1526,9 @@ printf("Draw a mesh");
         if (renderLevel==0){
             B3L_Norm3Xmat4Normalize(pVectSource+i, pMat, &normalVect); 
             //dot multi light and normalvect to get the light factor
-            normalDotLight = normalVect.x*light.x + normalVect.y*light.y + normalVect.z*light.z;
+            normalDotLight = normalVect.x*lightX + normalVect.y*lightY + normalVect.z*lightZ;
             //normalDotLight is in the range -1.0f to 1.0f
-            lightValue = B3L_CalculateLight(normalDotLight,lightFactor0,lightFactor1);
+            lightValue = B3L_CalLightFactor(normalDotLight,lightFactor0,lightFactor1);
         }
 
 
