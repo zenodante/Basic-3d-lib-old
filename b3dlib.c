@@ -1,14 +1,18 @@
 #include <stdio.h>
 #include <stdbool.h>
+#include <stdlib.h>
 #include "b3dlib.h"
 
 #ifndef   __ASM
-  #define __ASM                                  __asm
+#define   __ASM                                  __asm
 #endif
+
+#pragma GCC optimize("-O3")
+
 
 //config the ram position if necessary
 screen3f_t      vectBuff[VECT_BUFF_SIZE]; //8KB
-Z_buff_t       zbuff[BUFF_LENTH];        //75KB
+Z_buff_t        zbuff[BUFF_LENTH];        //75KB
 
 
 #if Z_BUFF_LEVEL == 2
@@ -23,6 +27,12 @@ Z_buff_t       zbuff[BUFF_LENTH];        //75KB
     #define Z_LIMIT_NUM_F    (255.0f)
 #endif
 
+#ifndef _swap_f32_t
+#define _swap_f32_t(a, b) { f32 t = a; a = b; b = t; }
+#endif
+#ifndef _swap_int32_t
+#define _swap_int32_t(a, b) { int32_t t = a; a = b; b = t; }
+#endif
 
 const f32   B3L_boxVect[24] = {
 /* 0 front, bottom, right */
@@ -175,12 +185,12 @@ __attribute__((always_inline)) static  inline f32   B3L_Absf(f32 in);
 #define B3L_Sqrtf   sqrtf
 #define B3L_Absf    abs
 #endif
+//math functions
 __attribute__((always_inline)) static  inline s32   B3L_VcvtF32ToS32_Fix(f32 in);
 __attribute__((always_inline)) static  inline f32   B3L_VcvtS32ToF32_Fix(s32 in);
 __attribute__((always_inline)) static  inline u32   B3L_SatToU8(u32 in);
 __attribute__((always_inline)) static  inline u32   B3L_SatToU16(u32 in);
-
-__attribute__((always_inline)) static  inline f32   B3L_nonZero  (f32 value);
+__attribute__((always_inline)) static  inline f32   B3L_nonZero(f32 value);
 __attribute__((always_inline)) static  inline f32   B3L_interp(f32 x1, f32 x2, f32 t);
 __attribute__((always_inline)) static  inline s32   B3L_IntClamp(s32 v, s32 v1, s32 v2);
 __attribute__((always_inline)) static  inline f32   B3L_FloatClamp(f32 v, f32 v1, f32 v2);
@@ -198,11 +208,14 @@ __attribute__((always_inline)) static  inline void  B3L_Norm3Xmat4Normalize(vect
 __attribute__((always_inline)) static  inline void  B3L_Vect4Xmat4(vect4_t *pV, mat4_t *pMat, vect4_t *pResult);
 __attribute__((always_inline)) static  inline bool  B3L_Vect4BoundTest(vect4_t *pV);
 __attribute__((always_inline)) static  inline f32   B3L_FastInvertSqrt(f32 x);
+//light functions
 __attribute__((always_inline)) static  inline void  B3L_UpdateLightVect(render_t *pRender);
 __attribute__((always_inline)) static  inline u32   B3L_CalLightFactor(f32 normalDotLight, f32 lightFactor0,f32 lightFactor1);
+//triangle testing functions
 __attribute__((always_inline)) static  inline bool  B3L_TriangleFaceToViewer(s32 x0, s32 y0, s32 x1, s32 y1, s32 x2, s32 y2);
 __attribute__((always_inline)) static  inline bool  B3L_TriangleFaceToViewer2(f32 x0, f32 y0, f32 x1, f32 y1, f32 x2, f32 y2);
 __attribute__((always_inline)) static  inline bool  B3L_TriVisable(u32 r0,u32 r1,u32 r2);
+//draw functions
 __attribute__((always_inline)) static  inline void  B3L_DrawTriTexture(
                                                                         f32 x0,f32 y0,f32 u0,f32 v0,f32 z0,
                                                                         f32 x1,f32 y1,f32 u1,f32 v1,f32 z1,
@@ -222,21 +235,25 @@ __attribute__((always_inline)) static   inline void DrawTexHLine(f32 x,s32 y,f32
 __attribute__((always_inline)) static   inline void DrawColorHLine(f32 x,s32 y,f32 b, f32 aZ, f32 bZ,
                                                                 frameBuffData_t finalColor, 
                                                                 frameBuffData_t *pFrameBuff,Z_buff_t *pZbuff); 
-__attribute__((always_inline)) static   inline void B3L_DrawDepthLine(f32 Ax,f32 Ay,f32 Az,f32 Bx,f32 By,f32 Bz, texLUTData_t color);           
-
+__attribute__((always_inline)) static   inline void B3L_DrawDepthLineNoClip(s32 Ax,s32 Ay,f32 Az,s32 Bx,s32 By,f32 Bz, 
+                                                                            texLUTData_t color,frameBuffData_t *pFrameBuff,Z_buff_t *pZbuff);  
+__attribute__((always_inline)) static   inline void B3L_DrawDepthLineClip(f32 Ax,f32 Ay,f32 Az,f32 Bx,f32 By,f32 Bz,
+                                                                            texLUTData_t color,frameBuffData_t *pFrameBuff,Z_buff_t *pZbuff);              
+//obj list functions
 static void B3L_AddObjToList(B3LObj_t *pObj, B3LObj_t **pStart);
-
+//buff functions
 static void ClearFrameBuff(frameBuffData_t *pFramebuff,frameBuffData_t value,u32 length);
 static void ClearZbuff(Z_buff_t *pZbuff,u32 length);
-
+//draw call functions
 static void B3L_DrawObjs(render_t *pRender);
 static void B3L_DrawMesh(B3LMeshObj_t *pObj,render_t *pRender, mat4_t *pMat,u32 renderLevel);
 static void B3L_DrawMeshNoTexture(B3LMeshNoTexObj_t *pObj,render_t *pRender, mat4_t *pMat,u32 renderLevel);
 static void B3L_DrawPolygon(B3LPolygonObj_t *pObj,render_t *pRender, mat4_t *pMat);
 
 
-
-/*Private Fuction define ----------------------------------------------------*/
+/*-----------------------------------------------------------------------------
+Math function
+-----------------------------------------------------------------------------*/
 #ifdef B3L_ARM
 __attribute__((always_inline)) static  inline f32 B3L_Sqrtf(f32 in){
     f32 result;
@@ -324,23 +341,6 @@ __attribute__((always_inline)) static inline f32 B3L_max_f(f32 v1, f32 v2){
     return v1 >= v2 ? v1 : v2;
 }
 
-
-__attribute__((always_inline)) static inline bool B3L_TriangleFaceToViewer2(f32 x0, f32 y0, f32 x1, f32 y1, f32 x2, f32 y2){
-  f32 winding =
-    (x1 - x0) * (y2 - y0) - (y1 - y0) * (x2 - x0) ;
-    // ^ cross product for points with z == 0
-
-  return winding >= 0.0f ? true : false;
-}
-
-
-__attribute__((always_inline)) static inline bool B3L_TriangleFaceToViewer(s32 x0, s32 y0, s32 x1, s32 y1, s32 x2, s32 y2){
-  int32_t winding =
-    (x1 - x0) * (y2 - y0) - (y1 - y0) * (x2 - x0) ;
-    // ^ cross product for points with z == 0
-
-  return winding >= 0 ? true : false;
-}
 //inv sqrt black magic from quake 
 __attribute__((always_inline)) static  inline f32 B3L_FastInvertSqrt(f32 x){
     f32 xhalf = 0.5f * x;
@@ -364,18 +364,8 @@ __attribute__((always_inline)) static inline f32 B3L_interp(f32 x1, f32 x2, f32 
 }
 
 
-__attribute__((always_inline)) static inline void B3L_MakeClipMatrix(f32 focalLength, f32 aspectRatio,mat4_t *mat){
 
-    #define M(x,y) (mat)->m##x##y
 
-    M(0,0) = focalLength; M(1,0) = 0.0f;   M(2,0) = 0.0f;   M(3,0) = 0.0f; 
-    M(0,1) = 0.0f;   M(1,1) = focalLength*aspectRatio; M(2,1) = 0.0f;   M(3,1) = 0.0f; 
-    M(0,2) = 0.0f;   M(1,2) = 0.0f;   M(2,2) = FAR_PLANE/(FAR_PLANE-NEAR_PLANE); M(3,2) = 1.0f; 
-    M(0,3) = 0.0f;   M(1,3) = 0.0f;   M(2,3) =-1.0f*NEAR_PLANE*FAR_PLANE/(FAR_PLANE-NEAR_PLANE);   M(3,3) = 0.0f; 
-
-    #undef M
-
-}
 /*
 __attribute__((always_inline)) static inline void B3L_ClipToScreen(vect4Test_t *pV, screen4_t *pResult){
     f32 factor=1.0f / (pV->w);
@@ -438,9 +428,6 @@ __attribute__((always_inline)) static  inline void  B3L_Vect3Xmat4WithTest_float
     rz = dotCol(2);
     rw = dotCol(3);
 
-    
-
-
     if (rz<0.0f){//if the near plane clip, then don't do the calculation, set bit and return directly
         B3L_SET(testResult,B3L_NEAR_PLANE_CLIP); 
         pResult->test = testResult;     
@@ -483,9 +470,6 @@ __attribute__((always_inline)) static  inline void  B3L_Vect3Xmat4WithTest(vect3
     ry = dotCol(1);
     rz = dotCol(2);
     rw = dotCol(3);
-
-    
-
 
     if (rz<0.0f){//if the near plane clip, then don't do the calculation, set bit and return directly
         B3L_SET(testResult,B3L_NEAR_PLANE_CLIP); 
@@ -567,23 +551,6 @@ __attribute__((always_inline)) static  inline bool B3L_Vect4BoundTest(vect4_t *p
 
 }
 
-__attribute__((always_inline)) static  inline bool B3L_TriVisable(u32 r0,u32 r1,u32 r2){
-    bool returnVal=true;
-    //u32 nearPlaneCount = 0;
-    //u32 inSpaceCount = 0;
-
-    if(B3L_TEST(r0,B3L_IN_SPACE)||B3L_TEST(r1,B3L_IN_SPACE)||B3L_TEST(r2,B3L_IN_SPACE)){
-        //test near plan
-        if (B3L_TEST(r0,B3L_NEAR_PLANE_CLIP)||B3L_TEST(r1,B3L_NEAR_PLANE_CLIP)||B3L_TEST(r2,B3L_NEAR_PLANE_CLIP)){
-            returnVal= false;
-        }
-    }else{
-        returnVal= false;
-    }
-    return returnVal;
-    
-}
-/*Fuction define ------------------------------------------------------------*/
 vect2_t B3L_Vect2(f32 x,f32 y){
     vect2_t output = {.x=x,.y=y};
     return output;
@@ -757,6 +724,21 @@ void B3L_CrossProductVect3(vect3_t *pA, vect3_t *pB, vect3_t *pResult){
 f32 B3L_DotProductVect3(vect3_t *pA, vect3_t *pB){
     return (pA->x*pB->x+pA->y*pB->y+pA->z*pB->z);
 }
+/*-----------------------------------------------------------------------------
+Matrix functions
+-----------------------------------------------------------------------------*/
+__attribute__((always_inline)) static inline void B3L_MakeClipMatrix(f32 focalLength, f32 aspectRatio,mat4_t *mat){
+
+    #define M(x,y) (mat)->m##x##y
+
+    M(0,0) = focalLength; M(1,0) = 0.0f;   M(2,0) = 0.0f;   M(3,0) = 0.0f; 
+    M(0,1) = 0.0f;   M(1,1) = focalLength*aspectRatio; M(2,1) = 0.0f;   M(3,1) = 0.0f; 
+    M(0,2) = 0.0f;   M(1,2) = 0.0f;   M(2,2) = FAR_PLANE/(FAR_PLANE-NEAR_PLANE); M(3,2) = 1.0f; 
+    M(0,3) = 0.0f;   M(1,3) = 0.0f;   M(2,3) =-1.0f*NEAR_PLANE*FAR_PLANE/(FAR_PLANE-NEAR_PLANE);   M(3,3) = 0.0f; 
+
+    #undef M
+
+}
 
 void B3L_InitMat4(mat4_t *pMat){
     #define M(x,y) (pMat)->m##x##y
@@ -794,9 +776,6 @@ void B3L_TransposeMat4(mat4_t *pMat){
     ((f32 *)pMat)[11]=((f32 *)pMat)[14];
     ((f32 *)pMat)[14] = temp;
 }
-
-
-
 
 //mat1 * mat2 -> mat1
 void B3L_Mat4Xmat4(mat4_t *pMat1, mat4_t *pMat2){
@@ -840,6 +819,124 @@ void B3L_Mat4Xmat4(mat4_t *pMat1, mat4_t *pMat2){
     M(3,3) = t3;
     #undef M
     #undef N
+}
+
+void B3L_MakeRotationMatrixZXY(f32 byX,f32 byY,f32 byZ,mat4_t *pMat){
+    byX *= -1.0f;
+    byY *= -1.0f;
+    byZ *= -1.0f;
+
+    f32 sx = B3L_sin(byX);
+    f32 sy = B3L_sin(byY);
+    f32 sz = B3L_sin(byZ);
+
+    f32 cx = B3L_cos(byX);
+    f32 cy = B3L_cos(byY);
+    f32 cz = B3L_cos(byZ);
+    #define M(x,y) (pMat)->m##x##y
+    M(0,0) = (cy * cz)  + (sy * sx * sz);
+    M(1,0) = (cx * sz) ;
+    M(2,0) = (cy * sx * sz)  - (cz * sy);
+    M(3,0) = 0.0f;
+
+    M(0,1) = (cz * sy * sx)  - (cy * sz);
+    M(1,1) = (cx * cz);
+    M(2,1) = (cy * cz * sx)+ (sy * sz) ;
+    M(3,1) = 0.0f;
+
+    M(0,2) = (cx * sy) ;
+    M(1,2) = -1.0f * sx;
+    M(2,2) = (cy * cx) ;
+    M(3,2) = 0.0f;
+
+    M(0,3) = 0.0f;
+    M(1,3) = 0.0f;
+    M(2,3) = 0.0f;
+    M(3,3) = 1.0f;
+    #undef M
+}
+
+void B3L_MakeScaleMatrix(f32 scaleX,f32 scaleY,f32 scaleZ,mat4_t *pMat){
+    #define M(x,y) (pMat)->m##x##y
+
+    M(0,0) = scaleX; M(1,0) = 0.0f;   M(2,0) = 0.0f;   M(3,0) = 0.0f; 
+    M(0,1) = 0.0f;   M(1,1) = scaleY; M(2,1) = 0.0f;   M(3,1) = 0.0f; 
+    M(0,2) = 0.0f;   M(1,2) = 0.0f;   M(2,2) = scaleZ; M(3,2) = 0.0f; 
+    M(0,3) = 0.0f;   M(1,3) = 0.0f;   M(2,3) = 0.0f;   M(3,3) = 1.0f; 
+
+    #undef M
+}
+
+void B3L_MakeTranslationMat(f32 offsetX,f32 offsetY,f32 offsetZ,mat4_t *pMat){
+    #define M(x,y) (pMat)->m##x##y
+    f32 one = 1.0f;
+    M(0,0) = one; M(1,0) = 0.0f; M(2,0) = 0.0f; M(3,0) = 0.0f; 
+    M(0,1) = 0.0f; M(1,1) = one; M(2,1) = 0.0f; M(3,1) = 0.0f; 
+    M(0,2) = 0.0f; M(1,2) = 0.0f; M(2,2) = one; M(3,2) = 0.0f; 
+    M(0,3) = offsetX; M(1,3) = offsetY; M(2,3) = offsetZ; M(3,3) = one;
+    #undef M
+}
+
+void B3L_MakeWorldMatrix(transform3D_t *pWorldTransform, mat4_t *pMat){
+    mat4_t temp;
+    B3L_MakeScaleMatrix(pWorldTransform->scale.x,
+                        pWorldTransform->scale.y,
+                        pWorldTransform->scale.z,pMat);
+    
+    B3L_MakeRotationMatrixZXY(pWorldTransform->rotation.x,
+                                pWorldTransform->rotation.y,
+                                pWorldTransform->rotation.z,&temp);
+
+    B3L_Mat4Xmat4(pMat,&temp); 
+       
+    B3L_MakeTranslationMat(pWorldTransform->translation.x,
+                                pWorldTransform->translation.y,
+                                pWorldTransform->translation.z,&temp);
+    B3L_Mat4Xmat4(pMat,&temp);   
+#ifdef B3L_DEBUG
+printf("pWorldTransform %.3f,%.3f,%.3f,\n",pWorldTransform->rotation.x,pWorldTransform->rotation.y,pWorldTransform->rotation.z);
+printf("In make world matrix, temp matrix:\n");
+B3L_logMat4(temp);  
+#endif  
+              
+
+}
+
+/*-----------------------------------------------------------------------------
+Triangle testing functions
+-----------------------------------------------------------------------------*/
+__attribute__((always_inline)) static inline bool B3L_TriangleFaceToViewer2(f32 x0, f32 y0, f32 x1, f32 y1, f32 x2, f32 y2){
+  f32 winding =
+    (x1 - x0) * (y2 - y0) - (y1 - y0) * (x2 - x0) ;
+    // ^ cross product for points with z == 0
+
+  return winding >= 0.0f ? true : false;
+}
+
+
+__attribute__((always_inline)) static inline bool B3L_TriangleFaceToViewer(s32 x0, s32 y0, s32 x1, s32 y1, s32 x2, s32 y2){
+  int32_t winding =
+    (x1 - x0) * (y2 - y0) - (y1 - y0) * (x2 - x0) ;
+    // ^ cross product for points with z == 0
+
+  return winding >= 0 ? true : false;
+}
+
+__attribute__((always_inline)) static  inline bool B3L_TriVisable(u32 r0,u32 r1,u32 r2){
+    bool returnVal=true;
+    //u32 nearPlaneCount = 0;
+    //u32 inSpaceCount = 0;
+
+    if(B3L_TEST(r0,B3L_IN_SPACE)||B3L_TEST(r1,B3L_IN_SPACE)||B3L_TEST(r2,B3L_IN_SPACE)){
+        //test near plan
+        if (B3L_TEST(r0,B3L_NEAR_PLANE_CLIP)||B3L_TEST(r1,B3L_NEAR_PLANE_CLIP)||B3L_TEST(r2,B3L_NEAR_PLANE_CLIP)){
+            returnVal= false;
+        }
+    }else{
+        returnVal= false;
+    }
+    return returnVal;
+    
 }
 /*-----------------------------------------------------------------------------
 light functions
@@ -962,89 +1059,6 @@ void B3L_CameraLookAt(camera_t *pCam, vect3_t *pAt){
 }
 
 
-/*-----------------------------------------------------------------------------
-Matrix functions
------------------------------------------------------------------------------*/
-void B3L_MakeRotationMatrixZXY(f32 byX,f32 byY,f32 byZ,mat4_t *pMat){
-    byX *= -1.0f;
-    byY *= -1.0f;
-    byZ *= -1.0f;
-
-    f32 sx = B3L_sin(byX);
-    f32 sy = B3L_sin(byY);
-    f32 sz = B3L_sin(byZ);
-
-    f32 cx = B3L_cos(byX);
-    f32 cy = B3L_cos(byY);
-    f32 cz = B3L_cos(byZ);
-    #define M(x,y) (pMat)->m##x##y
-    M(0,0) = (cy * cz)  + (sy * sx * sz);
-    M(1,0) = (cx * sz) ;
-    M(2,0) = (cy * sx * sz)  - (cz * sy);
-    M(3,0) = 0.0f;
-
-    M(0,1) = (cz * sy * sx)  - (cy * sz);
-    M(1,1) = (cx * cz);
-    M(2,1) = (cy * cz * sx)+ (sy * sz) ;
-    M(3,1) = 0.0f;
-
-    M(0,2) = (cx * sy) ;
-    M(1,2) = -1.0f * sx;
-    M(2,2) = (cy * cx) ;
-    M(3,2) = 0.0f;
-
-    M(0,3) = 0.0f;
-    M(1,3) = 0.0f;
-    M(2,3) = 0.0f;
-    M(3,3) = 1.0f;
-    #undef M
-}
-
-void B3L_MakeScaleMatrix(f32 scaleX,f32 scaleY,f32 scaleZ,mat4_t *pMat){
-    #define M(x,y) (pMat)->m##x##y
-
-    M(0,0) = scaleX; M(1,0) = 0.0f;   M(2,0) = 0.0f;   M(3,0) = 0.0f; 
-    M(0,1) = 0.0f;   M(1,1) = scaleY; M(2,1) = 0.0f;   M(3,1) = 0.0f; 
-    M(0,2) = 0.0f;   M(1,2) = 0.0f;   M(2,2) = scaleZ; M(3,2) = 0.0f; 
-    M(0,3) = 0.0f;   M(1,3) = 0.0f;   M(2,3) = 0.0f;   M(3,3) = 1.0f; 
-
-    #undef M
-}
-
-void B3L_MakeTranslationMat(f32 offsetX,f32 offsetY,f32 offsetZ,mat4_t *pMat){
-    #define M(x,y) (pMat)->m##x##y
-    f32 one = 1.0f;
-    M(0,0) = one; M(1,0) = 0.0f; M(2,0) = 0.0f; M(3,0) = 0.0f; 
-    M(0,1) = 0.0f; M(1,1) = one; M(2,1) = 0.0f; M(3,1) = 0.0f; 
-    M(0,2) = 0.0f; M(1,2) = 0.0f; M(2,2) = one; M(3,2) = 0.0f; 
-    M(0,3) = offsetX; M(1,3) = offsetY; M(2,3) = offsetZ; M(3,3) = one;
-    #undef M
-}
-
-void B3L_MakeWorldMatrix(transform3D_t *pWorldTransform, mat4_t *pMat){
-    mat4_t temp;
-    B3L_MakeScaleMatrix(pWorldTransform->scale.x,
-                        pWorldTransform->scale.y,
-                        pWorldTransform->scale.z,pMat);
-    
-    B3L_MakeRotationMatrixZXY(pWorldTransform->rotation.x,
-                                pWorldTransform->rotation.y,
-                                pWorldTransform->rotation.z,&temp);
-
-    B3L_Mat4Xmat4(pMat,&temp); 
-       
-    B3L_MakeTranslationMat(pWorldTransform->translation.x,
-                                pWorldTransform->translation.y,
-                                pWorldTransform->translation.z,&temp);
-    B3L_Mat4Xmat4(pMat,&temp);   
-#ifdef B3L_DEBUG
-printf("pWorldTransform %.3f,%.3f,%.3f,\n",pWorldTransform->rotation.x,pWorldTransform->rotation.y,pWorldTransform->rotation.z);
-printf("In make world matrix, temp matrix:\n");
-B3L_logMat4(temp);  
-#endif  
-              
-
-}
 
 
 /*-----------------------------------------------------------------------------
@@ -1304,259 +1318,9 @@ void B3L_InitBoxObjNoTexture(B3LMeshNoTexObj_t *pObj,f32 size){
     B3L_SET(pObj->state,OBJ_BACK_CULLING_CLOCK);
 
 }
-
-
-static void B3L_DrawMeshNoTexture(B3LMeshNoTexObj_t *pObj,render_t *pRender, mat4_t *pMat,u32 renderLevel){
-#ifdef B3L_DEBUG
-printf("Draw a no texture mesh");
-#endif
-    int32_t i;
-    B3L_Mesh_NoTex_t *pMesh= pObj->pMesh;
-    vect3_t *pVectSource = ((vect3_t *)(pMesh->pVect));
-    screen3f_t *pVectTarget =pRender->pVectBuff;
-    u8  *pColorIdx = pMesh->pColorIdx;
-    texLUTData_t       *pLUT = pObj->pLUT;
-//process all the vectors
-    for(i=pMesh->vectNum - 1;i>=0;i--){ 
-        B3L_Vect3Xmat4WithTest_float(pVectSource+i, pMat, pVectTarget+i);
-    }
-    f32 lightX,lightY,lightZ;
-    f32 normalFact;
-    f32   lightFactor0;
-    f32   lightFactor1;
-    if (renderLevel==0){//light calculation is needed, so normalized the normal
-
-        pVectSource = ((vect3_t *)(pMesh->pNormal));// now the vectsource point to the normal vect
-        //calculate the Light vect in clip space;      
-        if(B3L_TEST(pRender->light.state,LIGHT_TYPE_BIT)){
-            lightX = pRender->light.pointLightVectInCamSpaceBuff.x - pMat->m03;
-            lightY = pRender->light.pointLightVectInCamSpaceBuff.y - pMat->m13;
-            lightZ = pRender->light.pointLightVectInCamSpaceBuff.z - pMat->m23;
-            normalFact = B3L_FastInvertSqrt(lightX*lightX+lightY*lightY+lightZ*lightZ);
-            lightX = lightX * normalFact;
-            lightY = lightY * normalFact;
-            lightZ = lightZ * normalFact;
-        }else{
-            lightX = pRender->light.pointLightVectInCamSpaceBuff.x;
-            lightY = pRender->light.pointLightVectInCamSpaceBuff.y;
-            lightZ = pRender->light.pointLightVectInCamSpaceBuff.z;
-        }
-        
-        lightFactor0 = pRender->light.factor_0;
-        lightFactor1 = pRender->light.factor_1;
-    }               
-
-    u16 *pTriIdx = pMesh->pTri;
-
-
-    u32 cullingState = ((pObj->state)&OBJ_CILLING_MASK)>>OBJ_CILLING_SHIFT;
-
-    
-    u32 vect0Idx,vect1Idx,vect2Idx;
-    vect3_t normalVect;
-    f32   normalDotLight;
-    frameBuffData_t color;
-    //if the render level is not zero, then the lightValue would fix at 0xff
-    u32 lightValue=B3L_LEVEL_1_DEFAULT_LIGHT;
-//draw tri loop
-    for (i=pMesh->triNum -1;i>=0;i--){
-        //pTriRenderState[i]=0;
-        vect0Idx = pTriIdx[i*3];
-        vect1Idx = pTriIdx[i*3+1];
-        vect2Idx = pTriIdx[i*3+2];
-        u32 result0 = pVectTarget[vect0Idx].test;
-        u32 result1 = pVectTarget[vect1Idx].test;
-        u32 result2 = pVectTarget[vect2Idx].test;
-        if(!B3L_TriVisable(result0,result1,result2)){
-            continue;
-        }
-        //screen3_t *screenVect = pVectTarget;
-        f32 x0 = pVectTarget[vect0Idx].x;
-        f32 y0 = pVectTarget[vect0Idx].y;
-        f32 x1 = pVectTarget[vect1Idx].x;
-        f32 y1 = pVectTarget[vect1Idx].y;
-        f32 x2 = pVectTarget[vect2Idx].x;
-        f32 y2 = pVectTarget[vect2Idx].y;
-
-        bool backFaceCullingResult = B3L_TriangleFaceToViewer2(x0, y0, x1, y1, x2, y2);
-#ifdef B3L_DEBUG
-        printf("backFaceCullingResult = %d\n",backFaceCullingResult);
-#endif
-
-
-            
-        if ((cullingState==1) && backFaceCullingResult){     
-            continue;
-        }
-        if ((cullingState==2) && (!backFaceCullingResult)){     
-            continue;
-        }
-
-        
-
-        if (renderLevel==0){
-            B3L_Norm3Xmat4Normalize(pVectSource+i, pMat, &normalVect); 
-            //dot multi light and normalvect to get the light factor
-            normalDotLight = normalVect.x*lightX + normalVect.y*lightY + normalVect.z*lightZ;
-            //normalDotLight is in the range -1.0f to 1.0f
-            lightValue = B3L_CalLightFactor(normalDotLight,lightFactor0,lightFactor1);
-        }
-        //printf("renderLevel %d,lightValue %d\n",renderLevel,lightValue);
-        #if (FRAME_BUFF_COLOR_TYPE  == 0) || (FRAME_BUFF_COLOR_TYPE  == 1)
-        color = pLUT[pColorIdx[i]];
-        #endif
-        #if (FRAME_BUFF_COLOR_TYPE  == 2)
-        color = pColorIdx[i];
-        #endif
-        B3L_DrawTriColor(
-            x0,y0,pVectTarget[vect0Idx].z,
-            x1,y1,pVectTarget[vect1Idx].z,
-            x2,y2,pVectTarget[vect2Idx].z,
-            renderLevel,lightValue,color,
-            pRender->pFrameBuff,pRender->pZBuff);
-
-    }      
-    
-}
-
-static void B3L_DrawPolygon(B3LPolygonObj_t *pObj,render_t *pRender, mat4_t *pMat){
-    int32_t i;
-    B3L_Polygon_t *pPoly = pObj->pPolygon;
-    texLUTData_t color= pObj->color;
-    vect3_t *pVectSource = ((vect3_t *)(pPoly->pVect));
-    screen3f_t *pVectTarget =pRender->pVectBuff;
-    //project all the vect into screen space
-    for(i=pPoly->vectNum - 1;i>=0;i--){ 
-        B3L_Vect3Xmat4WithTest_float(pVectSource+i, pMat, pVectTarget+i);
-    }
-    u8 *pLine = pPoly->pLine;
-    u8 lineIdxA,lineIdxB;
-    for (i=pPoly->lineNum -1;i>=0;i--){
-        //draw every line
-        lineIdxA = pLine[i*2];
-        lineIdxB = pLine[i*2+1];
-        f32 Ax = pVectTarget[lineIdxA].x;
-        f32 Ay = pVectTarget[lineIdxA].y;
-        f32 Az = pVectTarget[lineIdxA].z;
-        f32 Bx = pVectTarget[lineIdxB].x;
-        f32 By = pVectTarget[lineIdxB].y;
-        f32 Bz = pVectTarget[lineIdxB].z;
-        B3L_DrawDepthLine(Ax,Ay,Az,Bx,By,Bz,color);
-
-    }
-
-
-}
-
-
-static void B3L_DrawMesh(B3LMeshObj_t *pObj,render_t *pRender, mat4_t *pMat,u32 renderLevel){
-#ifdef B3L_DEBUG
-printf("Draw a mesh");
-#endif
-    int32_t i;
-    B3L_Mesh_t *pMesh= pObj->pMesh;
-    vect3_t *pVectSource = ((vect3_t *)(pMesh->pVect));
-    screen3f_t *pVectTarget =pRender->pVectBuff;
-    u8 * pUV = pObj->pMesh->pUv;
-    B3L_texture_t *pTexture = pObj->pTexture;
-//process all the vectors
-    for(i=pMesh->vectNum - 1;i>=0;i--){ 
-        B3L_Vect3Xmat4WithTest_float(pVectSource+i, pMat, pVectTarget+i);
-    }
-    f32 lightX,lightY,lightZ;
-    f32 normalFact;
-    f32   lightFactor0;
-    f32   lightFactor1;
-    if (renderLevel==0){//light calculation is needed, so normalized the normal
-
-        pVectSource = ((vect3_t *)(pMesh->pNormal));// now the vectsource point to the normal vect
-        //calculate the Light vect in clip space;      
-        if(B3L_TEST(pRender->light.state,LIGHT_TYPE_BIT)){  
-             //dot light, calculate the vect point  to light from obj (both already in camera space)
-            lightX = pRender->light.pointLightVectInCamSpaceBuff.x - pMat->m03;
-            lightY = pRender->light.pointLightVectInCamSpaceBuff.y - pMat->m13;
-            lightZ = pRender->light.pointLightVectInCamSpaceBuff.z - pMat->m23;
-            normalFact = B3L_FastInvertSqrt(lightX*lightX+lightY*lightY+lightZ*lightZ);
-            lightX = lightX * normalFact;
-            lightY = lightY * normalFact;
-            lightZ = lightZ * normalFact;
-        }else{
-            //parallel light, the point to light vect is already in camera space
-            lightX = pRender->light.pointLightVectInCamSpaceBuff.x;
-            lightY = pRender->light.pointLightVectInCamSpaceBuff.y;
-            lightZ = pRender->light.pointLightVectInCamSpaceBuff.z;
-        }
-        
-        lightFactor0 = pRender->light.factor_0;
-        lightFactor1 = pRender->light.factor_1;
-    }               
-
-    u16 *pTriIdx = pMesh->pTri;
-
-
-    u32 cullingState = ((pObj->state)&OBJ_CILLING_MASK)>>OBJ_CILLING_SHIFT;
-
-    u32 vect0Idx,vect1Idx,vect2Idx;
-    vect3_t normalVect;
-    f32   normalDotLight;
-    //if the render level is not zero, then the lightValue would fix at 0xff
-    u32 lightValue=B3L_LEVEL_1_DEFAULT_LIGHT;
-//draw tri loop
-    for (i=pMesh->triNum -1;i>=0;i--){
-        //pTriRenderState[i]=0;
-        vect0Idx = pTriIdx[i*3];
-        vect1Idx = pTriIdx[i*3+1];
-        vect2Idx = pTriIdx[i*3+2];
-        u32 result0 = pVectTarget[vect0Idx].test;
-        u32 result1 = pVectTarget[vect1Idx].test;
-        u32 result2 = pVectTarget[vect2Idx].test;
-        if(!B3L_TriVisable(result0,result1,result2)){
-            continue;
-        }
-        //screen3f_t *screenVect = pVectTarget;
-        f32 x0 = pVectTarget[vect0Idx].x;
-        f32 y0 = pVectTarget[vect0Idx].y;
-        f32 x1 = pVectTarget[vect1Idx].x;
-        f32 y1 = pVectTarget[vect1Idx].y;
-        f32 x2 = pVectTarget[vect2Idx].x;
-        f32 y2 = pVectTarget[vect2Idx].y;
-
-        bool backFaceCullingResult = B3L_TriangleFaceToViewer2(x0, y0, x1, y1, x2, y2);
-#ifdef B3L_DEBUG
-        printf("backFaceCullingResult = %d\n",backFaceCullingResult);
-#endif
-
-
-            
-        if ((cullingState==1) && backFaceCullingResult){    
-            continue;
-        }
-        if ((cullingState==2) && (!backFaceCullingResult)){  
-            continue;
-        }
-
-
-        if (renderLevel==0){
-            B3L_Norm3Xmat4Normalize(pVectSource+i, pMat, &normalVect); 
-            //dot multi light and normalvect to get the light factor
-            normalDotLight = normalVect.x*lightX + normalVect.y*lightY + normalVect.z*lightZ;
-            //normalDotLight is in the range -1.0f to 1.0f
-            lightValue = B3L_CalLightFactor(normalDotLight,lightFactor0,lightFactor1);
-        }
-
-
-        B3L_DrawTriTexture(
-            x0,y0,(f32)(pUV[i*6]),(f32)(pUV[i*6+1]),pVectTarget[vect0Idx].z,
-            x1,y1,(f32)(pUV[i*6+2]),(f32)(pUV[i*6+3]),pVectTarget[vect1Idx].z,
-            x2,y2,(f32)(pUV[i*6+4]),(f32)(pUV[i*6+5]),pVectTarget[vect2Idx].z,
-            renderLevel,lightValue,pObj->pTexture,
-            pRender->pFrameBuff,pRender->pZBuff);
-
-    }      
-    
-}
-
-
+/*-----------------------------------------------------------------------------
+Draw functions
+-----------------------------------------------------------------------------*/
 static void ClearFrameBuff(frameBuffData_t *pFramebuff,frameBuffData_t value,u32 length){
 //in stm32, we could use DMA to do this job   
     int32_t i;   
@@ -1681,16 +1445,333 @@ static void ClearZbuff(Z_buff_t *pZbuff,u32 length){
     #undef Addr
 }
 
+static void B3L_DrawMeshNoTexture(B3LMeshNoTexObj_t *pObj,render_t *pRender, mat4_t *pMat,u32 renderLevel){
+#ifdef B3L_DEBUG
+printf("Draw a no texture mesh");
+#endif
+    int32_t i;
+    B3L_Mesh_NoTex_t *pMesh= pObj->pMesh;
+    vect3_t *pVectSource = ((vect3_t *)(pMesh->pVect));
+    screen3f_t *pVectTarget =pRender->pVectBuff;
+    u8  *pColorIdx = pMesh->pColorIdx;
+    texLUTData_t       *pLUT = pObj->pLUT;
+    frameBuffData_t *pFrameBuff =pRender->pFrameBuff;
+    Z_buff_t *pZBuff =  pRender->pZBuff;
+//process all the vectors
+    for(i=pMesh->vectNum - 1;i>=0;i--){ 
+        B3L_Vect3Xmat4WithTest_float(pVectSource+i, pMat, pVectTarget+i);
+    }
+    f32 lightX,lightY,lightZ;
+    f32 normalFact;
+    f32   lightFactor0;
+    f32   lightFactor1;
+    if (renderLevel==0){//light calculation is needed, so normalized the normal
 
-/*draw functions ------------------------------------------------------------*/
-__attribute__((always_inline)) static inline void B3L_DrawDepthLine(f32 Ax,f32 Ay,f32 Az,f32 Bx,f32 By,f32 Bz, texLUTData_t color){
-//todo here~
+        pVectSource = ((vect3_t *)(pMesh->pNormal));// now the vectsource point to the normal vect
+        //calculate the Light vect in clip space;      
+        if(B3L_TEST(pRender->light.state,LIGHT_TYPE_BIT)){
+            lightX = pRender->light.pointLightVectInCamSpaceBuff.x - pMat->m03;
+            lightY = pRender->light.pointLightVectInCamSpaceBuff.y - pMat->m13;
+            lightZ = pRender->light.pointLightVectInCamSpaceBuff.z - pMat->m23;
+            normalFact = B3L_FastInvertSqrt(lightX*lightX+lightY*lightY+lightZ*lightZ);
+            lightX = lightX * normalFact;
+            lightY = lightY * normalFact;
+            lightZ = lightZ * normalFact;
+        }else{
+            lightX = pRender->light.pointLightVectInCamSpaceBuff.x;
+            lightY = pRender->light.pointLightVectInCamSpaceBuff.y;
+            lightZ = pRender->light.pointLightVectInCamSpaceBuff.z;
+        }
+        
+        lightFactor0 = pRender->light.factor_0;
+        lightFactor1 = pRender->light.factor_1;
+    }               
+
+    u16 *pTriIdx = pMesh->pTri;
+
+
+    u32 cullingState = ((pObj->state)&OBJ_CILLING_MASK)>>OBJ_CILLING_SHIFT;
+
+    
+    u32 vect0Idx,vect1Idx,vect2Idx;
+    vect3_t normalVect;
+    f32   normalDotLight;
+    frameBuffData_t color;
+    //if the render level is not zero, then the lightValue would fix at 0xff
+    u32 lightValue=B3L_LEVEL_1_DEFAULT_LIGHT;
+//draw tri loop
+    for (i=pMesh->triNum -1;i>=0;i--){
+        //pTriRenderState[i]=0;
+        vect0Idx = pTriIdx[i*3];
+        vect1Idx = pTriIdx[i*3+1];
+        vect2Idx = pTriIdx[i*3+2];
+        u32 result0 = pVectTarget[vect0Idx].test;
+        u32 result1 = pVectTarget[vect1Idx].test;
+        u32 result2 = pVectTarget[vect2Idx].test;
+        if(!B3L_TriVisable(result0,result1,result2)){
+            continue;
+        }
+        //screen3_t *screenVect = pVectTarget;
+        f32 x0 = pVectTarget[vect0Idx].x;
+        f32 y0 = pVectTarget[vect0Idx].y;
+        f32 x1 = pVectTarget[vect1Idx].x;
+        f32 y1 = pVectTarget[vect1Idx].y;
+        f32 x2 = pVectTarget[vect2Idx].x;
+        f32 y2 = pVectTarget[vect2Idx].y;
+
+        bool backFaceCullingResult = B3L_TriangleFaceToViewer2(x0, y0, x1, y1, x2, y2);
+#ifdef B3L_DEBUG
+        printf("backFaceCullingResult = %d\n",backFaceCullingResult);
+#endif
+            
+        if ((cullingState==1) && backFaceCullingResult){     
+            continue;
+        }
+        if ((cullingState==2) && (!backFaceCullingResult)){     
+            continue;
+        }
+
+        if (renderLevel==0){
+            B3L_Norm3Xmat4Normalize(pVectSource+i, pMat, &normalVect); 
+            //dot multi light and normalvect to get the light factor
+            normalDotLight = normalVect.x*lightX + normalVect.y*lightY + normalVect.z*lightZ;
+            //normalDotLight is in the range -1.0f to 1.0f
+            lightValue = B3L_CalLightFactor(normalDotLight,lightFactor0,lightFactor1);
+        }
+        //printf("renderLevel %d,lightValue %d\n",renderLevel,lightValue);
+        #if (FRAME_BUFF_COLOR_TYPE  == 0) || (FRAME_BUFF_COLOR_TYPE  == 1)
+        color = pLUT[pColorIdx[i]];
+        #endif
+        #if (FRAME_BUFF_COLOR_TYPE  == 2)
+        color = pColorIdx[i];
+        #endif
+        B3L_DrawTriColor(
+            x0,y0,pVectTarget[vect0Idx].z,
+            x1,y1,pVectTarget[vect1Idx].z,
+            x2,y2,pVectTarget[vect2Idx].z,
+            renderLevel,lightValue,color,
+            pFrameBuff,pZBuff);
+
+    }      
+    
+}
+
+static void B3L_DrawPolygon(B3LPolygonObj_t *pObj,render_t *pRender, mat4_t *pMat){
+    int32_t i;
+    frameBuffData_t *pFrameBuff =pRender->pFrameBuff;
+    Z_buff_t *pZBuff =  pRender->pZBuff;
+    B3L_Polygon_t *pPoly = pObj->pPolygon;
+    texLUTData_t color= pObj->color;
+    vect3_t *pVectSource = ((vect3_t *)(pPoly->pVect));
+    screen3f_t *pVectTarget =pRender->pVectBuff;
+    //project all the vect into screen space
+    for(i=pPoly->vectNum - 1;i>=0;i--){ 
+        B3L_Vect3Xmat4WithTest_float(pVectSource+i, pMat, pVectTarget+i);
+    }
+    u8 *pLine = pPoly->pLine;
+    u8 lineIdxA,lineIdxB;
+    u32 testA, testB;
+    for (i=pPoly->lineNum -1;i>=0;i--){
+        
+        //draw every line
+        lineIdxA = pLine[i*2];
+        lineIdxB = pLine[i*2+1];
+        testA = pVectTarget[lineIdxA].test;
+        testB = pVectTarget[lineIdxB].test;
+        if (B3L_TEST(testA,B3L_NEAR_PLANE_CLIP)||
+            B3L_TEST(testB,B3L_NEAR_PLANE_CLIP)){
+                continue;
+        }
+
+        s32 Ax = (s32)(pVectTarget[lineIdxA].x);
+        s32 Ay = (s32)(pVectTarget[lineIdxA].y);
+        f32 Az = pVectTarget[lineIdxA].z;
+        s32 Bx = (s32)(pVectTarget[lineIdxB].x);
+        s32 By = (s32)(pVectTarget[lineIdxB].y);
+        f32 Bz = pVectTarget[lineIdxB].z;
+        if (B3L_TEST(testA,B3L_IN_SPACE )&&
+            B3L_TEST(testB,B3L_IN_SPACE )){
+            B3L_DrawDepthLineNoClip(Ax,Ay,Az,Bx,By,Bz,color,pFrameBuff,pZBuff);
+        }else{
+            B3L_DrawDepthLineClip(Ax,Ay,Az,Bx,By,Bz,color,pFrameBuff,pZBuff);
+        }
+
+    }
+
+
 }
 
 
+static void B3L_DrawMesh(B3LMeshObj_t *pObj,render_t *pRender, mat4_t *pMat,u32 renderLevel){
+#ifdef B3L_DEBUG
+printf("Draw a mesh");
+#endif
+    int32_t i;
+    B3L_Mesh_t *pMesh= pObj->pMesh;
+    vect3_t *pVectSource = ((vect3_t *)(pMesh->pVect));
+    screen3f_t *pVectTarget =pRender->pVectBuff;
+    u8 * pUV = pObj->pMesh->pUv;
+    B3L_texture_t *pTexture = pObj->pTexture;
+    frameBuffData_t *pFrameBuff =pRender->pFrameBuff;
+    Z_buff_t *pZBuff =  pRender->pZBuff;
+//process all the vectors
+    for(i=pMesh->vectNum - 1;i>=0;i--){ 
+        B3L_Vect3Xmat4WithTest_float(pVectSource+i, pMat, pVectTarget+i);
+    }
+    f32 lightX,lightY,lightZ;
+    f32 normalFact;
+    f32   lightFactor0;
+    f32   lightFactor1;
+    if (renderLevel==0){//light calculation is needed, so normalized the normal
+
+        pVectSource = ((vect3_t *)(pMesh->pNormal));// now the vectsource point to the normal vect
+        //calculate the Light vect in clip space;      
+        if(B3L_TEST(pRender->light.state,LIGHT_TYPE_BIT)){  
+             //dot light, calculate the vect point  to light from obj (both already in camera space)
+            lightX = pRender->light.pointLightVectInCamSpaceBuff.x - pMat->m03;
+            lightY = pRender->light.pointLightVectInCamSpaceBuff.y - pMat->m13;
+            lightZ = pRender->light.pointLightVectInCamSpaceBuff.z - pMat->m23;
+            normalFact = B3L_FastInvertSqrt(lightX*lightX+lightY*lightY+lightZ*lightZ);
+            lightX = lightX * normalFact;
+            lightY = lightY * normalFact;
+            lightZ = lightZ * normalFact;
+        }else{
+            //parallel light, the point to light vect is already in camera space
+            lightX = pRender->light.pointLightVectInCamSpaceBuff.x;
+            lightY = pRender->light.pointLightVectInCamSpaceBuff.y;
+            lightZ = pRender->light.pointLightVectInCamSpaceBuff.z;
+        }
+        
+        lightFactor0 = pRender->light.factor_0;
+        lightFactor1 = pRender->light.factor_1;
+    }               
+
+    u16 *pTriIdx = pMesh->pTri;
+
+
+    u32 cullingState = ((pObj->state)&OBJ_CILLING_MASK)>>OBJ_CILLING_SHIFT;
+
+    u32 vect0Idx,vect1Idx,vect2Idx;
+    vect3_t normalVect;
+    f32   normalDotLight;
+    //if the render level is not zero, then the lightValue would fix at 0xff
+    u32 lightValue=B3L_LEVEL_1_DEFAULT_LIGHT;
+//draw tri loop
+    for (i=pMesh->triNum -1;i>=0;i--){
+        //pTriRenderState[i]=0;
+        vect0Idx = pTriIdx[i*3];
+        vect1Idx = pTriIdx[i*3+1];
+        vect2Idx = pTriIdx[i*3+2];
+        u32 result0 = pVectTarget[vect0Idx].test;
+        u32 result1 = pVectTarget[vect1Idx].test;
+        u32 result2 = pVectTarget[vect2Idx].test;
+        if(!B3L_TriVisable(result0,result1,result2)){
+            continue;
+        }
+        //screen3f_t *screenVect = pVectTarget;
+        f32 x0 = pVectTarget[vect0Idx].x;
+        f32 y0 = pVectTarget[vect0Idx].y;
+        f32 x1 = pVectTarget[vect1Idx].x;
+        f32 y1 = pVectTarget[vect1Idx].y;
+        f32 x2 = pVectTarget[vect2Idx].x;
+        f32 y2 = pVectTarget[vect2Idx].y;
+
+        bool backFaceCullingResult = B3L_TriangleFaceToViewer2(x0, y0, x1, y1, x2, y2);
+#ifdef B3L_DEBUG
+        printf("backFaceCullingResult = %d\n",backFaceCullingResult);
+#endif
+
+
+            
+        if ((cullingState==1) && backFaceCullingResult){    
+            continue;
+        }
+        if ((cullingState==2) && (!backFaceCullingResult)){  
+            continue;
+        }
+
+
+        if (renderLevel==0){
+            B3L_Norm3Xmat4Normalize(pVectSource+i, pMat, &normalVect); 
+            //dot multi light and normalvect to get the light factor
+            normalDotLight = normalVect.x*lightX + normalVect.y*lightY + normalVect.z*lightZ;
+            //normalDotLight is in the range -1.0f to 1.0f
+            lightValue = B3L_CalLightFactor(normalDotLight,lightFactor0,lightFactor1);
+        }
+
+
+        B3L_DrawTriTexture(
+            x0,y0,(f32)(pUV[i*6]),(f32)(pUV[i*6+1]),pVectTarget[vect0Idx].z,
+            x1,y1,(f32)(pUV[i*6+2]),(f32)(pUV[i*6+3]),pVectTarget[vect1Idx].z,
+            x2,y2,(f32)(pUV[i*6+4]),(f32)(pUV[i*6+5]),pVectTarget[vect2Idx].z,
+            renderLevel,lightValue,pTexture,
+            pFrameBuff,pZBuff);
+
+    }      
+    
+}
+
+__attribute__((always_inline)) static inline void B3L_DrawDepthLineNoClip(s32 Ax,s32 Ay,f32 Az,s32 Bx,s32 By,f32 Bz, 
+                                                            texLUTData_t color,frameBuffData_t *pFrameBuff,Z_buff_t *pZbuff){
+//todo here~
+    s32 steep = abs(Ay - By) > abs(Ax - Bx);
+    frameBuffData_t drawColor;
+
+    if (steep){
+        _swap_int32_t(Ax,Ay);
+        _swap_int32_t(Bx,By);
+    }
+    if (Ax>Bx){
+        //swap a,b point
+        _swap_int32_t(Ax, Bx);
+        _swap_int32_t(Ay, By);
+        _swap_f32_t(Az, Bz);
+    }
+    s32 dx, dy;
+    dx = Bx - Ax;
+    dy = abs(By - Ay);
+    f32 dz = (Bz - Az)/((f32)dx);
+    s32 err = dx / 2;
+    s32 ystep;
+    if (Ay < By) {
+        ystep = 1;
+    } else {
+        ystep = -1;
+    }
+
+    for (; Ax <= Bx; Ax++) {
+    if (steep) {
+      //writePixel(Ay, Ax, Az,color);
+    } else {
+      //writePixel(Ax, Ay, Az,color);
+    }
+    Az = Az + dz;
+    err -= dy;
+    if (err < 0) {
+      Ay += ystep;
+      err += dx;
+    }
+  }
+    //now A is in the left and B is in the right
+
+}
+
+__attribute__((always_inline)) static inline void B3L_DrawDepthLineClip(f32 Ax,f32 Ay,f32 Az,f32 Bx,f32 By,f32 Bz, 
+                                                    texLUTData_t color,frameBuffData_t *pFrameBuff,Z_buff_t *pZbuff){
+//todo here~
+    if (Ax>Bx){
+        //swap a,b point
+        _swap_f32_t(Ax, Bx);
+        _swap_f32_t(Ay, By);
+        _swap_f32_t(Az, Bz);
+    }
+    //now A is in the left and B is in the right
+
+}
+
 
 __attribute__((always_inline)) static inline void DrawColorHLine(f32 x,s32 y,f32 b, f32 aZ, f32 bZ,
-frameBuffData_t finalColor, frameBuffData_t *pFrameBuff,Z_buff_t *pZbuff) {
+                                       frameBuffData_t finalColor, frameBuffData_t *pFrameBuff,Z_buff_t *pZbuff) {
     //printf("auv%.2f,%.2f,buv%.2f,%.2f\n",aU,aV,bU,bV);
     s32 intx = (s32)x,inty=y,intb=(s32)b;
     //s32 b = x + length -1;//correct
@@ -1727,40 +1808,26 @@ frameBuffData_t finalColor, frameBuffData_t *pFrameBuff,Z_buff_t *pZbuff) {
 
 
     for (;i>0;i--){ //don't draw the most right pixel
-        #if  (Z_BUFF_LEVEL == 0)
-        if (aZ< ((*pCurrentPixelZ)*0.0039215686f)){
+        #if  (Z_BUFF_LEVEL == 0) 
+        u32 tempZ = (u32)(aZ*255.0f);
+        u8  compZ = B3L_SatToU8(tempZ);
+        if (compZ< (*pCurrentPixelZ)){
         #endif
         #if (Z_BUFF_LEVEL == 1)
-        if (aZ< ((*pCurrentPixelZ)*0.000015259021896f)){
+        u32 tempZ = (u32)(aZ*65535.0f);
+        u16 compZ = B3L_SatToU16(tempZ);
+        if (compZ< (*pCurrentPixelZ)){
         #endif
         #if (Z_BUFF_LEVEL == 2)
-        if (aZ< *pCurrentPixelZ){
-        #endif
-            #if Z_BUFF_LEVEL == 0
-                u32 compZ = (u32)(aZ*255.0f);
-                compZ = B3L_SatToU8(compZ);
-                //compZ = B3L_UintMin(compZ, 255);    //could be optimzed by cortex m dsp q ins
-            #endif
-            #if Z_BUFF_LEVEL == 1
-                u32 compZ = (u32)(aZ*65535.0f);
-                compZ = B3L_SatToU16(compZ);
-                //compZ = B3L_UintMin(compZ, 65535);
-            #endif
-            #if Z_BUFF_LEVEL == 2
-                f32 compZ = aZ;
-            #endif
-            //printf("u:%.3f,v:%.3f\n",u,v);
-            //if(intu>15){intu=15;}
-            //if(intv>15){intv=15;}
-            
+        f32 compZ = aZ;
+        if (compZ< *pCurrentPixelZ){
+        #endif           
             *pCurrentPixelZ = compZ;
-            *pixel =finalColor;
-            
+            *pixel =finalColor;           
         }
-
-            aZ = aZ + dZ;
-            pCurrentPixelZ ++;
-            pixel++;
+        aZ = aZ + dZ;
+        pCurrentPixelZ ++;
+        pixel++;
 
     }
     
@@ -1817,28 +1884,20 @@ f32 aU,f32 aV,f32 bU,f32 bV, u32 lightFactor, frameBuffData_t *pFrameBuff,Z_buff
     switch(pTexture->type){
         case LUT16:
         for (;i>0;i--){ //don't draw the most right pixel
-            #if  (Z_BUFF_LEVEL == 0)
-            if (aZ< ((*pCurrentPixelZ)*0.0039215686f)){
+            #if  (Z_BUFF_LEVEL == 0) 
+            u32 tempZ = (u32)(aZ*255.0f);
+            u8  compZ = B3L_SatToU8(tempZ);
+            if (compZ< (*pCurrentPixelZ)){
             #endif
             #if (Z_BUFF_LEVEL == 1)
-            if (aZ< ((*pCurrentPixelZ)*0.000015259021896f)){
+            u32 tempZ = (u32)(aZ*65535.0f);
+            u16 compZ = B3L_SatToU16(tempZ);
+            if (compZ< (*pCurrentPixelZ)){
             #endif
             #if (Z_BUFF_LEVEL == 2)
-            if (aZ< *pCurrentPixelZ){
-            #endif
-                #if Z_BUFF_LEVEL == 0
-                    u32 compZ = (u32)(aZ*255.0f);
-                    compZ = B3L_SatToU8(compZ);
-                    //compZ = B3L_UintMin(compZ, 255);    //could be optimzed by cortex m dsp q ins
-                #endif
-                #if Z_BUFF_LEVEL == 1
-                    u32 compZ = (u32)(aZ*65535.0f);
-                    compZ = B3L_SatToU16(compZ);
-                    //compZ = B3L_UintMin(compZ, 65535);
-                #endif
-                #if Z_BUFF_LEVEL == 2
-                    f32 compZ = aZ;
-                #endif
+            f32 compZ = aZ;
+            if (compZ< *pCurrentPixelZ){
+            #endif           
                 intu = (uint32_t)u;
                 intv = (uint32_t)v;
                 //printf("u:%.3f,v:%.3f\n",u,v);
@@ -1879,28 +1938,20 @@ f32 aU,f32 aV,f32 bU,f32 bV, u32 lightFactor, frameBuffData_t *pFrameBuff,Z_buff
         break;
         case LUT256:
         for (;i>=0;i--){
-            #if  (Z_BUFF_LEVEL == 0)
-            if (aZ< ((*pCurrentPixelZ)*0.0039215686f)){
+            #if  (Z_BUFF_LEVEL == 0) 
+            u32 tempZ = (u32)(aZ*255.0f);
+            u8  compZ = B3L_SatToU8(tempZ);
+            if (compZ< (*pCurrentPixelZ)){
             #endif
             #if (Z_BUFF_LEVEL == 1)
-            if (aZ< ((*pCurrentPixelZ)*0.000015259021896f)){
+            u32 tempZ = (u32)(aZ*65535.0f);
+            u16 compZ = B3L_SatToU16(tempZ);
+            if (compZ< (*pCurrentPixelZ)){
             #endif
             #if (Z_BUFF_LEVEL == 2)
-            if (aZ< *pCurrentPixelZ){
-            #endif
-                #if Z_BUFF_LEVEL == 0
-                    u32 compZ = (u32)(aZ*255.0f);
-                    compZ = B3L_SatToU8(compZ);
-                    //compZ = B3L_UintMin(compZ, 255);    //could be optimzed by cortex m dsp q ins
-                #endif
-                #if Z_BUFF_LEVEL == 1
-                    u32 compZ = (u32)(aZ*65535.0f);
-                    compZ = B3L_SatToU16(compZ);
-                    //compZ = B3L_UintMin(compZ, 65535);
-                #endif
-                #if Z_BUFF_LEVEL == 2
-                    f32 compZ = aZ;
-                #endif       
+            f32 compZ = aZ;
+            if (compZ< *pCurrentPixelZ){
+            #endif           
                 intu = (uint32_t)u;
                 intv = (uint32_t)v;  
                 //if(intu>15){intu=15;}
@@ -1947,51 +1998,39 @@ __attribute__((always_inline)) static  inline void  B3L_DrawTriTexture(
     #ifndef _swap_f32_t
     #define _swap_f32_t(a, b) { f32 t = a; a = b; b = t; }
     #endif
-    #ifndef _swap_int32_t
-    #define _swap_int32_t(a, b) { int32_t t = a; a = b; b = t; }
-    #endif
-    #ifndef _swap_zbuff_t
-    #define _swap_zbuff_t(a, b) { Z_buff_t t = a; a = b; b = t; }
-    #endif
-
-    #define B3L_SWAP_DRAW_TRI_VECT(a,b) _swap_int32_t(y##a,y##b);\
-                                        _swap_int32_t(x##a,x##b);\
-                                        _swap_int32_t(u##a,u##b);\
-                                        _swap_int32_t(v##a,v##b);\
-                                        _swap_zbuff_t(z##a,z##b);  
-
-
+ 
 
     s32 y,last;
-    s32 inty0 = (s32)y0,inty1 = (s32)y1,inty2 = (s32)y2;
-    if(inty0 > inty1){
+    
+    if(y0 > y1){
         //B3L_SWAP_DRAW_TRI_VECT(0,1);
         _swap_f32_t(y0,y1);
         _swap_f32_t(x0,x1);
         _swap_f32_t(u0,u1);
         _swap_f32_t(v0,v1); 
-        _swap_zbuff_t(z0,z1); 
-        _swap_int32_t(inty0,inty1);  
+        _swap_f32_t(z0,z1); 
+        //_swap_int32_t(inty0,inty1);  
     }
-    if (inty1 > inty2) {
+    if (y1 > y2) {
         //B3L_SWAP_DRAW_TRI_VECT(2,1);
         _swap_f32_t(y2,y1);
         _swap_f32_t(x2,x1);
         _swap_f32_t(u2,u1);
         _swap_f32_t(v2,v1);
-        _swap_zbuff_t(z2,z1);  
-        _swap_int32_t(inty1,inty2);  
+        _swap_f32_t(z2,z1);  
+        //_swap_int32_t(inty1,inty2);  
     }
-    if(inty0 > inty1){
+    if(y0 > y1){
         //B3L_SWAP_DRAW_TRI_VECT(0,1);
         _swap_f32_t(y0,y1);
         _swap_f32_t(x0,x1);
         _swap_f32_t(u0,u1);
         _swap_f32_t(v0,v1);
-        _swap_zbuff_t(z0,z1); 
-        _swap_int32_t(inty0,inty1);   
+        _swap_f32_t(z0,z1); 
+        //_swap_int32_t(inty0,inty1);   
     }
-        if(inty0 == inty2) { // Handle awkward all-on-same-line case as its own thing
+    s32 inty0 = (s32)y0,inty1 = (s32)y1,inty2 = (s32)y2;
+    if(inty0 == inty2) { // Handle awkward all-on-same-line case as its own thing
         return;
     }
     f32 dy01 = 1.0f/(inty1 - inty0);
@@ -2021,10 +2060,11 @@ __attribute__((always_inline)) static  inline void  B3L_DrawTriTexture(
     f32  bU=u0;
     f32  aV=v0;
     f32  bV=v0;
-    //printf("\n",dy01,dy02,dy12);
-    //printf("du12,%.3f dv12,%.3f du02,%.3f dv02,%.3f \n",du12,dv12,du02,dv02);
+    /*
     if(inty1 == inty2) last = inty1;   // Include y1 scanline
     else last = inty1-1; // Skip it
+    */
+    last = inty1-1;
     if (last>=RENDER_RESOLUTION_Y){
             last = RENDER_RESOLUTION_Y -1;
     }
@@ -2067,9 +2107,8 @@ __attribute__((always_inline)) static  inline void  B3L_DrawTriTexture(
     if (inty2>=RENDER_RESOLUTION_Y){
         inty2= RENDER_RESOLUTION_Y -1;
     }
-    //printf("aU,%.3f aV,%.3f bU,%.3f bV%.3f \n",aU,aV,bU,bV);
     
-    for(; y<=inty2; y++) {
+    for(; y<inty2; y++) {
         if ((aZ>1.0f) && (bZ>1.0f)){
             continue;
         }
@@ -2110,9 +2149,7 @@ __attribute__((always_inline)) static  inline void  B3L_DrawTriColor(
     #ifndef _swap_int32_t
     #define _swap_int32_t(a, b) { int32_t t = a; a = b; b = t; }
     #endif
-    #ifndef _swap_zbuff_t
-    #define _swap_zbuff_t(a, b) { Z_buff_t t = a; a = b; b = t; }
-    #endif
+
 
     #if FRAME_BUFF_COLOR_TYPE == 0
                 
@@ -2127,29 +2164,27 @@ __attribute__((always_inline)) static  inline void  B3L_DrawTriColor(
     #endif
 
     s32 y,last;
-    s32 inty0 = (s32)y0,inty1 = (s32)y1,inty2 = (s32)y2;
-    if(inty0 > inty1){
-        //B3L_SWAP_DRAW_TRI_VECT(0,1);
+    
+    if(y0 > y1){
         _swap_f32_t(y0,y1);
         _swap_f32_t(x0,x1);
-        _swap_zbuff_t(z0,z1); 
-        _swap_int32_t(inty0,inty1);  
+        _swap_f32_t(z0,z1); 
+        //_swap_int32_t(inty0,inty1);  
     }
-    if (inty1 > inty2) {
-        //B3L_SWAP_DRAW_TRI_VECT(2,1);
+    if (y1 > y2) {
         _swap_f32_t(y2,y1);
         _swap_f32_t(x2,x1);
-        _swap_zbuff_t(z2,z1);  
-        _swap_int32_t(inty1,inty2);  
+        _swap_f32_t(z2,z1);  
+        //_swap_int32_t(inty1,inty2);  
     }
-    if(inty0 > inty1){
-        //B3L_SWAP_DRAW_TRI_VECT(0,1);
+    if(y0 > y1){
         _swap_f32_t(y0,y1);
         _swap_f32_t(x0,x1);
-        _swap_zbuff_t(z0,z1); 
-        _swap_int32_t(inty0,inty1);   
+        _swap_f32_t(z0,z1); 
+        //_swap_int32_t(inty0,inty1);   
     }
-        if(inty0 == inty2) { // Handle awkward all-on-same-line case as its own thing
+    s32 inty0 = (s32)y0,inty1 = (s32)y1,inty2 = (s32)y2;
+    if(inty0 == inty2) { // Handle awkward all-on-same-line case as its own thing
         return;
     }
     f32 dy01 = 1.0f/(inty1 - inty0);
@@ -2168,10 +2203,11 @@ __attribute__((always_inline)) static  inline void  B3L_DrawTriColor(
     f32  bZ=z0;
     f32  a=x0;
     f32  b=x0;
-    //printf("\n",dy01,dy02,dy12);
-    //printf("du12,%.3f dv12,%.3f du02,%.3f dv02,%.3f \n",du12,dv12,du02,dv02);
+    /*
     if(inty1 == inty2) last = inty1;   // Include y1 scanline
     else last = inty1-1; // Skip it
+    */
+    last = inty1-1;
     if (last>=RENDER_RESOLUTION_Y){
             last = RENDER_RESOLUTION_Y -1;
     }
@@ -2205,7 +2241,7 @@ __attribute__((always_inline)) static  inline void  B3L_DrawTriColor(
         inty2= RENDER_RESOLUTION_Y -1;
     }
     //printf("aU,%.3f aV,%.3f bU,%.3f bV%.3f \n",aU,aV,bU,bV);    
-    for(; y<=inty2; y++) {
+    for(; y<inty2; y++) {
         if ((aZ>1.0f) && (bZ>1.0f)){
             continue;
         }

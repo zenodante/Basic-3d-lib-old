@@ -55,8 +55,7 @@ type 2: 16bit 8:8     AL
 #define OBJ_BUFF_SIZE            1
 #endif
 
-#define B3L_IN_SPACE             (0u)
-#define B3L_NEAR_PLANE_CLIP      (1u)
+
 
 #define B3L_MATH_TABLE_SIZE      256
 /*Type defines---------------------------------------------------------------*/
@@ -115,7 +114,8 @@ typedef struct{
 }vect3_t;
 
 //screen3_t is for 2d screen drawing step, it has same length as vect4_t
-
+#define B3L_IN_SPACE             (0u)
+#define B3L_NEAR_PLANE_CLIP      (1u)
 typedef struct{
     int32_t x;
     int32_t y; 
@@ -164,7 +164,7 @@ typedef struct {
     u16              lineNum;
     f32              *pVect;
     u8               *pLine;
-    texLUTData_t  color;
+    
 }B3L_Polygon_t;
 
 typedef struct {
@@ -215,8 +215,22 @@ typedef struct{
     u8             transColorIdx;
 }B3L_texture_t ;
 
-//obj->state config bits
-//obj type information
+/*
+B3LObj_t state
+   31     2423     1615      87
+   ------------------------------------
+31|        |      II|    HGFE|   DCB A|0
+  ------------------------------------
+  A-- mesh obj with texture
+  B-- polygon obj
+  C-- mesh obj without texture
+  D-- particle obj
+  E-- obj visualization
+  F-- Back face culling clock wise
+  G-- Back face culling anti-clock wise
+  H-- fix render level switch
+  I-- fix render level number
+*/
 #define OBJ_TYPE_MASK            0x000000FF
 #define MESH_OBJ                    (0)
 //the texture 2d obj should be seperated and sorted before draw, then we could use
@@ -229,14 +243,14 @@ typedef struct{
 //obj visualizable control
 #define OBJ_VISUALIZABLE            (8)
 
-#define OBJ_BACK_CULLING_CLOCK            (10)
-#define OBJ_BACK_CULLING_ANTICLOCK        (11)
-#define OBJ_CILLING_MASK       0x00000C00  
-#define OBJ_CILLING_SHIFT            10
-#define OBJ_IGNORE_RENDER_LEVEL     (11)
+#define OBJ_BACK_CULLING_CLOCK            (9)
+#define OBJ_BACK_CULLING_ANTICLOCK        (10)
+#define OBJ_CILLING_MASK             0x00000600  
+#define OBJ_CILLING_SHIFT                  (9)
+#define OBJ_IGNORE_RENDER_LEVEL            (11)
 //render stage information
-#define OBJ_RENDER_LEVEL_MASK    0x00030000
-#define OBJ_FIX_RENDER_LEVEL_SHIFT  (16)
+#define OBJ_RENDER_LEVEL_MASK        0x00030000
+#define OBJ_FIX_RENDER_LEVEL_SHIFT         (16)
 
 //all different obj types's size is <= sizeof(B3LObj_t)
 typedef struct B3LOBJ{
@@ -244,8 +258,12 @@ typedef struct B3LOBJ{
     struct B3LOBJ   *next;
     u32             state;
     f32             *pBoundBox;
-    transform3D_t   transform;    
+    transform3D_t   transform;  
+    #ifdef B3L_ARM  
+    u32             dummy[2];
+    #else
     u32             dummy[4];
+    #endif
 }B3LObj_t;
 
 typedef struct{
@@ -276,6 +294,7 @@ typedef struct{
     f32                *pBoundBox;
     transform3D_t      transform; 
     B3L_Polygon_t      *pPolygon; 
+    texLUTData_t       color;
 }B3LPolygonObj_t;
 
 typedef struct{
@@ -299,7 +318,15 @@ typedef enum {
     parallelLight = 0,
     dotLight = 1,
 }lightType_e;
-
+/*
+light_t state
+   31     2423     1615      87
+   ------------------------------------
+31|        |        |        |       A|0
+  ------------------------------------
+A-- 1, point light
+    0, parallel light
+*/
 #define LIGHT_TYPE_BIT         (0)
 //POINT_LIGHT            (1)
 //PARALLEL_LIGHT         (0)
@@ -318,20 +345,22 @@ typedef struct{
     camera_t         camera;
     light_t          light;    
     scene_t          scene;
-    screen3f_t        *pVectBuff;
+    screen3f_t       *pVectBuff;
 }render_t;
+
 /*Useful macros--------------------------------------------------------------*/
 #define B3L_SET(PIN,N)  (PIN |=  (1u<<N))
 #define B3L_CLR(PIN,N)  (PIN &= ~(1u<<N))
 #define B3L_TEST(PIN,N) (PIN & (1u<<N))
+
 #define B3L_logVec2(v)\
-  printf("Vec3: %.3f %.3f\n",((v).x),((v).y))
+  printf("Vector 2: %.3f %.3f\n",((v).x),((v).y))
 #define B3L_logVec3(v)\
-  printf("Vec3: %.3f %.3f %.3f\n",((v).x),((v).y),((v).z))
+  printf("Vector 3: %.3f %.3f %.3f\n",((v).x),((v).y),((v).z))
 #define B3L_logVec4(v)\
-  printf("Vec4: %.3f %.3f %.3f %.3f\n",((v).x),((v).y),((v).z),((v).w))
+  printf("Vector 4: %.3f %.3f %.3f %.3f\n",((v).x),((v).y),((v).z),((v).w))
 #define B3L_logMat4(m)\
-  printf("Mat4:\n  %.3f %.3f %.3f %.3f\n  %.3f %.3f %.3f %.3f\n  %.3f %.3f %.3f %.3f\n  %.3f %.3f %.3f %.3f\n"\
+  printf("Matix4:\n  %.3f %.3f %.3f %.3f\n  %.3f %.3f %.3f %.3f\n  %.3f %.3f %.3f %.3f\n  %.3f %.3f %.3f %.3f\n"\
    ,(m).m00,(m).m10,(m).m20,(m).m30,\
     (m).m01,(m).m11,(m).m21,(m).m31,\
     (m).m02,(m).m12,(m).m22,(m).m32,\
@@ -373,7 +402,7 @@ extern void B3L_ResetScene(scene_t *pScene);
 //light functions
 extern void B3L_ResetLight(light_t *pLight);
 extern void B3L_SetLightType(render_t *pRender,lightType_e type);
-//extern void B3L_SetLightDirction(light_t *pLight, vect3_t *To);
+extern void B3L_SetLightVect(render_t *pRender, f32 x,f32 y,f32 z);
 //render obj functions
 extern B3LObj_t *B3L_GetFreeObj(render_t *pRender);
 extern void B3L_AddObjToRenderList(B3LObj_t *pObj, render_t *pRender);
