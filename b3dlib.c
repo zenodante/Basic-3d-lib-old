@@ -12,8 +12,11 @@
 
 //config the ram position if necessary
 screen3f_t      vectBuff[VECT_BUFF_SIZE]; //8KB
-Z_buff_t        zbuff[BUFF_LENTH];        //75KB
+Z_buff_t        zBuff[BUFF_LENTH];        //75KB
+B3L_Particle_t  particleBuff[B3L_PARTICLE_BUFF_DEPTH];
 
+
+#define B3L_MATH_TABLE_SIZE      256
 
 #if Z_BUFF_LEVEL == 2
     #define Z_LIMIT_NUM      (1.0f)
@@ -260,7 +263,7 @@ static void B3L_AddObjToList(B3LObj_t *pObj, B3LObj_t **pStart);
 static void ClearFrameBuff(frameBuffData_t *pFramebuff,frameBuffData_t value,u32 length);
 static void ClearZbuff(Z_buff_t *pZbuff,u32 length);
 //draw call functions
-static void B3L_DrawObjs(render_t *pRender);
+static void B3L_DrawObjs(render_t *pRender,u32 time);
 static void B3L_DrawMesh(B3LMeshObj_t *pObj,render_t *pRender, mat4_t *pMat,u32 renderLevel);
 static void B3L_DrawMeshNoTexture(B3LMeshNoTexObj_t *pObj,render_t *pRender, mat4_t *pMat,u32 renderLevel);
 static void B3L_DrawPolygon(B3LPolygonObj_t *pObj,render_t *pRender, mat4_t *pMat);
@@ -1095,7 +1098,7 @@ obj functions
 
 
 
-static void B3L_DrawObjs(render_t *pRender){
+static void B3L_DrawObjs(render_t *pRender, u32 time){
     
     mat4_t mat; //64 byte
     vect4_t boundBoxBuffVec; //128 byte
@@ -1115,7 +1118,20 @@ static void B3L_DrawObjs(render_t *pRender){
             pCurrentObj = pCurrentObj->next;
             continue;
         }
+#ifdef B3L_USING_PARTICLE
+        if (B3L_TEST(state,PARTICLE_OBJ)){ //for particle generator obj, special workflow is applied
+            //if the generate time out, set it to invisable
+            
+            //update particle statement
 
+            
+
+            //call draw function to draw every particles
+
+            pCurrentObj = pCurrentObj->next;
+            continue;
+        }
+#endif
         //create the obj->clip matrix
         B3L_MakeWorldMatrix(&(pCurrentObj->transform), &mat);
         
@@ -1185,8 +1201,6 @@ static void B3L_DrawObjs(render_t *pRender){
             case (1<<NOTEX_MESH_OBJ):                
                 B3L_DrawMeshNoTexture((B3LMeshNoTexObj_t *)pCurrentObj,pRender,&mat,renderLevel);
                 break;
-            case (1<<PARTICLE_OBJ):
-                break;
         }      
         //point to the next obj
         pCurrentObj = pCurrentObj->next;
@@ -1194,7 +1208,7 @@ static void B3L_DrawObjs(render_t *pRender){
 
 }
 
-void B3L_RenderScence(render_t *pRender){
+void B3L_RenderScence(render_t *pRender,u32 time){
 
     //printf("start render\n");
     //set world to clip matrix
@@ -1202,7 +1216,7 @@ void B3L_RenderScence(render_t *pRender){
 
     B3L_UpdateLightVect(pRender);
 
-    B3L_DrawObjs(pRender);
+    B3L_DrawObjs(pRender,time);
 
 
 }
@@ -1286,7 +1300,7 @@ void B3L_ReturnObjToInactiveList(B3LObj_t *pObj,  render_t *pRender){
 
 void B3L_RenderInit(render_t *pRender,frameBuffData_t *pFrameBuff){
     pRender->pFrameBuff = pFrameBuff;
-    pRender->pZBuff = zbuff;
+    pRender->pZBuff = zBuff;
     pRender->pVectBuff = vectBuff;
     B3L_ResetScene(&(pRender->scene));
     B3L_InitCamera(&(pRender->camera));
@@ -1934,7 +1948,7 @@ __attribute__((always_inline)) static inline void DrawColorHLine(f32 x,s32 y,f32
     Z_buff_t  *pCurrentPixelZ = pZbuff + shift;  
 
     Z_buff_t compZ;
-    for (;i>=0;i--){ //don't draw the most right pixel
+    for (;i>=0;i--){ //don't draw the most right pixel, so the b has already -1
         compZ = B3L_CalZbuffValue(aZ);
         if (compZ< *pCurrentPixelZ){          
             *pCurrentPixelZ = compZ;
@@ -2003,7 +2017,7 @@ f32 aU,f32 aV,f32 bU,f32 bV, u32 lightFactor, frameBuffData_t *pFrameBuff,Z_buff
     Z_buff_t compZ;
     switch(pTexture->type){
         case LUT16:
-        for (;i>=0;i--){ //don't draw the most right pixel
+        for (;i>=0;i--){  //don't draw the most right pixel, so the b has already -1
             compZ = B3L_CalZbuffValue(aZ);
             if (compZ< *pCurrentPixelZ){           
                 intu = (uint32_t)u;

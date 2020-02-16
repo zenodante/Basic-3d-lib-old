@@ -11,7 +11,7 @@
 
 //#define B3L_DEBUG
 /*Config area----------------------------------------------------------------*/
-
+//not used fix math 
 #define B3L_FIX_BITS            10
 //vect buff is limited the max vectors in single obj
 #define VECT_BUFF_SIZE          512
@@ -46,8 +46,14 @@ type 2: 16bit 8:8     AL
 
 
 
+#define B3L_USING_PARTICLE   
+#ifdef B3L_USING_PARTICLE
+#define B3L_PARTICLE_BUFF_DEPTH    512
+#endif
+
+
   
-/*bit defines and setting area-----------------------------------------------*/
+
 
 //the obj buff at least has 1 slot
 #if OBJ_BUFF_SIZE<=0
@@ -56,8 +62,6 @@ type 2: 16bit 8:8     AL
 #endif
 
 
-
-#define B3L_MATH_TABLE_SIZE      256
 /*Type defines---------------------------------------------------------------*/
 
 typedef float    f32;
@@ -190,15 +194,14 @@ typedef struct {
 //36 byte for single particle
 typedef struct B3L_PARTICLE{
     struct B3L_PARTICLE *next;
+    uint32_t color;
+    uint32_t life;
     f32 x;  //f16 may be better for size? -> 24 byte
     f32 y;
     f32 z;
     f32 dx;
     f32 dy;
     f32 dz;
-    uint32_t color;
-    uint16_t size;
-    uint16_t life;
 }B3L_Particle_t;
 
 
@@ -212,7 +215,7 @@ typedef struct{
     u16            uvSize;
     texLUTData_t   *pLUT;
     u8             *pData;
-    u8             transColorIdx;
+    u8             transColorIdx; 
 }B3L_texture_t ;
 
 /*
@@ -301,11 +304,12 @@ typedef struct{
     B3LObj_t           *privous;
     B3LObj_t           *next;
     u32                state;
-    f32                *pBoundBox;
-    transform3D_t      transform; 
+    vect3_t            translation;
+    vect3_t            rotation;
+    vect3_t            force;
+    u32                life;
     B3L_Particle_t     *pParticleActive; 
-    B3L_Particle_t     *pParticleRecycle; 
-}B3LParticleObj_t;
+}B3LParticleGenObj_t;
 
 typedef struct{
     B3LObj_t       objBuff[OBJ_BUFF_SIZE];    
@@ -397,7 +401,7 @@ extern void B3L_CameraLookAt(camera_t *pCam, vect3_t *pAt);
 //render functions
 extern void B3L_RenderInit(render_t *pRender,frameBuffData_t *pFrameBuff);
 extern void B3L_NewFrame(render_t *pRender);
-extern void B3L_RenderScence(render_t *pRender);
+extern void B3L_RenderScence(render_t *pRender,u32 time);
 extern void B3L_ResetScene(scene_t *pScene);
 //light functions
 extern void B3L_ResetLight(light_t *pLight);

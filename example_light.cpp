@@ -6,7 +6,7 @@ extern "C" {
 }
 using namespace blit;
 
-B3LMeshNoTexObj_t *pBox2;
+B3LPolygonObj_t *pBox2;
 B3LMeshObj_t *pBox;
 render_t B3Lrender;
 B3LMeshObj_t box;
@@ -19,15 +19,17 @@ void init() {
     //you need a 32bit framebuff here!
     B3L_RenderInit(&B3Lrender,(frameBuffData_t *)fb.data);
 
-    pBox2 = (B3LMeshNoTexObj_t *)B3L_GetFreeObj(&B3Lrender);
+    pBox2 = (B3LPolygonObj_t *)B3L_GetFreeObj(&B3Lrender);
     pBox = (B3LMeshObj_t *)B3L_GetFreeObj(&B3Lrender);
     B3L_InitBoxObj(&box,50.0f);
-    B3L_InitBoxObjNoTexture(pBox2,50.0f); //create a size 10 box   
+    //B3L_InitBoxObjNoTexture(pBox2,50.0f); //create a size 10 box   
+    B3L_InitBoxObjPolygon(pBox2,50.0f);
     InitCatObj(pBox,2.0f); //create a size 10 box  
     B3L_AddObjToRenderList((B3LObj_t *)&box, &B3Lrender);
     B3L_AddObjToRenderList((B3LObj_t *)pBox, &B3Lrender);
     B3L_AddObjToRenderList((B3LObj_t *)pBox2, &B3Lrender);
     B3L_SetLightType(&B3Lrender,dotLight);
+    B3Lrender.light.factor_0=0.2f;
     box.transform.translation.y = 0.0f;
     box.transform.translation.x = 50.0f;
     box.transform.translation.z = 0.0f;
@@ -72,6 +74,12 @@ void update(uint32_t time){
     if (pressed(DPAD_RIGHT)){
         B3Lrender.camera.transform.translation.x -= 1.0f;    
     }
+    if (pressed(A)){
+        pBox->transform.rotation.y +=0.01f;
+    }
+    if (pressed(B)){
+        pBox->transform.rotation.y -=0.01f;
+    }
     if (i>1.0f){
         i=0.0f;
     }
@@ -96,7 +104,7 @@ void update(uint32_t time){
 
 void render(uint32_t time) {
     B3L_NewFrame( &B3Lrender);
-    B3L_RenderScence(&B3Lrender);
+    B3L_RenderScence(&B3Lrender,time);
 /*
 B3L_DrawTriColor(
                                                                         0.0f,0.0f,0.1f,
