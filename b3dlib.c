@@ -1908,7 +1908,7 @@ __attribute__((always_inline)) static inline void DrawColorHLine(f32 x,s32 y,f32
     s32 clipL = 0;
     s32 clipR = RENDER_RESOLUTION_X ;
     f32 invlength = 1.0f/((f32)(intb-intx));
-
+    intb = intb - 1;
     if ((intx>=clipR)||(b<clipL)){
         return;
     }
@@ -1934,7 +1934,7 @@ __attribute__((always_inline)) static inline void DrawColorHLine(f32 x,s32 y,f32
     Z_buff_t  *pCurrentPixelZ = pZbuff + shift;  
 
     Z_buff_t compZ;
-    for (;i>0;i--){ //don't draw the most right pixel
+    for (;i>=0;i--){ //don't draw the most right pixel
         compZ = B3L_CalZbuffValue(aZ);
         if (compZ< *pCurrentPixelZ){          
             *pCurrentPixelZ = compZ;
@@ -1957,6 +1957,7 @@ f32 aU,f32 aV,f32 bU,f32 bV, u32 lightFactor, frameBuffData_t *pFrameBuff,Z_buff
     s32 clipL = 0;
     s32 clipR = RENDER_RESOLUTION_X ;
     f32 invlength = 1.0f/((f32)(intb-intx));
+    intb = intb - 1;
     //printf("invlength %.3f\n",invlength);
     //length = B3L_IntMax(length , 1) ;
 
@@ -2002,7 +2003,7 @@ f32 aU,f32 aV,f32 bU,f32 bV, u32 lightFactor, frameBuffData_t *pFrameBuff,Z_buff
     Z_buff_t compZ;
     switch(pTexture->type){
         case LUT16:
-        for (;i>0;i--){ //don't draw the most right pixel
+        for (;i>=0;i--){ //don't draw the most right pixel
             compZ = B3L_CalZbuffValue(aZ);
             if (compZ< *pCurrentPixelZ){           
                 intu = (uint32_t)u;
