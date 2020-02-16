@@ -36,10 +36,10 @@ type 2: 16bit 8:8     AL
 //1.0f == 90 degree fov,smaller is larger fov
 #define DEFAULT_FOCUS_LENGTH    (1.0f)
 
-#define FAR_PLANE                    500.0f
-#define NEAR_PLANE                   1.0f
-#define LEVEL_0_DISTANCE             300.0f
-#define LEVEL_1_DISTANCE             500.0f
+#define FAR_PLANE                    800.0f
+#define NEAR_PLANE                   0.1f
+#define LEVEL_0_DISTANCE             400.0f
+#define LEVEL_1_DISTANCE             800.0f
 #define B3L_LEVEL_1_DEFAULT_LIGHT    0xA0
 //level 0, calculate light, texture
 //level 1, calculate texture
