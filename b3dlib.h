@@ -410,6 +410,7 @@ extern void B3L_PopObjFromRenderList(B3LObj_t *pObj, render_t *pRender);
 extern void B3L_ReturnObjToInactiveList(B3LObj_t *pObj,  render_t *pRender);
 extern void B3L_InitBoxObj(B3LMeshObj_t *pObj,f32 size);
 extern void B3L_InitBoxObjNoTexture(B3LMeshNoTexObj_t *pObj,f32 size);
+extern void B3L_InitBoxObjPolygon(B3LPolygonObj_t *pObj,f32 size);
 //extern void B3L_DrawObjs(render_t *pRender);
 /*
 void B3L_DrawTriTexture(

@@ -32,38 +32,43 @@ Z_buff_t        zbuff[BUFF_LENTH];        //75KB
 #define _swap_int32_t(a, b) { int32_t t = a; a = b; b = t; }
 #endif
 
+const u8 B3L_polygonIdx[24] = {
+    0,1,0,2,1,3,2,3,0,4,1,5,2,6,3,7,4,5,4,6,5,7,6,7
+};
+
+
 const f32   B3L_boxVect[24] = {
-/* 0 front, bottom, right */
- 0.5f, -0.5f, -0.5f,
- /* 1 front, bottom, left */
--0.5f, -0.5f, -0.5f,
- /* 2 front, top,    right */
- 0.5f,  0.5f, -0.5f,
- /* 3 front, top,    left */
--0.5f,  0.5f, -0.5f,
- /* 4 back,  bottom, right */
- 0.5f, -0.5f,  0.5f,
- /* 5 back,  bottom, left */
--0.5f, -0.5f,  0.5f,
- /* 6 back,  top,    right */
- 0.5f,  0.5f,  0.5f,
- /* 7 back,  top,    left */
--0.5f,  0.5f,  0.5f
+    /* 0 front, bottom, right */
+     0.5f, -0.5f, -0.5f,
+     /* 1 front, bottom, left */
+    -0.5f, -0.5f, -0.5f,
+     /* 2 front, top,    right */
+     0.5f,  0.5f, -0.5f,
+     /* 3 front, top,    left */
+    -0.5f,  0.5f, -0.5f,
+     /* 4 back,  bottom, right */
+     0.5f, -0.5f,  0.5f,
+     /* 5 back,  bottom, left */
+    -0.5f, -0.5f,  0.5f,
+     /* 6 back,  top,    right */
+     0.5f,  0.5f,  0.5f,
+     /* 7 back,  top,    left */
+    -0.5f,  0.5f,  0.5f
 };
 
 const u16 B3L_boxTri[36] ={
-  3, 0, 2, /* front  */
-  1, 0, 3,
-  0, 4, 2, /* right  */
-  2, 4, 6,
-  4, 5, 6, /* back   */
-  7, 6, 5,
-  3, 7, 1, /* left   */
-  1, 7, 5,
-  6, 3, 2, /* top    */
-  7, 3, 6,
-  1, 4, 0, /* bottom */
-  5, 4, 1
+    3, 0, 2, /* front  */
+    1, 0, 3,
+    0, 4, 2, /* right  */
+    2, 4, 6,
+    4, 5, 6, /* back   */
+    7, 6, 5,
+    3, 7, 1, /* left   */
+    1, 7, 5,
+    6, 3, 2, /* top    */
+    7, 3, 6,
+    1, 4, 0, /* bottom */
+    5, 4, 1
 };
 
 const u8 B3L_boxColorIdx[12]={
@@ -75,18 +80,18 @@ const u8 B3L_boxColorIdx[12]={
 
 #define m 15
 const u8 B3L_boxUV[72]={
-  0,0,  m,m,  m,0,\
-  0,m,  m,m,  0,0,\
-  m,m,  m,0,  0,m,\
-  0,m,  m,0,  0,0,\
-  m,0,  0,0,  m,m,\
-  0,m,  m,m,  0,0,\
-  0,0,  0,m,  m,0,\
-  m,0,  0,m,  m,m,\
-  0,0,  m,m,  m,0,\
-  0,m,  m,m,  0,0,\
-  m,0,  0,m,  m,m,\
-  0,0,  0,m,  m,0
+    0,0,  m,m,  m,0,\
+    0,m,  m,m,  0,0,\
+    m,m,  m,0,  0,m,\
+    0,m,  m,0,  0,0,\
+    m,0,  0,0,  m,m,\
+    0,m,  m,m,  0,0,\
+    0,0,  0,m,  m,0,\
+    m,0,  0,m,  m,m,\
+    0,0,  m,m,  m,0,\
+    0,m,  m,m,  0,0,\
+    m,0,  0,m,  m,m,\
+    0,0,  0,m,  m,0
 };
 #undef m
 
@@ -148,7 +153,7 @@ const B3L_Mesh_t B3L_box = {.id      = 0,
                       .pUv     = (u8 *)B3L_boxUV,
                       .pNormal = (f32 *)B3L_boxNormal
                       };
-const B3L_Mesh_NoTex_t B3L_box_noTex = {.id      = 0,
+const B3L_Mesh_NoTex_t B3L_box_noTex = {.id      = 1,
                       .vectNum = 8,
                       .triNum  = 12,
                       .pVect   = (f32 *)B3L_boxVect,
@@ -157,6 +162,12 @@ const B3L_Mesh_NoTex_t B3L_box_noTex = {.id      = 0,
                       .pNormal = (f32 *)B3L_boxNormal
                       };
 
+const B3L_Polygon_t B3L_box_Polygon = {.id  =  2,
+                        .vectNum = 8,
+                        .lineNum = 12,
+                        .pVect = (f32 *)B3L_boxVect,
+                        .pLine = (u8 *) B3L_polygonIdx
+                        };
 
 
 const B3L_texture_t B3L_boxTexture = { .id      = 0,
@@ -215,6 +226,7 @@ __attribute__((always_inline)) static  inline bool     B3L_TriangleFaceToViewer(
 __attribute__((always_inline)) static  inline bool     B3L_TriangleFaceToViewer_f(f32 x0, f32 y0, f32 x1, f32 y1, f32 x2, f32 y2);
 __attribute__((always_inline)) static  inline bool     B3L_TriVisable(u32 r0,u32 r1,u32 r2);
 //draw functions   
+__attribute__((always_inline)) static  inline frameBuffData_t  B3L_GetColorValue(texLUTData_t *lut,u8 colorIdx,u32 lightFactor);
 __attribute__((always_inline)) static  inline void     B3L_DrawPixel(frameBuffData_t color,s32 x,s32 y,f32 z,
                                                                         frameBuffData_t *pFrameBuff,Z_buff_t *pZbuff);
 __attribute__((always_inline)) static  inline void     B3L_DrawPixelWithTest(frameBuffData_t color,s32 x,s32 y,f32 z,
@@ -438,15 +450,15 @@ __attribute__((always_inline)) static  inline void  B3L_Vect3Xmat4WithTest_float
     }else{
         if((rx<=rw)&&(rx>=-rw)&&(ry<=rw)&&(ry>=-rw)&&(rz<=rw)){
             B3L_SET(testResult,B3L_IN_SPACE);
-            pResult->test = testResult;    
+               
         }
     }
-
+    
     f32 factor=1.0f / (rw);//rw won't be zero due we returned already rz<0 (rz>0, rw must >0)
     f32 intX = (HALF_RESOLUTION_X + rx *factor* HALF_RESOLUTION_X);
     f32 intY = (HALF_RESOLUTION_Y - ry *factor* HALF_RESOLUTION_Y);
     rz = rz*factor;
-
+    pResult->test = testResult; 
     pResult->x = intX;
     pResult->y = intY;
     pResult->z = rz;
@@ -1334,9 +1346,57 @@ void B3L_InitBoxObjNoTexture(B3LMeshNoTexObj_t *pObj,f32 size){
     B3L_SET(pObj->state,OBJ_BACK_CULLING_CLOCK);
 
 }
+
+void B3L_InitBoxObjPolygon(B3LPolygonObj_t *pObj,f32 size){
+    pObj->privous = (B3LObj_t *)NULL;
+    pObj->next = (B3LObj_t *)NULL;
+    pObj->pPolygon = (B3L_Polygon_t *)&B3L_box_Polygon;
+
+    pObj->transform.translation.x = 0.0f;
+    pObj->transform.translation.y = 0.0f;
+    pObj->transform.translation.z = 0.0f;
+    pObj->transform.rotation.x = 0.0f;
+    pObj->transform.rotation.y = 0.0f;
+    pObj->transform.rotation.z = 0.0f;
+    pObj->transform.scale.x = size;
+    pObj->transform.scale.y = size;
+    pObj->transform.scale.z = size;
+    pObj->pBoundBox = B3L_box.pVect;
+    #if FRAME_BUFF_COLOR_TYPE == 0
+    pObj->color = 0xFF00FF00;
+    #endif
+    #if FRAME_BUFF_COLOR_TYPE == 1
+    pObj->color = 0xF0F0;
+    #endif
+    #if FRAME_BUFF_COLOR_TYPE == 2
+    pObj->color = 1;
+    #endif
+    B3L_SET(pObj->state,POLYGON_OBJ); 
+    B3L_SET(pObj->state,OBJ_VISUALIZABLE);
+
+    //B3L_SET(pObj->state,OBJ_BACK_CULLING_CLOCK);
+
+}
 /*-----------------------------------------------------------------------------
 Draw functions
 -----------------------------------------------------------------------------*/
+__attribute__((always_inline)) static  inline frameBuffData_t     B3L_GetColorValue(texLUTData_t *lut,u8 colorIdx,u32 lightFactor){
+    frameBuffData_t color;
+    #if FRAME_BUFF_COLOR_TYPE == 0
+    color = lut[colorIdx];
+    color = (color&0x00FFFFFF)|((lightFactor)<<24);
+    #endif
+    #if FRAME_BUFF_COLOR_TYPE == 1
+    color = lut[colorIdx];
+    color = (color&0x0FFF)|(((u16)lightFactor)<<12);
+    #endif
+    #if FRAME_BUFF_COLOR_TYPE == 2
+    color = lut[colorIdx];
+    color = ((u16)color)|(((u16)lightFactor)<<8);
+    #endif
+    return color;
+}
+
 __attribute__((always_inline)) static  inline void     B3L_DrawPixel(frameBuffData_t color,s32 x,s32 y,f32 z,
                                                                         frameBuffData_t *pFrameBuff,Z_buff_t *pZbuff){
         Z_buff_t *pCurrentPixelZ = pZbuff + (y*RENDER_RESOLUTION_X) + x;
@@ -1632,9 +1692,9 @@ static void B3L_DrawPolygon(B3LPolygonObj_t *pObj,render_t *pRender, mat4_t *pMa
         f32 Bz = pVectTarget[lineIdxB].z;
         if (B3L_TEST(testA,B3L_IN_SPACE )&&
             B3L_TEST(testB,B3L_IN_SPACE )){
+
             B3L_DrawDepthLineNoClip(Ax,Ay,Az,Bx,By,Bz,color,pFrameBuff,pZBuff);
         }else{
-
             B3L_DrawDepthLineClip(Ax,Ay,Az,Bx,By,Bz,color,pFrameBuff,pZBuff);
         }
 
@@ -1844,14 +1904,10 @@ __attribute__((always_inline)) static inline void B3L_DrawDepthLineClip(s32 Ax,s
 
 __attribute__((always_inline)) static inline void DrawColorHLine(f32 x,s32 y,f32 b, f32 aZ, f32 bZ,
                                        frameBuffData_t finalColor, frameBuffData_t *pFrameBuff,Z_buff_t *pZbuff) {
-    //printf("auv%.2f,%.2f,buv%.2f,%.2f\n",aU,aV,bU,bV);
-    s32 intx = (s32)x,inty=y,intb=(s32)b;
-    //s32 b = x + length -1;//correct
+    s32 intx = (s32)x,inty=y,intb=((s32)b);
     s32 clipL = 0;
     s32 clipR = RENDER_RESOLUTION_X ;
     f32 invlength = 1.0f/((f32)(intb-intx));
-    //printf("invlength %.3f\n",invlength);
-    //length = B3L_IntMax(length , 1) ;
 
     if ((intx>=clipR)||(b<clipL)){
         return;
@@ -1870,7 +1926,6 @@ __attribute__((always_inline)) static inline void DrawColorHLine(f32 x,s32 y,f32
     }
     if (intb>=clipR){
         intb = clipR-1;
-
     }
     s32 i = intb-intx;
 
@@ -1896,7 +1951,7 @@ __attribute__((always_inline)) static inline void DrawColorHLine(f32 x,s32 y,f32
 __attribute__((always_inline)) static inline void DrawTexHLine(f32 x,s32 y,f32 b, f32 aZ, f32 bZ,
 f32 aU,f32 aV,f32 bU,f32 bV, u32 lightFactor, frameBuffData_t *pFrameBuff,Z_buff_t *pZbuff, B3L_texture_t *pTexture) {
     //printf("auv%.2f,%.2f,buv%.2f,%.2f\n",aU,aV,bU,bV);
-    s32 intx = (s32)x,inty=y,intb=(s32)b;
+    s32 intx = (s32)x,inty=y,intb=((s32)b);
     //s32 b = x + length -1;//correct
     f32 u=aU,v=aV;
     s32 clipL = 0;
@@ -1960,23 +2015,9 @@ f32 aU,f32 aV,f32 bU,f32 bV, u32 lightFactor, frameBuffData_t *pFrameBuff,Z_buff
                 }
                 if (colorIdx == transColorIdx){
                     continue;
-                }
-                
+                }                
                 *pCurrentPixelZ = compZ;
-                
-                #if FRAME_BUFF_COLOR_TYPE == 0
-                color = lut[colorIdx];
-                color = (color&0x00FFFFFF)|((lightFactor)<<24);
-                #endif
-                #if FRAME_BUFF_COLOR_TYPE == 1
-                color = lut[colorIdx];
-                color = (color&0x0FFF)|(((u16)lightFactor)<<12);
-                #endif
-                #if FRAME_BUFF_COLOR_TYPE == 2
-                color = lut[colorIdx];
-                color = ((u16)color)|(((u16)lightFactor)<<8);
-                #endif
-                *pixel = color;          
+                *pixel = B3L_GetColorValue(lut,colorIdx,lightFactor);          
             }
             u +=du;
             v +=dv;
@@ -1996,24 +2037,12 @@ f32 aU,f32 aV,f32 bU,f32 bV, u32 lightFactor, frameBuffData_t *pFrameBuff,Z_buff
                     continue;
                 }
                 *pCurrentPixelZ = compZ;
-                
-                #if FRAME_BUFF_COLOR_TYPE == 0
-                color = lut[colorIdx];
-                color = (color&0x00FFFFFF)|((lightFactor)<<24);
-                #endif
-                #if FRAME_BUFF_COLOR_TYPE == 1
-                color = lut[colorIdx];
-                color = (color&0x0FFF)|(((u16)lightFactor)<<12);
-                #endif
-                #if FRAME_BUFF_COLOR_TYPE == 2
-                color = ((u16)colorIdx)|(((u16)lightFactor)<<8);
-                #endif
-                *pixel = color;        
+                *pixel = B3L_GetColorValue(lut,colorIdx,lightFactor);           
             }
             u +=du;
             v +=dv;
-            aZ = aZ + dZ;
-            pCurrentPixelZ ++;
+            aZ +=dZ;
+            pCurrentPixelZ++;
             pixel++;
         }
         break;
