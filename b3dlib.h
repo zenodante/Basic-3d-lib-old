@@ -143,10 +143,11 @@ typedef struct{
 
 //in column first order, mxy -- x is column num, y is the row number
 typedef struct{
-    f32 m00;f32 m01;f32 m02;f32 m03;
-    f32 m10;f32 m11;f32 m12;f32 m13;
-    f32 m20;f32 m21;f32 m22;f32 m23;
-    f32 m30;f32 m31;f32 m32;f32 m33;
+    //row0  row1    row2    row3    
+    f32 m00;f32 m01;f32 m02;f32 m03;//column 0
+    f32 m10;f32 m11;f32 m12;f32 m13;//column 1
+    f32 m20;f32 m21;f32 m22;f32 m23;//column 2
+    f32 m30;f32 m31;f32 m32;f32 m33;//column 3
 }mat4_t;
 
 typedef struct{

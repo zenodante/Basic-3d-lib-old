@@ -1101,8 +1101,9 @@ void B3L_CameraLookAt(camera_t *pCam, vect3_t *pAt){
 obj functions
 -----------------------------------------------------------------------------*/
 static void B3L_DrawParticleObjs(render_t *pRender, u32 time){
-    B3LObj_t *pCurrentObj = pRender->scene.pActiveParticleGenObjs;
+    B3LParticleGenObj_t *pCurrentObj =(B3LParticleGenObj_t *) (pRender->scene.pActiveParticleGenObjs);
     u32 state;
+    mat4_t mat;
     //switch(state & OBJ_TYPE_MASK)
     while(pCurrentObj != (B3LObj_t *)NULL){
         state = pCurrentObj->state;
@@ -1110,6 +1111,12 @@ static void B3L_DrawParticleObjs(render_t *pRender, u32 time){
             pCurrentObj = pCurrentObj->next;
             continue;
         }
+        //update the time
+
+        //
+        B3L_MakeRotationMatrixZXY(pCurrentObj->rotation.x,
+                                  pCurrentObj->rotation.y,
+                                  pCurrentObj->rotation.z,&mat);
         //create matrix
 
                 //update
