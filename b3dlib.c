@@ -13,8 +13,9 @@
 //config the ram position if necessary
 screen3f_t      vectBuff[VECT_BUFF_SIZE]; //8KB
 Z_buff_t        zBuff[BUFF_LENTH];        //75KB
+#ifdef B3L_USING_PARTICLE
 B3L_Particle_t  particleBuff[B3L_PARTICLE_BUFF_DEPTH];
-
+#endif
 
 #define B3L_MATH_TABLE_SIZE      256
 
@@ -259,11 +260,15 @@ __attribute__((always_inline)) static  inline void     B3L_DrawDepthLineClip(s32
                                                                         texLUTData_t color,frameBuffData_t *pFrameBuff,Z_buff_t *pZbuff);             
 //obj list functions
 static void B3L_AddObjToList(B3LObj_t *pObj, B3LObj_t **pStart);
+static void B3L_ResetParticleList(B3L_Particle_t *pPool,B3L_Particle_t **pStart);
+static void B3L_ReturnParticleToPool(B3L_Particle_t *pParticle,scene_t *pScene);
+static B3L_Particle_t *B3L_GetAFreeParticle(scene_t *pScene);
 //buff functions
 static void ClearFrameBuff(frameBuffData_t *pFramebuff,frameBuffData_t value,u32 length);
 static void ClearZbuff(Z_buff_t *pZbuff,u32 length);
 //draw call functions
-static void B3L_DrawMeshObjs(render_t *pRender,u32 time);
+static void B3L_DrawMeshObjs(render_t *pRender);
+static void B3L_DrawParticleBitmapObjs(render_t *pRender,u32 time);
 static void B3L_DrawMesh(B3LMeshObj_t *pObj,render_t *pRender, mat4_t *pMat,u32 renderLevel);
 static void B3L_DrawMeshNoTexture(B3LMeshNoTexObj_t *pObj,render_t *pRender, mat4_t *pMat,u32 renderLevel);
 static void B3L_DrawPolygon(B3LPolygonObj_t *pObj,render_t *pRender, mat4_t *pMat);
@@ -1095,10 +1100,37 @@ void B3L_CameraLookAt(camera_t *pCam, vect3_t *pAt){
 /*-----------------------------------------------------------------------------
 obj functions
 -----------------------------------------------------------------------------*/
+static void B3L_DrawParticleBitmapObjs(render_t *pRender, u32 time){
+    B3LObj_t *pCurrentObj = = pRender->scene.pActiveParticleBitmapObjs;
+    u32 state;
+    //switch(state & OBJ_TYPE_MASK)
+    while(pCurrentObj != (B3LObj_t *)NULL){
+        state = pCurrentObj->state;
+        if (B3L_TEST(state ,OBJ_VISUALIZABLE)==0){  //obj visual is false
+            pCurrentObj = pCurrentObj->next;
+            continue;
+        }
+
+        //create matrix
 
 
+        switch(state & OBJ_TYPE_MASK){
+            case (1<<PARTICLE_OBJ):
+                //update
+                ((B3LParticleGenObj_t *)pCurrentObj)->pUpdFunc(time,((B3LParticleGenObj_t *)pCurrentObj));
+                //particle ->camera matrix
 
-static void B3L_DrawMeshObjs(render_t *pRender, u32 time){
+                //draw particles
+                
+                break;
+            case (1<<BITMAP_OBJ):
+                break;
+        }
+    }
+}
+
+
+static void B3L_DrawMeshObjs(render_t *pRender){
     
     mat4_t mat; //64 byte
     vect4_t boundBoxBuffVec; //128 byte
@@ -1202,8 +1234,9 @@ void B3L_RenderScence(render_t *pRender,u32 time){
 
     B3L_UpdateLightVect(pRender);
 
-    B3L_DrawMeshObjs(pRender,time);
+    B3L_DrawMeshObjs(pRender);
 
+    B3L_DrawParticleBitmapObjs(pRender,time);
 
 }
 
@@ -1214,6 +1247,8 @@ void B3L_NewFrame(render_t *pRender){
 
 void B3L_ResetScene(scene_t *pScene){
     u32 i;
+    pScene->pActiveMeshObjs = (B3LObj_t *)NULL;
+    pScene->pActiveParticleBitmapObjs = (B3LObj_t *)NULL;
     pScene->pInactiveObjs = pScene->objBuff;
     pScene->objBuff[0].privous = pScene->pInactiveObjs;
     pScene->objBuff[0].next= &(pScene->objBuff[1]);
@@ -1222,7 +1257,39 @@ void B3L_ResetScene(scene_t *pScene){
         pScene->objBuff[i].next = &(pScene->objBuff[i+1]);
     }
     pScene->objBuff[OBJ_BUFF_SIZE - 1].next = (B3LObj_t *)NULL;
+#ifdef B3L_USING_PARTICLE   
+    pScene->freeParticleNum = B3L_PARTICLE_BUFF_DEPTH;   
+    B3L_ResetParticleList(particleBuff,&(pScene->pfreeParticlePool),B3L_PARTICLE_BUFF_DEPTH);
+    //call reset particle one-way list function
+#endif
 }
+
+static void B3L_ResetParticleList(B3L_Particle_t *pPool,B3L_Particle_t **pStart,u32 num){
+    u32 i;
+    *pStart = pPool;
+    for (i=0;i<(num-1);i++){
+        pPool[i].next = &(pPool[i+1]);
+    }
+    pPool[(num-1)].next = (B3L_Particle_t *)NULL;
+}
+static void B3L_ReturnParticleToPool(B3L_Particle_t *pParticle,scene_t *pScene){
+    
+    B3L_Particle_t *temp=pScene->pfreeParticlePool;
+    pScene->pfreeParticlePool = pParticle;
+    pParticle->next = temp;
+    pScene->freeParticleNum +=1;
+}
+static B3L_Particle_t *B3L_GetAFreeParticle(scene_t *pScene){
+    //todo
+    if (pScene->freeParticleNum == 0){
+        return (B3L_Particle_t *)NULL;
+    }
+    pScene->freeParticleNum --;
+    B3L_Particle_t *popParticle = pScene->pfreeParticlePool;
+    pScene->pfreeParticlePool = pScene->pfreeParticlePool->next;
+    return popParticle;
+}
+
 
 static void B3L_AddObjToList(B3LObj_t *pObj, B3LObj_t **pStart){
     pObj->next = *pStart;
@@ -1253,7 +1320,16 @@ B3LObj_t * B3L_GetFreeObj(render_t *pRender){
 
 
 void B3L_AddObjToRenderList(B3LObj_t *pObj, render_t *pRender){
-    B3L_AddObjToList(pObj, &(pRender->scene.pActiveMeshObjs));
+    //get the statement
+    u32 type = (pObj->state & OBJ_TYPE_MASK);
+
+    if ((type == (1<<MESH_OBJ))||(type == (1<<POLYGON_OBJ))||(type == (1<<NOTEX_MESH_OBJ))){
+        B3L_AddObjToList(pObj, &(pRender->scene.pActiveMeshObjs));    
+    }
+    if ((type == (1<<PARTICLE_OBJ))||(type == (1<<BITMAP_OBJ))){
+        B3L_AddObjToList(pObj, &(pRender->scene.pActiveParticleBitmapObjs)); 
+    }
+    
 }
 
 
@@ -1265,10 +1341,20 @@ void B3L_PopObjFromRenderList(B3LObj_t *pObj, render_t *pRender){
         }
         pObj->privous->next = pObj->next; 
     }else{
-        pRender->scene.pActiveMeshObjs = pObj->next;
-        if (pObj->next != (B3LObj_t *)NULL){
-            pObj->next->privous = pRender->scene.pActiveMeshObjs;
+        u32 type = (pObj->state & OBJ_TYPE_MASK);
+        if ((type == (1<<MESH_OBJ))||(type == (1<<POLYGON_OBJ))||(type == (1<<NOTEX_MESH_OBJ))){
+            pRender->scene.pActiveMeshObjs = pObj->next;
+            if (pObj->next != (B3LObj_t *)NULL){
+                pObj->next->privous = pRender->scene.pActiveMeshObjs;
+            }
         }
+        if ((type == (1<<PARTICLE_OBJ))||(type == (1<<BITMAP_OBJ))){
+            pRender->scene.pActiveParticleBitmapObjs = pObj->next;
+            if (pObj->next != (B3LObj_t *)NULL){
+                pObj->next->privous = pRender->scene.pActiveParticleBitmapObjs;
+            }
+        }
+        
     }
     
     pObj->next = (B3LObj_t *)NULL;

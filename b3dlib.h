@@ -239,10 +239,10 @@ B3LObj_t state
 //the texture 2d obj should be seperated and sorted before draw, then we could use
 //alpha mix correctly
 //so the new plan would be:draw all 3d objs, then 2d objs overthen with z buff check
-//#define TEXTURE2D_OBJ               (1)
-#define POLYGON_OBJ                 (2)
-#define NOTEX_MESH_OBJ              (3)
-#define PARTICLE_OBJ                (4)
+#define POLYGON_OBJ                 (1)
+#define NOTEX_MESH_OBJ              (2)
+#define PARTICLE_OBJ                (3)
+#define BITMAP_OBJ                  (4)
 //obj visualizable control
 #define OBJ_VISUALIZABLE            (8)
 
@@ -267,7 +267,7 @@ typedef struct B3LOBJ{
     #else
     u32             dummy[4];
     #endif
-}B3LObj_t;
+}B3LObj_t;//15 words on ARM32, 20words on win64
 
 typedef struct{
     B3LObj_t        *privous;
@@ -277,7 +277,7 @@ typedef struct{
     transform3D_t   transform; 
     B3L_Mesh_t      *pMesh;
     B3L_texture_t   *pTexture;   
-}B3LMeshObj_t;
+}B3LMeshObj_t;//15 on ARM32 20 on win64
 
 
 typedef struct{
@@ -288,7 +288,7 @@ typedef struct{
     transform3D_t      transform; 
     B3L_Mesh_NoTex_t   *pMesh; 
     texLUTData_t       *pLUT;
-}B3LMeshNoTexObj_t;
+}B3LMeshNoTexObj_t;//15 on ARM32 20 on win64
 
 typedef struct{
     B3LObj_t           *privous;
@@ -298,25 +298,42 @@ typedef struct{
     transform3D_t      transform; 
     B3L_Polygon_t      *pPolygon; 
     texLUTData_t       color;
-}B3LPolygonObj_t;
+}B3LPolygonObj_t;//15 on ARM32 19 on win64
 
 typedef struct{
     B3LObj_t           *privous;
     B3LObj_t           *next;
     u32                state;
-    u32                particlePerSecond;
+
+}B3LBitmapObj_t;
+
+//need to decide the detail parameters for input
+//u32 time,particlegen obj type pointer
+typedef void (*B3L_PtlUpdFunc_t)(u32,B3LParticleGenObj_t *);
+typedef void (*B3L_DrawFunc_t)(void);
+
+//user need to provide 2 functions to update particle state and draw methods
+typedef struct{
+    B3LObj_t           *privous;
+    B3LObj_t           *next;
+    u32                state;
     vect3_t            translation;
     vect3_t            rotation;
     vect3_t            force;
     B3L_Particle_t     *pParticleActive; 
+    B3L_PtlUpdFunc_t   *pUpdFunc;   
     B3L_DrawFunc_t     *pDrawFunc;     
-}B3LParticleGenObj_t;
+}B3LParticleGenObj_t; //15 words on ARM32 20 words on win32
 
 typedef struct{
     B3LObj_t       objBuff[OBJ_BUFF_SIZE];    
     B3LObj_t       *pActiveMeshObjs;
     B3LObj_t       *pActiveParticleBitmapObjs;
     B3LObj_t       *pInactiveObjs;
+#ifdef B3L_USING_PARTICLE
+    u32            freeParticleNum;
+    B3L_Particle_t *pfreeParticlePool;
+#endif
 }scene_t;
 
 //state
@@ -417,6 +434,8 @@ extern void B3L_ReturnObjToInactiveList(B3LObj_t *pObj,  render_t *pRender);
 extern void B3L_InitBoxObj(B3LMeshObj_t *pObj,f32 size);
 extern void B3L_InitBoxObjNoTexture(B3LMeshNoTexObj_t *pObj,f32 size);
 extern void B3L_InitBoxObjPolygon(B3LPolygonObj_t *pObj,f32 size);
+
+
 //extern void B3L_DrawMeshObjs(render_t *pRender);
 /*
 void B3L_DrawTriTexture(
