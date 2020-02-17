@@ -4712,7 +4712,7 @@ const uint8_t cat_img[65536]={
 const B3L_texture_t cat_texture = { .id      = 1,
                                  .type    = LUT256,
                                  .uvSize  = 256,
-                                 .pLUT    = (texLUTData_t *)cat_pal,
+                                 .pLUT    = (texLUT_t *)cat_pal,
                                  .pData   = (u8 *)cat_img,
                                  .transColorIdx = 0
 };

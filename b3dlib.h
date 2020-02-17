@@ -77,68 +77,68 @@ typedef uint32_t q32;
 #define B3L_FIX_1          (1<<B3L_FIX_BITS)
 
 #if Z_BUFF_LEVEL == 0
-#define Z_buff_t u8
+typedef  u8 zBuff_t;
 #endif
 
 
 #if Z_BUFF_LEVEL == 1
-#define Z_buff_t u16
+typedef u16 zBuff_t; 
 #endif
 
 #if Z_BUFF_LEVEL == 2
-typedef f32 Z_buff_t;
+typedef f32 zBuff_t;
 #endif
 
 #if (FRAME_BUFF_COLOR_TYPE  == 0)
-typedef  u32 frameBuffData_t;
-typedef  u32 texLUTData_t;
+typedef  u32 frameBuff_t;
+typedef  u32 texLUT_t;
 #define LIGHT_BIT           8
 #endif
 #if (FRAME_BUFF_COLOR_TYPE  == 1)
-typedef  u16 frameBuffData_t;
-typedef  u16 texLUTData_t;
+typedef  u16 frameBuff_t;
+typedef  u16 texLUT_t;
 #define LIGHT_BIT           4
 #endif
 #if (FRAME_BUFF_COLOR_TYPE  == 2)
-typedef  u16 frameBuffData_t;
-typedef  u8  texLUTData_t;
+typedef  u16 frameBuff_t;
+typedef  u8  texLUT_t;
 #define LIGHT_BIT           8
 #endif
 
 
 typedef struct{
-    f32 x;
-    f32 y;   
+    f32                 x;
+    f32                 y;   
 }vect2_t;
 
 typedef struct{
-    f32 x;
-    f32 y;  
-    f32 z; 
+    f32                 x;
+    f32                 y;  
+    f32                 z; 
 }vect3_t;
 
 //screen3_t is for 2d screen drawing step, it has same length as vect4_t
 #define B3L_IN_SPACE             (0u)
 #define B3L_NEAR_PLANE_CLIP      (1u)
 typedef struct{
-    int32_t x;
-    int32_t y; 
-    f32 z;
-    u32 test;
+    int32_t             x;
+    int32_t             y; 
+    f32                 z;
+    u32                 test;
 }screen3_t;
 
 typedef struct{
-    f32 x;
-    f32 y; 
-    f32 z;
-    u32 test;
+    f32                 x;
+    f32                 y; 
+    f32                 z;
+    u32                 test;
 }screen3f_t;
 
 typedef struct{
-    f32 x;
-    f32 y; 
-    f32 z;
-    f32 w;  
+    f32                 x;
+    f32                 y; 
+    f32                 z;
+    f32                 w;  
 }vect4_t;
 
 //in column first order, mxy -- x is column num, y is the row number
@@ -150,58 +150,57 @@ typedef struct{
 }mat4_t;
 
 typedef struct{
-    vect3_t rotation;
-    vect3_t scale;
-    vect3_t translation;
+    vect3_t             rotation;
+    vect3_t             scale;
+    vect3_t             translation;
 }transform3D_t;
 
 typedef struct{
-    f32            aspectRate;
-    f32            focalLength;
-    transform3D_t  transform;
-    mat4_t         camMat;
+    f32                 aspectRate;
+    f32                 focalLength;
+    transform3D_t       transform;
+    mat4_t              camMat;
 }camera_t;
 
 typedef struct {
-    u32              id;
-    u16              vectNum;
-    u16              lineNum;
-    f32              *pVect;
-    u8               *pLine;
-    
+    u32                 id;
+    u16                 vectNum;
+    u16                 lineNum;
+    f32                 *pVect;
+    u8                  *pLine;  
 }B3L_Polygon_t;
 
 typedef struct {
-    u32              id;
-    u16              vectNum;
-    u16              triNum;
-    f32              *pVect;
-    u16              *pTri;
-    u8               *pColorIdx;
-    f32              *pNormal;
+    u32                 id;
+    u16                 vectNum;
+    u16                 triNum;
+    f32                 *pVect;
+    u16                 *pTri;
+    u8                  *pColorIdx;
+    f32                 *pNormal;
 }B3L_Mesh_NoTex_t;
 
 typedef struct {
-    u32        id;
-    u16        vectNum;
-    u16        triNum;
-    f32        *pVect;
-    u16        *pTri;
-    u8         *pUv;
-    f32        *pNormal;
+    u32                 id;
+    u16                 vectNum;
+    u16                 triNum;
+    f32                 *pVect;
+    u16                 *pTri;
+    u8                  *pUv;
+    f32                 *pNormal;
 }B3L_Mesh_t;
 
 //36 byte for single particle
 typedef struct B3L_PARTICLE{
     struct B3L_PARTICLE *next;
-    uint32_t state;
-    uint32_t life;
-    f32 x;  //f16 may be better for size? -> 24 byte
-    f32 y;
-    f32 z;
-    f32 dx;
-    f32 dy;
-    f32 dz;
+    uint32_t            state;
+    uint32_t            life;
+    f32                 x;  //f16 may be better for size? -> 24 byte
+    f32                 y;
+    f32                 z;
+    f32                 dx;
+    f32                 dy;
+    f32                 dz;
 }B3L_Particle_t;
 
 
@@ -210,12 +209,12 @@ typedef struct B3L_PARTICLE{
 #define LUT16        1
 #define LUT256       2
 typedef struct{
-    u32            id;
-    u16            type;
-    u16            uvSize;
-    texLUTData_t   *pLUT;
-    u8             *pData;
-    u8             transColorIdx; 
+    u32                 id;
+    u16                 type;
+    u16                 uvSize;
+    texLUT_t            *pLUT;
+    u8                  *pData;
+    u8                  transColorIdx; 
 }B3L_texture_t ;
 
 /*
@@ -257,82 +256,81 @@ B3LObj_t state
 
 //all different obj types's size is <= sizeof(B3LObj_t)
 typedef struct B3LOBJ{
-    struct B3LOBJ   *privous;
-    struct B3LOBJ   *next;
-    u32             state;
-    f32             *pBoundBox;
-    transform3D_t   transform;  
-    #ifdef B3L_ARM  
-    u32             dummy[2];
-    #else
-    u32             dummy[4];
+    struct B3LOBJ       *privous;
+    struct B3LOBJ       *next;
+    u32                 state;
+    f32                 *pBoundBox;
+    transform3D_t       transform;  
+    #ifdef B3L_ARM      
+    u32                 dummy[2];
+    #else    
+    u32                 dummy[4];
     #endif
 }B3LObj_t;//15 words on ARM32, 20words on win64
 
 typedef struct{
-    B3LObj_t        *privous;
-    B3LObj_t        *next;
-    u32             state;
-    f32             *pBoundBox;
-    transform3D_t   transform; 
-    B3L_Mesh_t      *pMesh;
-    B3L_texture_t   *pTexture;   
+    B3LObj_t            *privous;
+    B3LObj_t            *next;
+    u32                 state;
+    f32                 *pBoundBox;
+    transform3D_t       transform; 
+    B3L_Mesh_t          *pMesh;
+    B3L_texture_t       *pTexture;   
 }B3LMeshObj_t;//15 on ARM32 20 on win64
 
 
 typedef struct{
-    B3LObj_t           *privous;
-    B3LObj_t           *next;
-    u32                state;
-    f32                *pBoundBox;
-    transform3D_t      transform; 
-    B3L_Mesh_NoTex_t   *pMesh; 
-    texLUTData_t       *pLUT;
+    B3LObj_t            *privous;
+    B3LObj_t            *next;
+    u32                 state;
+    f32                 *pBoundBox;
+    transform3D_t       transform; 
+    B3L_Mesh_NoTex_t    *pMesh; 
+    texLUT_t            *pLUT;
 }B3LMeshNoTexObj_t;//15 on ARM32 20 on win64
 
 typedef struct{
-    B3LObj_t           *privous;
-    B3LObj_t           *next;
-    u32                state;
-    f32                *pBoundBox;
-    transform3D_t      transform; 
-    B3L_Polygon_t      *pPolygon; 
-    texLUTData_t       color;
+    B3LObj_t            *privous;
+    B3LObj_t            *next;
+    u32                 state;
+    f32                 *pBoundBox;
+    transform3D_t       transform; 
+    B3L_Polygon_t       *pPolygon; 
+    texLUT_t            color;
 }B3LPolygonObj_t;//15 on ARM32 19 on win64
 
 typedef struct{
-    B3LObj_t           *privous;
-    B3LObj_t           *next;
-    u32                state;
-
+    B3LObj_t            *privous;
+    B3LObj_t            *next;
+    u32                 state;
 }B3LBitmapObj_t;
 
-//need to decide the detail parameters for input
-//u32 time,particlegen obj type pointer
-typedef void (*B3L_PtlUpdFunc_t)(u32,B3LParticleGenObj_t *);
-typedef void (*B3L_DrawFunc_t)(void);
-
+typedef void (*B3L_PtlUpdFunc_t)(u32, mat4_t *, B3L_Particle_t *, screen3f_t *);
+typedef void (*B3L_DrawFunc_t)(B3L_Particle_t *, screen3f_t *,frameBuff_t *,zBuff_t *);
 //user need to provide 2 functions to update particle state and draw methods
 typedef struct{
-    B3LObj_t           *privous;
-    B3LObj_t           *next;
-    u32                state;
-    vect3_t            translation;
-    vect3_t            rotation;
-    vect3_t            force;
-    B3L_Particle_t     *pParticleActive; 
-    B3L_PtlUpdFunc_t   *pUpdFunc;   
-    B3L_DrawFunc_t     *pDrawFunc;     
-}B3LParticleGenObj_t; //15 words on ARM32 20 words on win32
+    B3LObj_t            *privous;
+    B3LObj_t            *next;
+    u32                 state;
+    vect3_t             translation;//for particle generate 
+    vect3_t             rotation;//for particle generate 
+    u32                 startTime;
+    u32                 lastTime;
+    B3L_Particle_t      *pParticleActive; 
+    B3L_PtlUpdFunc_t    *pUpdFunc;   
+    B3L_DrawFunc_t      *pDrawFunc;     
+}B3LParticleGenObj_t; //14 words on ARM32 19 words on win64
+
 
 typedef struct{
-    B3LObj_t       objBuff[OBJ_BUFF_SIZE];    
-    B3LObj_t       *pActiveMeshObjs;
-    B3LObj_t       *pActiveParticleBitmapObjs;
-    B3LObj_t       *pInactiveObjs;
+    B3LObj_t            objBuff[OBJ_BUFF_SIZE];
+    u32                 freeObjNum; 
+    B3LObj_t            *pFreeObjs;   
+    B3LObj_t            *pActiveMeshObjs;
 #ifdef B3L_USING_PARTICLE
-    u32            freeParticleNum;
-    B3L_Particle_t *pfreeParticlePool;
+    B3LObj_t            *pActiveParticleGenObjs;
+    u32                 freeParticleNum;
+    B3L_Particle_t      *pfreeParticles;
 #endif
 }scene_t;
 
@@ -354,22 +352,22 @@ A-- 1, point light
 //POINT_LIGHT            (1)
 //PARALLEL_LIGHT         (0)
 typedef struct{
-    u32          state;
-    vect3_t      lightVect;
-    vect4_t      pointLightVectInCamSpaceBuff;
-    u32          color;
-    f32          factor_0;
-    f32          factor_1;
+    u32                 state;
+    vect3_t             lightVect;
+    vect4_t             pointLightVectInCamSpaceBuff;
+    u32                 color;
+    f32                 factor_0;
+    f32                 factor_1;
 }light_t;
 
 typedef struct{   
-    frameBuffData_t  *pFrameBuff;
-    Z_buff_t         *pZBuff;
-    camera_t         camera;
-    light_t          light;    
-    scene_t          scene;
-    screen3f_t       *pVectBuff;
-}render_t;
+    frameBuff_t         *pFrameBuff;
+    zBuff_t             *pZBuff;
+    camera_t            camera;
+    light_t             light;    
+    scene_t             scene;
+    screen3f_t          *pVectBuff;
+}render_t;   
 
 /*Useful macros--------------------------------------------------------------*/
 #define B3L_SET(PIN,N)  (PIN |=  (1u<<N))
@@ -418,7 +416,7 @@ extern void B3L_SetCameraMatrix(camera_t *pCam);
 extern void B3L_CameraLookAt(camera_t *pCam, vect3_t *pAt);
 //extern void B3L_CameraUpDirection(camera_t *pCam, vect3_t *pUp);
 //render functions
-extern void B3L_RenderInit(render_t *pRender,frameBuffData_t *pFrameBuff);
+extern void B3L_RenderInit(render_t *pRender,frameBuff_t *pFrameBuff);
 extern void B3L_NewFrame(render_t *pRender);
 extern void B3L_RenderScence(render_t *pRender,u32 time);
 extern void B3L_ResetScene(scene_t *pScene);
@@ -443,14 +441,14 @@ s32 x0,s32 y0,s32 u0,s32 v0,f32 z0,
 s32 x1,s32 y1,s32 u1,s32 v1,f32 z1,
 s32 x2,s32 y2,s32 u2,s32 v2,f32 z2,
 u32 renderLevel,u16 lightFactor,B3L_texture_t *pTexture,
-frameBuffData_t *pFrameBuff,Z_buff_t *pZbuff);
+frameBuff_t *pFrameBuff,zBuff_t *pZbuff);
 */
 /*
 extern void  B3L_DrawTriColor(
                                                                         f32 x0,f32 y0,f32 z0,
                                                                         f32 x1,f32 y1,f32 z1,
                                                                         f32 x2,f32 y2,f32 z2,
-                                                                        u32 renderLevel,u8 lightFactor,frameBuffData_t color,
-                                                                        frameBuffData_t *pFrameBuff,Z_buff_t *pZbuff);
+                                                                        u32 renderLevel,u8 lightFactor,frameBuff_t color,
+                                                                        frameBuff_t *pFrameBuff,zBuff_t *pZbuff);
 */
 #endif

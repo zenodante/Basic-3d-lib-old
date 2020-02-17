@@ -17,7 +17,7 @@ f32 lightY = 0.0f;
 void init() {
     set_screen_mode(screen_mode::lores);
     //you need a 32bit framebuff here!
-    B3L_RenderInit(&B3Lrender,(frameBuffData_t *)fb.data);
+    B3L_RenderInit(&B3Lrender,(frameBuff_t *)fb.data);
 
     pBox2 = (B3LPolygonObj_t *)B3L_GetFreeObj(&B3Lrender);
     pBox = (B3LMeshObj_t *)B3L_GetFreeObj(&B3Lrender);
@@ -111,7 +111,7 @@ B3L_DrawTriColor(
                                                                         12.0f,12.0f,0.1f,
                                                                         0.0f,24.0f,0.1f,
                                                                         1,0xff,0XFF7E2553,
-                                                                        (frameBuffData_t *)fb.data,B3Lrender.pZBuff);
+                                                                        (frameBuff_t *)fb.data,B3Lrender.pZBuff);
 
 */
     //printf("result is %d\n",result);

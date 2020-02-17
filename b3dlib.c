@@ -12,7 +12,7 @@
 
 //config the ram position if necessary
 screen3f_t      vectBuff[VECT_BUFF_SIZE]; //8KB
-Z_buff_t        zBuff[BUFF_LENTH];        //75KB
+zBuff_t        zBuff[BUFF_LENTH];        //75KB
 #ifdef B3L_USING_PARTICLE
 B3L_Particle_t  particleBuff[B3L_PARTICLE_BUFF_DEPTH];
 #endif
@@ -178,13 +178,13 @@ const B3L_texture_t B3L_boxTexture = { .id      = 0,
                                  .type    = LUT16,
                                  .uvSize  = 16,
                                  #if FRAME_BUFF_COLOR_TYPE == 0
-                                 .pLUT    = (texLUTData_t *)B3L_boxLUT32bit,
+                                 .pLUT    = (texLUT_t *)B3L_boxLUT32bit,
                                  #endif
                                  #if FRAME_BUFF_COLOR_TYPE == 1
-                                 .pLUT    =  (texLUTData_t *)B3L_boxLUT4444,
+                                 .pLUT    =  (texLUT_t *)B3L_boxLUT4444,
                                  #endif
                                  #if FRAME_BUFF_COLOR_TYPE == 2
-                                 .pLUT    =  (texLUTData_t *)B3L_boxLUTL8Idx,
+                                 .pLUT    =  (texLUT_t *)B3L_boxLUTL8Idx,
                                  #endif
                                  .pData   = (u8 *)B3L_boxTexData,
                                  .transColorIdx = 16
@@ -221,7 +221,7 @@ __attribute__((always_inline)) static  inline void     B3L_Norm3Xmat4Normalize(v
 __attribute__((always_inline)) static  inline void     B3L_Vect4Xmat4(vect4_t *pV, mat4_t *pMat, vect4_t *pResult);
 __attribute__((always_inline)) static  inline bool     B3L_Vect4BoundTest(vect4_t *pV);
 __attribute__((always_inline)) static  inline f32      B3L_FastInvertSqrt(f32 x);
-__attribute__((always_inline)) static  inline Z_buff_t B3L_CalZbuffValue(f32 z);
+__attribute__((always_inline)) static  inline zBuff_t B3L_CalZbuffValue(f32 z);
 //light functions
 __attribute__((always_inline)) static  inline void     B3L_UpdateLightVect(render_t *pRender);
 __attribute__((always_inline)) static  inline u32      B3L_CalLightFactor(f32 normalDotLight, f32 lightFactor0,f32 lightFactor1);
@@ -230,45 +230,45 @@ __attribute__((always_inline)) static  inline bool     B3L_TriangleFaceToViewer(
 __attribute__((always_inline)) static  inline bool     B3L_TriangleFaceToViewer_f(f32 x0, f32 y0, f32 x1, f32 y1, f32 x2, f32 y2);
 __attribute__((always_inline)) static  inline bool     B3L_TriVisable(u32 r0,u32 r1,u32 r2);
 //draw functions   
-__attribute__((always_inline)) static  inline frameBuffData_t  B3L_GetColorValue(texLUTData_t *lut,u8 colorIdx,u32 lightFactor);
-__attribute__((always_inline)) static  inline void     B3L_DrawPixel(frameBuffData_t color,s32 x,s32 y,f32 z,
-                                                                        frameBuffData_t *pFrameBuff,Z_buff_t *pZbuff);
-__attribute__((always_inline)) static  inline void     B3L_DrawPixelWithTest(frameBuffData_t color,s32 x,s32 y,f32 z,
-                                                                        frameBuffData_t *pFrameBuff,Z_buff_t *pZbuff);                                                                        
+__attribute__((always_inline)) static  inline frameBuff_t  B3L_GetColorValue(texLUT_t *lut,u8 colorIdx,u32 lightFactor);
+__attribute__((always_inline)) static  inline void     B3L_DrawPixel(frameBuff_t color,s32 x,s32 y,f32 z,
+                                                                        frameBuff_t *pFrameBuff,zBuff_t *pZbuff);
+__attribute__((always_inline)) static  inline void     B3L_DrawPixelWithTest(frameBuff_t color,s32 x,s32 y,f32 z,
+                                                                        frameBuff_t *pFrameBuff,zBuff_t *pZbuff);                                                                        
 __attribute__((always_inline)) static  inline void     B3L_DrawTriTexture(
                                                                         f32 x0,f32 y0,f32 u0,f32 v0,f32 z0,
                                                                         f32 x1,f32 y1,f32 u1,f32 v1,f32 z1,
                                                                         f32 x2,f32 y2,f32 u2,f32 v2,f32 z2,
                                                                         u32 renderLevel,u32 lightFactor,B3L_texture_t *pTexture,
-                                                                        frameBuffData_t *pFrameBuff,Z_buff_t *pZbuff);
+                                                                        frameBuff_t *pFrameBuff,zBuff_t *pZbuff);
 __attribute__((always_inline)) static  inline void     B3L_DrawTriColor(
                                                                         f32 x0,f32 y0,f32 z0,
                                                                         f32 x1,f32 y1,f32 z1,
                                                                         f32 x2,f32 y2,f32 z2,
-                                                                        u32 renderLevel,u32 lightFactor,frameBuffData_t color,
-                                                                        frameBuffData_t *pFrameBuff,Z_buff_t *pZbuff);
+                                                                        u32 renderLevel,u32 lightFactor,frameBuff_t color,
+                                                                        frameBuff_t *pFrameBuff,zBuff_t *pZbuff);
 __attribute__((always_inline)) static  inline void     DrawTexHLine(f32 x,s32 y,f32 b, f32 aZ, f32 bZ,
                                                                         f32 aU,f32 aV,f32 bU,f32 bV,u32 lightFactor, 
-                                                                        frameBuffData_t *pFrameBuff,Z_buff_t *pZbuff,
+                                                                        frameBuff_t *pFrameBuff,zBuff_t *pZbuff,
                                                                         B3L_texture_t *pTexture);
 __attribute__((always_inline)) static  inline void     DrawColorHLine(f32 x,s32 y,f32 b, f32 aZ, f32 bZ,
-                                                                        frameBuffData_t finalColor, 
-                                                                        frameBuffData_t *pFrameBuff,Z_buff_t *pZbuff); 
+                                                                        frameBuff_t finalColor, 
+                                                                        frameBuff_t *pFrameBuff,zBuff_t *pZbuff); 
 __attribute__((always_inline)) static  inline void     B3L_DrawDepthLineNoClip(s32 Ax,s32 Ay,f32 Az,s32 Bx,s32 By,f32 Bz, 
-                                                                        texLUTData_t color,frameBuffData_t *pFrameBuff,Z_buff_t *pZbuff);  
+                                                                        texLUT_t color,frameBuff_t *pFrameBuff,zBuff_t *pZbuff);  
 __attribute__((always_inline)) static  inline void     B3L_DrawDepthLineClip(s32 Ax,s32 Ay,f32 Az,s32 Bx,s32 By,f32 Bz, 
-                                                                        texLUTData_t color,frameBuffData_t *pFrameBuff,Z_buff_t *pZbuff);             
+                                                                        texLUT_t color,frameBuff_t *pFrameBuff,zBuff_t *pZbuff);             
 //obj list functions
-static void B3L_AddObjToList(B3LObj_t *pObj, B3LObj_t **pStart);
-static void B3L_ResetParticleList(B3L_Particle_t *pPool,B3L_Particle_t **pStart);
+static void B3L_AddObjToTwoWayList(B3LObj_t *pObj, B3LObj_t **pStart);
+static void B3L_ResetParticleList(B3L_Particle_t *pPool,B3L_Particle_t **pStart,u32 num);
 static void B3L_ReturnParticleToPool(B3L_Particle_t *pParticle,scene_t *pScene);
-static B3L_Particle_t *B3L_GetAFreeParticle(scene_t *pScene);
+static B3L_Particle_t *B3L_GetFreeParticle(scene_t *pScene);
 //buff functions
-static void ClearFrameBuff(frameBuffData_t *pFramebuff,frameBuffData_t value,u32 length);
-static void ClearZbuff(Z_buff_t *pZbuff,u32 length);
+static void ClearFrameBuff(frameBuff_t *pFramebuff,frameBuff_t value,u32 length);
+static void ClearZbuff(zBuff_t *pZbuff,u32 length);
 //draw call functions
 static void B3L_DrawMeshObjs(render_t *pRender);
-static void B3L_DrawParticleBitmapObjs(render_t *pRender,u32 time);
+static void B3L_DrawParticleObjs(render_t *pRender,u32 time);
 static void B3L_DrawMesh(B3LMeshObj_t *pObj,render_t *pRender, mat4_t *pMat,u32 renderLevel);
 static void B3L_DrawMeshNoTexture(B3LMeshNoTexObj_t *pObj,render_t *pRender, mat4_t *pMat,u32 renderLevel);
 static void B3L_DrawPolygon(B3LPolygonObj_t *pObj,render_t *pRender, mat4_t *pMat);
@@ -924,7 +924,7 @@ B3L_logMat4(temp);
               
 
 }
-__attribute__((always_inline)) static  inline Z_buff_t B3L_CalZbuffValue(f32 z){
+__attribute__((always_inline)) static  inline zBuff_t B3L_CalZbuffValue(f32 z){
              #if  (Z_BUFF_LEVEL == 0) 
             u32 tempZ = (u32)(z*255.0f);
             u8  compZ = B3L_SatToU8(tempZ);
@@ -1100,8 +1100,8 @@ void B3L_CameraLookAt(camera_t *pCam, vect3_t *pAt){
 /*-----------------------------------------------------------------------------
 obj functions
 -----------------------------------------------------------------------------*/
-static void B3L_DrawParticleBitmapObjs(render_t *pRender, u32 time){
-    B3LObj_t *pCurrentObj = = pRender->scene.pActiveParticleBitmapObjs;
+static void B3L_DrawParticleObjs(render_t *pRender, u32 time){
+    B3LObj_t *pCurrentObj = pRender->scene.pActiveParticleGenObjs;
     u32 state;
     //switch(state & OBJ_TYPE_MASK)
     while(pCurrentObj != (B3LObj_t *)NULL){
@@ -1110,22 +1110,16 @@ static void B3L_DrawParticleBitmapObjs(render_t *pRender, u32 time){
             pCurrentObj = pCurrentObj->next;
             continue;
         }
-
         //create matrix
 
-
-        switch(state & OBJ_TYPE_MASK){
-            case (1<<PARTICLE_OBJ):
                 //update
-                ((B3LParticleGenObj_t *)pCurrentObj)->pUpdFunc(time,((B3LParticleGenObj_t *)pCurrentObj));
+        //((B3LParticleGenObj_t *)pCurrentObj)->pUpdFunc(time,((B3LParticleGenObj_t *)pCurrentObj));
                 //particle ->camera matrix
 
                 //draw particles
                 
-                break;
-            case (1<<BITMAP_OBJ):
-                break;
-        }
+
+        
     }
 }
 
@@ -1235,8 +1229,12 @@ void B3L_RenderScence(render_t *pRender,u32 time){
     B3L_UpdateLightVect(pRender);
 
     B3L_DrawMeshObjs(pRender);
-
-    B3L_DrawParticleBitmapObjs(pRender,time);
+    //draw bitmapObj
+    //TODO
+    //draw particleObj
+#ifdef B3L_USING_PARTICLE
+    B3L_DrawParticleObjs(pRender,time);
+#endif
 
 }
 
@@ -1247,10 +1245,11 @@ void B3L_NewFrame(render_t *pRender){
 
 void B3L_ResetScene(scene_t *pScene){
     u32 i;
+    pScene->freeObjNum = OBJ_BUFF_SIZE;
     pScene->pActiveMeshObjs = (B3LObj_t *)NULL;
-    pScene->pActiveParticleBitmapObjs = (B3LObj_t *)NULL;
-    pScene->pInactiveObjs = pScene->objBuff;
-    pScene->objBuff[0].privous = pScene->pInactiveObjs;
+    pScene->pActiveParticleGenObjs = (B3LObj_t *)NULL;
+    pScene->pFreeObjs = pScene->objBuff;
+    pScene->objBuff[0].privous = pScene->pFreeObjs;
     pScene->objBuff[0].next= &(pScene->objBuff[1]);
     for (i = 1;i<OBJ_BUFF_SIZE;i++){
         pScene->objBuff[i].privous = &(pScene->objBuff[i-1]);
@@ -1259,7 +1258,7 @@ void B3L_ResetScene(scene_t *pScene){
     pScene->objBuff[OBJ_BUFF_SIZE - 1].next = (B3LObj_t *)NULL;
 #ifdef B3L_USING_PARTICLE   
     pScene->freeParticleNum = B3L_PARTICLE_BUFF_DEPTH;   
-    B3L_ResetParticleList(particleBuff,&(pScene->pfreeParticlePool),B3L_PARTICLE_BUFF_DEPTH);
+    B3L_ResetParticleList(particleBuff,&(pScene->pfreeParticles),B3L_PARTICLE_BUFF_DEPTH);
     //call reset particle one-way list function
 #endif
 }
@@ -1274,24 +1273,25 @@ static void B3L_ResetParticleList(B3L_Particle_t *pPool,B3L_Particle_t **pStart,
 }
 static void B3L_ReturnParticleToPool(B3L_Particle_t *pParticle,scene_t *pScene){
     
-    B3L_Particle_t *temp=pScene->pfreeParticlePool;
-    pScene->pfreeParticlePool = pParticle;
+    B3L_Particle_t *temp=pScene->pfreeParticles;
+    pScene->pfreeParticles = pParticle;
     pParticle->next = temp;
     pScene->freeParticleNum +=1;
 }
-static B3L_Particle_t *B3L_GetAFreeParticle(scene_t *pScene){
+
+static B3L_Particle_t *B3L_GetFreeParticle(scene_t *pScene){
     //todo
     if (pScene->freeParticleNum == 0){
         return (B3L_Particle_t *)NULL;
     }
     pScene->freeParticleNum --;
-    B3L_Particle_t *popParticle = pScene->pfreeParticlePool;
-    pScene->pfreeParticlePool = pScene->pfreeParticlePool->next;
+    B3L_Particle_t *popParticle = pScene->pfreeParticles;
+    pScene->pfreeParticles = pScene->pfreeParticles->next;
     return popParticle;
 }
 
 
-static void B3L_AddObjToList(B3LObj_t *pObj, B3LObj_t **pStart){
+static void B3L_AddObjToTwoWayList(B3LObj_t *pObj, B3LObj_t **pStart){
     pObj->next = *pStart;
     *pStart = pObj;
     pObj->privous = pObj;
@@ -1304,10 +1304,11 @@ static void B3L_AddObjToList(B3LObj_t *pObj, B3LObj_t **pStart){
 
 B3LObj_t * B3L_GetFreeObj(render_t *pRender){
     B3LObj_t *returnObj;
-    if (pRender->scene.pInactiveObjs != (B3LObj_t *)NULL){
-        returnObj = pRender->scene.pInactiveObjs;
-        pRender->scene.pInactiveObjs = pRender->scene.pInactiveObjs->next;
-        pRender->scene.pInactiveObjs->privous = pRender->scene.pInactiveObjs;
+    if (pRender->scene.pFreeObjs != (B3LObj_t *)NULL){
+        pRender->scene.freeObjNum -=1;
+        returnObj = pRender->scene.pFreeObjs;
+        pRender->scene.pFreeObjs = pRender->scene.pFreeObjs->next;
+        pRender->scene.pFreeObjs->privous = pRender->scene.pFreeObjs;
         //isolate the returned obj 
         returnObj->next = (B3LObj_t *)NULL;
         returnObj->privous = (B3LObj_t *)NULL;
@@ -1324,10 +1325,10 @@ void B3L_AddObjToRenderList(B3LObj_t *pObj, render_t *pRender){
     u32 type = (pObj->state & OBJ_TYPE_MASK);
 
     if ((type == (1<<MESH_OBJ))||(type == (1<<POLYGON_OBJ))||(type == (1<<NOTEX_MESH_OBJ))){
-        B3L_AddObjToList(pObj, &(pRender->scene.pActiveMeshObjs));    
+        B3L_AddObjToTwoWayList(pObj, &(pRender->scene.pActiveMeshObjs));    
     }
-    if ((type == (1<<PARTICLE_OBJ))||(type == (1<<BITMAP_OBJ))){
-        B3L_AddObjToList(pObj, &(pRender->scene.pActiveParticleBitmapObjs)); 
+    if (type == (1<<PARTICLE_OBJ)){
+        B3L_AddObjToTwoWayList(pObj, &(pRender->scene.pActiveParticleGenObjs)); 
     }
     
 }
@@ -1348,10 +1349,10 @@ void B3L_PopObjFromRenderList(B3LObj_t *pObj, render_t *pRender){
                 pObj->next->privous = pRender->scene.pActiveMeshObjs;
             }
         }
-        if ((type == (1<<PARTICLE_OBJ))||(type == (1<<BITMAP_OBJ))){
-            pRender->scene.pActiveParticleBitmapObjs = pObj->next;
+        if (type == (1<<PARTICLE_OBJ)){
+            pRender->scene.pActiveParticleGenObjs = pObj->next;
             if (pObj->next != (B3LObj_t *)NULL){
-                pObj->next->privous = pRender->scene.pActiveParticleBitmapObjs;
+                pObj->next->privous = pRender->scene.pActiveParticleGenObjs;
             }
         }
         
@@ -1365,12 +1366,13 @@ void B3L_ReturnObjToInactiveList(B3LObj_t *pObj,  render_t *pRender){
     if (pObj->privous != (B3LObj_t *)NULL){ //it is now in the active list
         B3L_PopObjFromRenderList(pObj,  pRender);
     }
-    B3L_AddObjToList(pObj, &(pRender->scene.pInactiveObjs));
+    pRender->scene.freeObjNum +=1;
+    B3L_AddObjToTwoWayList(pObj, &(pRender->scene.pFreeObjs));
 }
 
 
 
-void B3L_RenderInit(render_t *pRender,frameBuffData_t *pFrameBuff){
+void B3L_RenderInit(render_t *pRender,frameBuff_t *pFrameBuff){
     pRender->pFrameBuff = pFrameBuff;
     pRender->pZBuff = zBuff;
     pRender->pVectBuff = vectBuff;
@@ -1418,13 +1420,13 @@ void B3L_InitBoxObjNoTexture(B3LMeshNoTexObj_t *pObj,f32 size){
     pObj->transform.scale.z = size;
     pObj->pBoundBox = B3L_box.pVect;
     #if FRAME_BUFF_COLOR_TYPE == 0
-    pObj->pLUT =  (texLUTData_t *)B3L_boxLUT32bit;
+    pObj->pLUT =  (texLUT_t *)B3L_boxLUT32bit;
     #endif
     #if FRAME_BUFF_COLOR_TYPE == 1
-    pObj->pLUT =  (texLUTData_t *)B3L_boxLUT4444;
+    pObj->pLUT =  (texLUT_t *)B3L_boxLUT4444;
     #endif
     #if FRAME_BUFF_COLOR_TYPE == 2
-    pObj->pLUT =  (texLUTData_t *)B3L_boxLUTL8Idx;
+    pObj->pLUT =  (texLUT_t *)B3L_boxLUTL8Idx;
     #endif
     B3L_SET(pObj->state,NOTEX_MESH_OBJ); 
     B3L_SET(pObj->state,OBJ_VISUALIZABLE);
@@ -1466,8 +1468,8 @@ void B3L_InitBoxObjPolygon(B3LPolygonObj_t *pObj,f32 size){
 /*-----------------------------------------------------------------------------
 Draw functions
 -----------------------------------------------------------------------------*/
-__attribute__((always_inline)) static  inline frameBuffData_t     B3L_GetColorValue(texLUTData_t *lut,u8 colorIdx,u32 lightFactor){
-    frameBuffData_t color;
+__attribute__((always_inline)) static  inline frameBuff_t     B3L_GetColorValue(texLUT_t *lut,u8 colorIdx,u32 lightFactor){
+    frameBuff_t color;
     #if FRAME_BUFF_COLOR_TYPE == 0
     color = lut[colorIdx];
     color = (color&0x00FFFFFF)|((lightFactor)<<24);
@@ -1483,36 +1485,36 @@ __attribute__((always_inline)) static  inline frameBuffData_t     B3L_GetColorVa
     return color;
 }
 
-__attribute__((always_inline)) static  inline void     B3L_DrawPixel(frameBuffData_t color,s32 x,s32 y,f32 z,
-                                                                        frameBuffData_t *pFrameBuff,Z_buff_t *pZbuff){
-        Z_buff_t *pCurrentPixelZ = pZbuff + (y*RENDER_RESOLUTION_X) + x;
-        frameBuffData_t *pixel= pFrameBuff + (y*RENDER_RESOLUTION_X) + x; 
-        Z_buff_t compZ = B3L_CalZbuffValue(z);
+__attribute__((always_inline)) static  inline void     B3L_DrawPixel(frameBuff_t color,s32 x,s32 y,f32 z,
+                                                                        frameBuff_t *pFrameBuff,zBuff_t *pZbuff){
+        zBuff_t *pCurrentPixelZ = pZbuff + (y*RENDER_RESOLUTION_X) + x;
+        frameBuff_t *pixel= pFrameBuff + (y*RENDER_RESOLUTION_X) + x; 
+        zBuff_t compZ = B3L_CalZbuffValue(z);
         if (compZ< *pCurrentPixelZ){          
             *pCurrentPixelZ = compZ;
             *pixel =color;           
         }
 
 }
-__attribute__((always_inline)) static  inline void     B3L_DrawPixelWithTest(frameBuffData_t color,s32 x,s32 y,f32 z,
-                                                                        frameBuffData_t *pFrameBuff,Z_buff_t *pZbuff){
+__attribute__((always_inline)) static  inline void     B3L_DrawPixelWithTest(frameBuff_t color,s32 x,s32 y,f32 z,
+                                                                        frameBuff_t *pFrameBuff,zBuff_t *pZbuff){
         if ((x<0)||(y<0)||(x>=RENDER_RESOLUTION_X)||(y>=RENDER_RESOLUTION_Y)){
             return;
         }
-        Z_buff_t *pCurrentPixelZ = pZbuff + (y*RENDER_RESOLUTION_X) + x;
-        frameBuffData_t *pixel= pFrameBuff + (y*RENDER_RESOLUTION_X) + x; 
-        Z_buff_t compZ = B3L_CalZbuffValue(z);
+        zBuff_t *pCurrentPixelZ = pZbuff + (y*RENDER_RESOLUTION_X) + x;
+        frameBuff_t *pixel= pFrameBuff + (y*RENDER_RESOLUTION_X) + x; 
+        zBuff_t compZ = B3L_CalZbuffValue(z);
         if (compZ< *pCurrentPixelZ){          
             *pCurrentPixelZ = compZ;
             *pixel =color;           
         }
 
 }
-static void ClearFrameBuff(frameBuffData_t *pFramebuff,frameBuffData_t value,u32 length){
+static void ClearFrameBuff(frameBuff_t *pFramebuff,frameBuff_t value,u32 length){
 //in stm32, we could use DMA to do this job   
     int32_t i;   
     #define Addr pFramebuff
-    //frameBuffData_t value = 0;
+    //frameBuff_t value = 0;
     for (i=(length>>4) - 1;i>=0;i--){
         
         *Addr = value;*Addr++;
@@ -1570,11 +1572,11 @@ static void ClearFrameBuff(frameBuffData_t *pFramebuff,frameBuffData_t value,u32
     #undef Addr
 }
 
-static void ClearZbuff(Z_buff_t *pZbuff,u32 length){
+static void ClearZbuff(zBuff_t *pZbuff,u32 length){
 //in stm32, we could use DMA to do this job   
     int32_t i;   
     #define Addr pZbuff
-    Z_buff_t value = Z_LIMIT_NUM;
+    zBuff_t value = Z_LIMIT_NUM;
     for (i=(length>>4) - 1;i>=0;i--){
         
         *Addr = value;*Addr++;
@@ -1641,9 +1643,9 @@ printf("Draw a no texture mesh");
     vect3_t *pVectSource = ((vect3_t *)(pMesh->pVect));
     screen3f_t *pVectTarget =pRender->pVectBuff;
     u8  *pColorIdx = pMesh->pColorIdx;
-    texLUTData_t       *pLUT = pObj->pLUT;
-    frameBuffData_t *pFrameBuff =pRender->pFrameBuff;
-    Z_buff_t *pZBuff =  pRender->pZBuff;
+    texLUT_t       *pLUT = pObj->pLUT;
+    frameBuff_t *pFrameBuff =pRender->pFrameBuff;
+    zBuff_t *pZBuff =  pRender->pZBuff;
 //process all the vectors
     for(i=pMesh->vectNum - 1;i>=0;i--){ 
         B3L_Vect3Xmat4WithTest_float(pVectSource+i, pMat, pVectTarget+i);
@@ -1683,7 +1685,7 @@ printf("Draw a no texture mesh");
     u32 vect0Idx,vect1Idx,vect2Idx;
     vect3_t normalVect;
     f32   normalDotLight;
-    frameBuffData_t color;
+    frameBuff_t color;
     //if the render level is not zero, then the lightValue would fix at 0xff
     u32 lightValue=B3L_LEVEL_1_DEFAULT_LIGHT;
 //draw tri loop
@@ -1745,10 +1747,10 @@ printf("Draw a no texture mesh");
 
 static void B3L_DrawPolygon(B3LPolygonObj_t *pObj,render_t *pRender, mat4_t *pMat){
     int32_t i;
-    frameBuffData_t *pFrameBuff =pRender->pFrameBuff;
-    Z_buff_t *pZBuff =  pRender->pZBuff;
+    frameBuff_t *pFrameBuff =pRender->pFrameBuff;
+    zBuff_t *pZBuff =  pRender->pZBuff;
     B3L_Polygon_t *pPoly = pObj->pPolygon;
-    texLUTData_t color= pObj->color;
+    texLUT_t color= pObj->color;
     vect3_t *pVectSource = ((vect3_t *)(pPoly->pVect));
     screen3f_t *pVectTarget =pRender->pVectBuff;
     //project all the vect into screen space
@@ -1800,8 +1802,8 @@ printf("Draw a mesh");
     screen3f_t *pVectTarget =pRender->pVectBuff;
     u8 * pUV = pObj->pMesh->pUv;
     B3L_texture_t *pTexture = pObj->pTexture;
-    frameBuffData_t *pFrameBuff =pRender->pFrameBuff;
-    Z_buff_t *pZBuff =  pRender->pZBuff;
+    frameBuff_t *pFrameBuff =pRender->pFrameBuff;
+    zBuff_t *pZBuff =  pRender->pZBuff;
 //process all the vectors
     for(i=pMesh->vectNum - 1;i>=0;i--){ 
         B3L_Vect3Xmat4WithTest_float(pVectSource+i, pMat, pVectTarget+i);
@@ -1900,10 +1902,10 @@ printf("Draw a mesh");
 }
 
 __attribute__((always_inline)) static inline void B3L_DrawDepthLineNoClip(s32 Ax,s32 Ay,f32 Az,s32 Bx,s32 By,f32 Bz, 
-                                                            texLUTData_t color,frameBuffData_t *pFrameBuff,Z_buff_t *pZbuff){
+                                                            texLUT_t color,frameBuff_t *pFrameBuff,zBuff_t *pZbuff){
 //todo here~
     s32 steep = abs(Ay - By) > abs(Ax - Bx);
-    frameBuffData_t drawColor;
+    frameBuff_t drawColor;
     if (steep){
         _swap_int32_t(Ax,Ay);
         _swap_int32_t(Bx,By);
@@ -1944,12 +1946,12 @@ __attribute__((always_inline)) static inline void B3L_DrawDepthLineNoClip(s32 Ax
 }
 
 __attribute__((always_inline)) static inline void B3L_DrawDepthLineClip(s32 Ax,s32 Ay,f32 Az,s32 Bx,s32 By,f32 Bz, 
-                                                                        texLUTData_t color,frameBuffData_t *pFrameBuff,Z_buff_t *pZbuff){
+                                                                        texLUT_t color,frameBuff_t *pFrameBuff,zBuff_t *pZbuff){
 //todo here~
 
     //now A is in the left and B is in the right
         s32 steep = abs(Ay - By) > abs(Ax - Bx);
-    frameBuffData_t drawColor;
+    frameBuff_t drawColor;
     if (steep){
         _swap_int32_t(Ax,Ay);
         _swap_int32_t(Bx,By);
@@ -1989,7 +1991,7 @@ __attribute__((always_inline)) static inline void B3L_DrawDepthLineClip(s32 Ax,s
 
 
 __attribute__((always_inline)) static inline void DrawColorHLine(f32 x,s32 y,f32 b, f32 aZ, f32 bZ,
-                                       frameBuffData_t finalColor, frameBuffData_t *pFrameBuff,Z_buff_t *pZbuff) {
+                                       frameBuff_t finalColor, frameBuff_t *pFrameBuff,zBuff_t *pZbuff) {
     s32 intx = (s32)x,inty=y,intb=((s32)b);
     s32 clipL = 0;
     s32 clipR = RENDER_RESOLUTION_X ;
@@ -2016,10 +2018,10 @@ __attribute__((always_inline)) static inline void DrawColorHLine(f32 x,s32 y,f32
     s32 i = intb-intx;
 
     u32 shift = inty*RENDER_RESOLUTION_X  + intx;
-    frameBuffData_t *pixel = pFrameBuff +shift;
-    Z_buff_t  *pCurrentPixelZ = pZbuff + shift;  
+    frameBuff_t *pixel = pFrameBuff +shift;
+    zBuff_t  *pCurrentPixelZ = pZbuff + shift;  
 
-    Z_buff_t compZ;
+    zBuff_t compZ;
     for (;i>=0;i--){ //don't draw the most right pixel, so the b has already -1
         compZ = B3L_CalZbuffValue(aZ);
         if (compZ< *pCurrentPixelZ){          
@@ -2035,7 +2037,7 @@ __attribute__((always_inline)) static inline void DrawColorHLine(f32 x,s32 y,f32
     
 }
 __attribute__((always_inline)) static inline void DrawTexHLine(f32 x,s32 y,f32 b, f32 aZ, f32 bZ,
-f32 aU,f32 aV,f32 bU,f32 bV, u32 lightFactor, frameBuffData_t *pFrameBuff,Z_buff_t *pZbuff, B3L_texture_t *pTexture) {
+f32 aU,f32 aV,f32 bU,f32 bV, u32 lightFactor, frameBuff_t *pFrameBuff,zBuff_t *pZbuff, B3L_texture_t *pTexture) {
     //printf("auv%.2f,%.2f,buv%.2f,%.2f\n",aU,aV,bU,bV);
     s32 intx = (s32)x,inty=y,intb=((s32)b);
     //s32 b = x + length -1;//correct
@@ -2076,17 +2078,17 @@ f32 aU,f32 aV,f32 bU,f32 bV, u32 lightFactor, frameBuffData_t *pFrameBuff,Z_buff
     s32 i = intb-intx;
 
     u32 shift = inty*RENDER_RESOLUTION_X  + intx;
-    frameBuffData_t *pixel = pFrameBuff +shift;
-    Z_buff_t  *pCurrentPixelZ = pZbuff + shift;  
+    frameBuff_t *pixel = pFrameBuff +shift;
+    zBuff_t  *pCurrentPixelZ = pZbuff + shift;  
     u32 uvSize = pTexture->uvSize;
     u8  *uvData = pTexture->pData;
-    texLUTData_t *lut = pTexture->pLUT;
+    texLUT_t *lut = pTexture->pLUT;
 
 
     u8  colorIdx = 0;
-    frameBuffData_t color;
+    frameBuff_t color;
     u8 transColorIdx = pTexture->transColorIdx;
-    Z_buff_t compZ;
+    zBuff_t compZ;
     switch(pTexture->type){
         case LUT16:
         for (;i>=0;i--){  //don't draw the most right pixel, so the b has already -1
@@ -2143,7 +2145,7 @@ __attribute__((always_inline)) static  inline void  B3L_DrawTriTexture(
                                                                         f32 x1,f32 y1,f32 u1,f32 v1,f32 z1,
                                                                         f32 x2,f32 y2,f32 u2,f32 v2,f32 z2,
                                                                         u32 renderLevel,u32 lightFactor,B3L_texture_t *pTexture,
-                                                                        frameBuffData_t *pFrameBuff,Z_buff_t *pZbuff){
+                                                                        frameBuff_t *pFrameBuff,zBuff_t *pZbuff){
 //to calculate 0.5 pixel, if it works, then we will modified the project functions
     #ifndef _swap_f32_t
     #define _swap_f32_t(a, b) { f32 t = a; a = b; b = t; }
@@ -2290,8 +2292,8 @@ __attribute__((always_inline)) static  inline void  B3L_DrawTriColor(
                                                                         f32 x0,f32 y0,f32 z0,
                                                                         f32 x1,f32 y1,f32 z1,
                                                                         f32 x2,f32 y2,f32 z2,
-                                                                        u32 renderLevel,u32 lightFactor,frameBuffData_t color,
-                                                                        frameBuffData_t *pFrameBuff,Z_buff_t *pZbuff){
+                                                                        u32 renderLevel,u32 lightFactor,frameBuff_t color,
+                                                                        frameBuff_t *pFrameBuff,zBuff_t *pZbuff){
 //to calculate 0.5 pixel, if it works, then we will modified the project functions
     #ifndef _swap_f32_t
     #define _swap_f32_t(a, b) { f32 t = a; a = b; b = t; }
@@ -2303,14 +2305,14 @@ __attribute__((always_inline)) static  inline void  B3L_DrawTriColor(
 
     #if FRAME_BUFF_COLOR_TYPE == 0
                 
-            frameBuffData_t  finalColor = (color&0x00FFFFFF)|(((u32)lightFactor)<<24);
+            frameBuff_t  finalColor = (color&0x00FFFFFF)|(((u32)lightFactor)<<24);
     #endif
     #if FRAME_BUFF_COLOR_TYPE == 1
 
-            frameBuffData_t  finalColor  = (color&0x0FFF)|(((u16)lightFactor)<<12);
+            frameBuff_t  finalColor  = (color&0x0FFF)|(((u16)lightFactor)<<12);
     #endif
     #if FRAME_BUFF_COLOR_TYPE == 2
-            frameBuffData_t  finalColor  = (color&0x00FF)|(((u16)lightFactor)<<8);
+            frameBuff_t  finalColor  = (color&0x00FF)|(((u16)lightFactor)<<8);
     #endif
 
     s32 y,last;
