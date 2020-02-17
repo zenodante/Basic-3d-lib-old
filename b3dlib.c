@@ -263,7 +263,7 @@ static void B3L_AddObjToList(B3LObj_t *pObj, B3LObj_t **pStart);
 static void ClearFrameBuff(frameBuffData_t *pFramebuff,frameBuffData_t value,u32 length);
 static void ClearZbuff(Z_buff_t *pZbuff,u32 length);
 //draw call functions
-static void B3L_DrawObjs(render_t *pRender,u32 time);
+static void B3L_DrawMeshObjs(render_t *pRender,u32 time);
 static void B3L_DrawMesh(B3LMeshObj_t *pObj,render_t *pRender, mat4_t *pMat,u32 renderLevel);
 static void B3L_DrawMeshNoTexture(B3LMeshNoTexObj_t *pObj,render_t *pRender, mat4_t *pMat,u32 renderLevel);
 static void B3L_DrawPolygon(B3LPolygonObj_t *pObj,render_t *pRender, mat4_t *pMat);
@@ -1098,7 +1098,7 @@ obj functions
 
 
 
-static void B3L_DrawObjs(render_t *pRender, u32 time){
+static void B3L_DrawMeshObjs(render_t *pRender, u32 time){
     
     mat4_t mat; //64 byte
     vect4_t boundBoxBuffVec; //128 byte
@@ -1108,7 +1108,7 @@ static void B3L_DrawObjs(render_t *pRender, u32 time){
     u32 renderLevel;
     f32 distance;
 //get the list enter point obj
-    B3LObj_t *pCurrentObj = pRender->scene.pActiveObjs;
+    B3LObj_t *pCurrentObj = pRender->scene.pActiveMeshObjs;
 //printf("start draw obj\n");
     while(pCurrentObj != (B3LObj_t *)NULL){
       
@@ -1118,20 +1118,6 @@ static void B3L_DrawObjs(render_t *pRender, u32 time){
             pCurrentObj = pCurrentObj->next;
             continue;
         }
-#ifdef B3L_USING_PARTICLE
-        if (B3L_TEST(state,PARTICLE_OBJ)){ //for particle generator obj, special workflow is applied
-            //if the generate time out, set it to invisable
-            
-            //update particle statement
-
-            
-
-            //call draw function to draw every particles
-
-            pCurrentObj = pCurrentObj->next;
-            continue;
-        }
-#endif
         //create the obj->clip matrix
         B3L_MakeWorldMatrix(&(pCurrentObj->transform), &mat);
         
@@ -1216,7 +1202,7 @@ void B3L_RenderScence(render_t *pRender,u32 time){
 
     B3L_UpdateLightVect(pRender);
 
-    B3L_DrawObjs(pRender,time);
+    B3L_DrawMeshObjs(pRender,time);
 
 
 }
@@ -1267,7 +1253,7 @@ B3LObj_t * B3L_GetFreeObj(render_t *pRender){
 
 
 void B3L_AddObjToRenderList(B3LObj_t *pObj, render_t *pRender){
-    B3L_AddObjToList(pObj, &(pRender->scene.pActiveObjs));
+    B3L_AddObjToList(pObj, &(pRender->scene.pActiveMeshObjs));
 }
 
 
@@ -1279,9 +1265,9 @@ void B3L_PopObjFromRenderList(B3LObj_t *pObj, render_t *pRender){
         }
         pObj->privous->next = pObj->next; 
     }else{
-        pRender->scene.pActiveObjs = pObj->next;
+        pRender->scene.pActiveMeshObjs = pObj->next;
         if (pObj->next != (B3LObj_t *)NULL){
-            pObj->next->privous = pRender->scene.pActiveObjs;
+            pObj->next->privous = pRender->scene.pActiveMeshObjs;
         }
     }
     

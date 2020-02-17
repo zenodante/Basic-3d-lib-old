@@ -194,7 +194,7 @@ typedef struct {
 //36 byte for single particle
 typedef struct B3L_PARTICLE{
     struct B3L_PARTICLE *next;
-    uint32_t color;
+    uint32_t state;
     uint32_t life;
     f32 x;  //f16 may be better for size? -> 24 byte
     f32 y;
@@ -304,16 +304,18 @@ typedef struct{
     B3LObj_t           *privous;
     B3LObj_t           *next;
     u32                state;
+    u32                particlePerSecond;
     vect3_t            translation;
     vect3_t            rotation;
     vect3_t            force;
-    u32                life;
     B3L_Particle_t     *pParticleActive; 
+    B3L_DrawFunc_t     *pDrawFunc;     
 }B3LParticleGenObj_t;
 
 typedef struct{
     B3LObj_t       objBuff[OBJ_BUFF_SIZE];    
-    B3LObj_t       *pActiveObjs;
+    B3LObj_t       *pActiveMeshObjs;
+    B3LObj_t       *pActiveParticleBitmapObjs;
     B3LObj_t       *pInactiveObjs;
 }scene_t;
 
@@ -415,7 +417,7 @@ extern void B3L_ReturnObjToInactiveList(B3LObj_t *pObj,  render_t *pRender);
 extern void B3L_InitBoxObj(B3LMeshObj_t *pObj,f32 size);
 extern void B3L_InitBoxObjNoTexture(B3LMeshNoTexObj_t *pObj,f32 size);
 extern void B3L_InitBoxObjPolygon(B3LPolygonObj_t *pObj,f32 size);
-//extern void B3L_DrawObjs(render_t *pRender);
+//extern void B3L_DrawMeshObjs(render_t *pRender);
 /*
 void B3L_DrawTriTexture(
 s32 x0,s32 y0,s32 u0,s32 v0,f32 z0,
