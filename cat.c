@@ -331,7 +331,6 @@ const uint8_t cat100_uv[1044]={
 	124, 245, 108, 183, 
 };
 const B3L_Mesh_t cat100_mesh={
-	.id = 1,
 	.vectNum = 89,
 	.triNum = 174,
 	.pVect = (float *)cat100_vect,
@@ -4709,7 +4708,7 @@ const uint8_t cat_img[65536]={
 	0XD9, 0XD9, 0XD9, 0XD9, 0XD9, 0XD9, 0XD9, 0XD9, 0XD9, 0XD9, 0XD9, 0XD9, 0XD9, 0XD9, 0XD9, 0XD9, 
 };
 
-const B3L_texture_t cat_texture = { .id      = 1,
+const B3L_texture_t cat_texture = { 
                                  .type    = LUT256,
                                  .uvSize  = 256,
                                  .pLUT    = (texLUT_t *)cat_pal,
@@ -4735,6 +4734,7 @@ void InitCatObj(B3LMeshObj_t *pObj,f32 size){
     pObj->pBoundBox = (f32 *)cat100bound;
     B3L_SET(pObj->state,MESH_OBJ); 
     B3L_SET(pObj->state,OBJ_VISUALIZABLE);
-    B3L_SET(pObj->state,OBJ_BACK_CULLING);
     B3L_SET(pObj->state,OBJ_BACK_CULLING_ANTICLOCK);
+    //B3L_SET(pObj->state,OBJ_IGNORE_RENDER_LEVEL);
+    //B3L_SET(pObj->state,OBJ_FIX_RENDER_LEVEL_SHIFT);
 }

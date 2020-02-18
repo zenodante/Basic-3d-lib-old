@@ -432,7 +432,7 @@ extern void     B3L_CameraLookAt(camera_t *pCam, vect3_t *pAt);
 extern void     B3L_RenderInit(render_t *pRender,fBuff_t *pFrameBuff);
 extern void     B3L_NewRenderStart(render_t *pRender);
 extern void     B3L_Update(render_t *pRender,u32 time);
-extern void     B3L_RenderScence(render_t *pRender,u32 time);
+extern void     B3L_RenderScence(render_t *pRender);
 extern void     B3L_ResetScene(scene_t *pScene);
 //light functions
 extern void     B3L_ResetLight(light_t *pLight);

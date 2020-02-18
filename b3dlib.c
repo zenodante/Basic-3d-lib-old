@@ -1107,16 +1107,16 @@ void B3L_CameraLookAt(camera_t *pCam, vect3_t *pAt){
 /*-----------------------------------------------------------------------------
 obj functions
 -----------------------------------------------------------------------------*/
-UpdateParticleObjs(render_t *pRender, u32 time){
+static void UpdateParticleObjs(render_t *pRender, u32 time){
     B3LParticleGenObj_t *pCurrentObj =(B3LParticleGenObj_t *) (pRender->scene.pActiveParticleGenObjs);
     u32 state;
     mat4_t mat0,mat1;
     //switch(state & OBJ_TYPE_MASK)
-    while(pCurrentObj != (B3LObj_t *)NULL){
+    while(pCurrentObj != (B3LParticleGenObj_t *)NULL){
         state = pCurrentObj->state;
         //only update those active particle generater
         if (B3L_TEST(state ,OBJ_PARTICLE_ACTIVE)==0){  //obj active is fail
-            pCurrentObj = pCurrentObj->next;
+            pCurrentObj = (B3LParticleGenObj_t *)(pCurrentObj->next);
             continue;
         }
         //cal project function
@@ -1132,10 +1132,10 @@ static void RenderParticleObjs(render_t *pRender) {
     u32 i;
     B3L_Particle_t *pParticle;
     //switch(state & OBJ_TYPE_MASK)
-    while(pCurrentObj != (B3LObj_t *)NULL){
+    while(pCurrentObj != (B3LParticleGenObj_t *)NULL){
         state = pCurrentObj->state;
         if (B3L_TEST(state ,OBJ_VISUALIZABLE)==0){  //obj visual is false
-            pCurrentObj = pCurrentObj->next;
+            pCurrentObj = (B3LParticleGenObj_t *)(pCurrentObj->next);
             continue;
         }
         pParticle = pCurrentObj->pParticleActive;
@@ -1150,7 +1150,7 @@ static void RenderParticleObjs(render_t *pRender) {
 
         //call the draw function to draw all the particle based on render level?
 
-        pCurrentObj = pCurrentObj->next;    
+        pCurrentObj = (B3LParticleGenObj_t *)(pCurrentObj->next);    
     }
 }
 
