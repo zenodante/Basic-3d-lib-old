@@ -407,49 +407,49 @@ typedef struct{
 
 /*Function declear-----------------------------------------------------------*/
 //math functions
-extern f32 B3L_sin(f32 in);
-extern f32 B3L_cos(f32 in);
-extern f32 B3L_asin(f32 in);
-extern void B3L_NormalizeVec3(vect3_t *pV);
-extern vect2_t B3L_Vect2(f32 x,f32 y);
-extern vect3_t B3L_Vect3(f32 x,f32 y,f32 z);
-extern vect4_t B3L_Vect4(f32 x,f32 y,f32 z,f32 w);
-extern f32 B3L_Vec2Length(vect2_t *pV);
-extern f32 B3L_Vec3Length(vect3_t *pV);
-extern void B3L_Vec3Add(vect3_t *pVa,vect3_t *pVb,vect3_t *pVc);
-extern void B3L_VecInterp(vect3_t *pVa,vect3_t *pVb,vect3_t *pVc,f32 t);
-extern void B3L_CrossProductVect3(vect3_t *pA, vect3_t *pB, vect3_t *pResult);
-extern f32 B3L_DotProductVect3(vect3_t *pA, vect3_t *pB);
-extern void B3L_InitMat4(mat4_t *pMat);
-extern void B3L_TransposeMat4(mat4_t *pMat);
-extern void B3L_Mat4Xmat4(mat4_t *pMat1, mat4_t *pMat2);
-extern void B3L_MakeRotationMatrixZXY(f32 byX,f32 byY,f32 byZ,mat4_t *pMat);
-extern void B3L_MakeScaleMatrix(f32 scaleX,f32 scaleY,f32 scaleZ,mat4_t *pMat);
-extern void B3L_MakeTranslationMat(f32 offsetX,f32 offsetY,f32 offsetZ,mat4_t *pMat);
-extern void B3L_MakeWorldMatrix(transform3D_t *pWorldTransform, mat4_t *pMat);
+extern f32      B3L_sin(f32 in);
+extern f32      B3L_cos(f32 in);
+extern f32      B3L_asin(f32 in);
+extern void     B3L_NormalizeVec3(vect3_t *pV);
+extern vect2_t  B3L_Vect2(f32 x,f32 y);
+extern vect3_t  B3L_Vect3(f32 x,f32 y,f32 z);
+extern vect4_t  B3L_Vect4(f32 x,f32 y,f32 z,f32 w);
+extern f32      B3L_Vec2Length(vect2_t *pV);
+extern f32      B3L_Vec3Length(vect3_t *pV);
+extern void     B3L_Vec3Add(vect3_t *pVa,vect3_t *pVb,vect3_t *pVc);
+extern void     B3L_VecInterp(vect3_t *pVa,vect3_t *pVb,vect3_t *pVc,f32 t);
+extern void     B3L_CrossProductVect3(vect3_t *pA, vect3_t *pB, vect3_t *pResult);
+extern f32      B3L_DotProductVect3(vect3_t *pA, vect3_t *pB);
+extern void     B3L_InitMat4(mat4_t *pMat);
+extern void     B3L_TransposeMat4(mat4_t *pMat);
+extern void     B3L_Mat4Xmat4(mat4_t *pMat1, mat4_t *pMat2);
+extern void     B3L_MakeRotationMatrixZXY(f32 byX,f32 byY,f32 byZ,mat4_t *pMat);
+extern void     B3L_MakeScaleMatrix(f32 scaleX,f32 scaleY,f32 scaleZ,mat4_t *pMat);
+extern void     B3L_MakeTranslationMat(f32 offsetX,f32 offsetY,f32 offsetZ,mat4_t *pMat);
+extern void     B3L_MakeWorldMatrix(transform3D_t *pWorldTransform, mat4_t *pMat);
 //camera functions
-extern void B3L_InitCamera(camera_t *pCam);
-extern void B3L_CameraMoveTo(vect3_t position,camera_t *pCam);
-extern void B3L_CameraLookAt(camera_t *pCam, vect3_t *pAt);
+extern void     B3L_InitCamera(camera_t *pCam);
+extern void     B3L_CameraMoveTo(vect3_t position,camera_t *pCam);
+extern void     B3L_CameraLookAt(camera_t *pCam, vect3_t *pAt);
 //extern void B3L_CameraUpDirection(camera_t *pCam, vect3_t *pUp);
 //render functions
-extern void B3L_RenderInit(render_t *pRender,fBuff_t *pFrameBuff);
-extern void B3L_NewRenderStart(render_t *pRender);
-extern void B3L_Update(render_t *pRender,u32 time);
-extern void B3L_RenderScence(render_t *pRender,u32 time);
-extern void B3L_ResetScene(scene_t *pScene);
+extern void     B3L_RenderInit(render_t *pRender,fBuff_t *pFrameBuff);
+extern void     B3L_NewRenderStart(render_t *pRender);
+extern void     B3L_Update(render_t *pRender,u32 time);
+extern void     B3L_RenderScence(render_t *pRender,u32 time);
+extern void     B3L_ResetScene(scene_t *pScene);
 //light functions
-extern void B3L_ResetLight(light_t *pLight);
-extern void B3L_SetLightType(render_t *pRender,lightType_e type);
-extern void B3L_SetLightVect(render_t *pRender, f32 x,f32 y,f32 z);
+extern void     B3L_ResetLight(light_t *pLight);
+extern void     B3L_SetLightType(render_t *pRender,lightType_e type);
+extern void     B3L_SetLightVect(render_t *pRender, f32 x,f32 y,f32 z);
 //render obj functions
 extern B3LObj_t *B3L_GetFreeObj(render_t *pRender);
-extern void B3L_AddObjToRenderList(B3LObj_t *pObj, render_t *pRender);
-extern void B3L_PopObjFromRenderList(B3LObj_t *pObj, render_t *pRender);
-extern void B3L_ReturnObjToInactiveList(B3LObj_t *pObj,  render_t *pRender);
-extern void B3L_InitBoxObj(B3LMeshObj_t *pObj,f32 size);
-extern void B3L_InitBoxObjNoTexture(B3LMeshNoTexObj_t *pObj,f32 size);
-extern void B3L_InitBoxObjPolygon(B3LPolygonObj_t *pObj,f32 size);
+extern void     B3L_AddObjToRenderList(B3LObj_t *pObj, render_t *pRender);
+extern void     B3L_PopObjFromRenderList(B3LObj_t *pObj, render_t *pRender);
+extern void     B3L_ReturnObjToInactiveList(B3LObj_t *pObj,  render_t *pRender);
+extern void     B3L_InitBoxObj(B3LMeshObj_t *pObj,f32 size);
+extern void     B3L_InitBoxObjNoTexture(B3LMeshNoTexObj_t *pObj,f32 size);
+extern void     B3L_InitBoxObjPolygon(B3LPolygonObj_t *pObj,f32 size);
 
 
 //extern void RenderMeshObjs(render_t *pRender);
