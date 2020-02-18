@@ -9,7 +9,7 @@ Currently only texture mapping triangle drawing worked.
 
 You could find configs in the b3dlib.h file, currently 32bit framebuff and 32bit z buff mode has been tested.
 
-At init phase, call B3L_RenderInit(&B3Lrender,(frameBuff_t *)pFramebuffAddr); to init the lib
+At init phase, call B3L_RenderInit(&B3Lrender,(fBuff_t *)pFramebuffAddr); to init the lib
 
 At the Render phase, call B3L_NewRenderStart( &B3Lrender) and B3L_RenderScence(&B3Lrender) to draw the frame. NewFrame function will clear the z buff and framebuff by default. Later I may change it to call some user callback function to customerize the framebuff cleaning operation.
 

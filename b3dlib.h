@@ -28,7 +28,7 @@ type 2: 16bit 8:8     AL
 
 #define RENDER_RESOLUTION_X     160
 #define RENDER_RESOLUTION_Y     120
-#define BUFF_LENTH              ((RENDER_RESOLUTION_X)*(RENDER_RESOLUTION_Y))
+#define VIDEO_BUFF_LENTH              ((RENDER_RESOLUTION_X)*(RENDER_RESOLUTION_Y))
 
 #define HALF_RESOLUTION_X       79.5f
 #define HALF_RESOLUTION_Y       59.5f
@@ -91,17 +91,17 @@ typedef f32 zBuff_t;
 #endif
 
 #if (FRAME_BUFF_COLOR_TYPE  == 0)
-typedef  u32 frameBuff_t;
+typedef  u32 fBuff_t;
 typedef  u32 texLUT_t;
 #define LIGHT_BIT           8
 #endif
 #if (FRAME_BUFF_COLOR_TYPE  == 1)
-typedef  u16 frameBuff_t;
+typedef  u16 fBuff_t;
 typedef  u16 texLUT_t;
 #define LIGHT_BIT           4
 #endif
 #if (FRAME_BUFF_COLOR_TYPE  == 2)
-typedef  u16 frameBuff_t;
+typedef  u16 fBuff_t;
 typedef  u8  texLUT_t;
 #define LIGHT_BIT           8
 #endif
@@ -197,12 +197,8 @@ typedef struct B3L_PARTICLE{
     struct B3L_PARTICLE *next;
     uint32_t            state;
     uint32_t            life;
-    f32                 x;  //f16 may be better for size? -> 24 byte
-    f32                 y;
-    f32                 z;
-    f32                 dx;
-    f32                 dy;
-    f32                 dz;
+    vect3_t             position;
+    vect3_t             delta;
 }B3L_Particle_t;
 
 
@@ -324,7 +320,7 @@ B3LParticleGenObj_t state
 */
 #define OBJ_PARTICLE_ACTIVE            (9)
 typedef void (*B3L_PtlUpdFunc_t)(u32, mat4_t *, B3L_Particle_t *, screen3f_t *);
-typedef void (*B3L_DrawFunc_t)(B3L_Particle_t *, screen3f_t *,frameBuff_t *,zBuff_t *);
+typedef void (*B3L_DrawFunc_t)(B3L_Particle_t *, screen3f_t *,fBuff_t *,zBuff_t *);
 //user need to provide 2 functions to update particle state and draw methods
 typedef struct{
     B3LObj_t            *privous;
@@ -333,8 +329,8 @@ typedef struct{
     B3LObj_t            *mother;//option, which could help to bound generater to other obj
     vect3_t             translation;//for particle generate 
     vect3_t             rotation;//for particle generate 
-    u32                 startTime;
     u32                 lastTime;
+    u32                 particleNum;
     B3L_Particle_t      *pParticleActive; 
     B3L_PtlUpdFunc_t    *pUpdFunc;   
     B3L_DrawFunc_t      *pDrawFunc;     
@@ -380,7 +376,7 @@ typedef struct{
 }light_t;
 
 typedef struct{   
-    frameBuff_t         *pFrameBuff;
+    fBuff_t         *pFrameBuff;
     zBuff_t             *pZBuff;
     screen3f_t          *pVectBuff;
     camera_t            camera;
@@ -434,11 +430,10 @@ extern void B3L_MakeWorldMatrix(transform3D_t *pWorldTransform, mat4_t *pMat);
 //camera functions
 extern void B3L_InitCamera(camera_t *pCam);
 extern void B3L_CameraMoveTo(vect3_t position,camera_t *pCam);
-extern void B3L_SetCameraMatrix(camera_t *pCam);
 extern void B3L_CameraLookAt(camera_t *pCam, vect3_t *pAt);
 //extern void B3L_CameraUpDirection(camera_t *pCam, vect3_t *pUp);
 //render functions
-extern void B3L_RenderInit(render_t *pRender,frameBuff_t *pFrameBuff);
+extern void B3L_RenderInit(render_t *pRender,fBuff_t *pFrameBuff);
 extern void B3L_NewRenderStart(render_t *pRender);
 extern void B3L_Update(render_t *pRender,u32 time);
 extern void B3L_RenderScence(render_t *pRender,u32 time);
@@ -457,21 +452,21 @@ extern void B3L_InitBoxObjNoTexture(B3LMeshNoTexObj_t *pObj,f32 size);
 extern void B3L_InitBoxObjPolygon(B3LPolygonObj_t *pObj,f32 size);
 
 
-//extern void B3L_DrawMeshObjs(render_t *pRender);
+//extern void RenderMeshObjs(render_t *pRender);
 /*
-void B3L_DrawTriTexture(
+void DrawTriTexture(
 s32 x0,s32 y0,s32 u0,s32 v0,f32 z0,
 s32 x1,s32 y1,s32 u1,s32 v1,f32 z1,
 s32 x2,s32 y2,s32 u2,s32 v2,f32 z2,
 u32 renderLevel,u16 lightFactor,B3L_texture_t *pTexture,
-frameBuff_t *pFrameBuff,zBuff_t *pZbuff);
+fBuff_t *pFrameBuff,zBuff_t *pZbuff);
 */
 /*
-extern void  B3L_DrawTriColor(
+extern void  DrawTriColor(
                                                                         f32 x0,f32 y0,f32 z0,
                                                                         f32 x1,f32 y1,f32 z1,
                                                                         f32 x2,f32 y2,f32 z2,
-                                                                        u32 renderLevel,u8 lightFactor,frameBuff_t color,
-                                                                        frameBuff_t *pFrameBuff,zBuff_t *pZbuff);
+                                                                        u32 renderLevel,u8 lightFactor,fBuff_t color,
+                                                                        fBuff_t *pFrameBuff,zBuff_t *pZbuff);
 */
 #endif

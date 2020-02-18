@@ -17,7 +17,7 @@ f32 i = 0.0f;
 void init() {
     set_screen_mode(screen_mode::lores);
     //you need a 32bit framebuff here!
-    B3L_RenderInit(&B3Lrender,(frameBuff_t *)fb.data);
+    B3L_RenderInit(&B3Lrender,(fBuff_t *)fb.data);
 
     pBox2 = (B3LMeshNoTexObj_t *)B3L_GetFreeObj(&B3Lrender);
     pBox = (B3LMeshObj_t *)B3L_GetFreeObj(&B3Lrender);
@@ -96,12 +96,12 @@ void render(uint32_t time) {
     B3L_NewRenderStart( &B3Lrender);
     B3L_RenderScence(&B3Lrender);
 /*
-B3L_DrawTriColor(
+DrawTriColor(
                                                                         0.0f,0.0f,0.1f,
                                                                         12.0f,12.0f,0.1f,
                                                                         0.0f,24.0f,0.1f,
                                                                         1,0xff,0XFF7E2553,
-                                                                        (frameBuff_t *)fb.data,B3Lrender.pZBuff);
+                                                                        (fBuff_t *)fb.data,B3Lrender.pZBuff);
 
 */
     //printf("result is %d\n",result);
@@ -112,7 +112,7 @@ B3L_DrawTriColor(
     uint32_t i;
     uint32_t color;
 /*    
-    for (i=0;i<BUFF_LENTH;i++){
+    for (i=0;i<VIDEO_BUFF_LENTH;i++){
     color = u4buff[i];
     color = color>>24;
     
@@ -123,7 +123,7 @@ B3L_DrawTriColor(
   
 */ 
 //on h750 you could use DMA2D mode DMA2D_CR/mode = 0b101 to do this transform
-    for (i=0;i<BUFF_LENTH;i++){
+    for (i=0;i<VIDEO_BUFF_LENTH;i++){
         r =  (backColor&(0x00FF0000))>>16;
         g =  (backColor &(0x0000FF00))>>8;
         b = (backColor &(0x000000FF));
