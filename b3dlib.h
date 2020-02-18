@@ -165,7 +165,6 @@ typedef struct{
 }camera_t;
 
 typedef struct {
-    u32                 id;
     u16                 vectNum;
     u16                 lineNum;
     f32                 *pVect;
@@ -173,7 +172,6 @@ typedef struct {
 }B3L_Polygon_t;
 
 typedef struct {
-    u32                 id;
     u16                 vectNum;
     u16                 triNum;
     f32                 *pVect;
@@ -183,7 +181,6 @@ typedef struct {
 }B3L_Mesh_NoTex_t;
 
 typedef struct {
-    u32                 id;
     u16                 vectNum;
     u16                 triNum;
     f32                 *pVect;
@@ -207,7 +204,6 @@ typedef struct B3L_PARTICLE{
 #define LUT16        1
 #define LUT256       2
 typedef struct{
-    u32                 id;
     u16                 type;
     u16                 uvSize;
     texLUT_t            *pLUT;
@@ -376,7 +372,7 @@ typedef struct{
 }light_t;
 
 typedef struct{   
-    fBuff_t         *pFrameBuff;
+    fBuff_t             *pFrameBuff;
     zBuff_t             *pZBuff;
     screen3f_t          *pVectBuff;
     camera_t            camera;
@@ -420,7 +416,7 @@ extern void     B3L_Vec3Add(vect3_t *pVa,vect3_t *pVb,vect3_t *pVc);
 extern void     B3L_VecInterp(vect3_t *pVa,vect3_t *pVb,vect3_t *pVc,f32 t);
 extern void     B3L_CrossProductVect3(vect3_t *pA, vect3_t *pB, vect3_t *pResult);
 extern f32      B3L_DotProductVect3(vect3_t *pA, vect3_t *pB);
-extern void     B3L_InitMat4(mat4_t *pMat);
+extern void     B3L_InitMat4One(mat4_t *pMat);
 extern void     B3L_TransposeMat4(mat4_t *pMat);
 extern void     B3L_Mat4Xmat4(mat4_t *pMat1, mat4_t *pMat2);
 extern void     B3L_MakeRotationMatrixZXY(f32 byX,f32 byY,f32 byZ,mat4_t *pMat);
@@ -443,10 +439,13 @@ extern void     B3L_ResetLight(light_t *pLight);
 extern void     B3L_SetLightType(render_t *pRender,lightType_e type);
 extern void     B3L_SetLightVect(render_t *pRender, f32 x,f32 y,f32 z);
 //render obj functions
+extern u32      B3L_GetFreeObjNum(render_t *pRender);
+extern u32      B3L_GetFreeParticleNum(render_t *pRender);
 extern B3LObj_t *B3L_GetFreeObj(render_t *pRender);
 extern void     B3L_AddObjToRenderList(B3LObj_t *pObj, render_t *pRender);
 extern void     B3L_PopObjFromRenderList(B3LObj_t *pObj, render_t *pRender);
 extern void     B3L_ReturnObjToInactiveList(B3LObj_t *pObj,  render_t *pRender);
+//helper function for testing objs
 extern void     B3L_InitBoxObj(B3LMeshObj_t *pObj,f32 size);
 extern void     B3L_InitBoxObjNoTexture(B3LMeshNoTexObj_t *pObj,f32 size);
 extern void     B3L_InitBoxObjPolygon(B3LPolygonObj_t *pObj,f32 size);

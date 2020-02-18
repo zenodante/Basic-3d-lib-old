@@ -149,7 +149,7 @@ const u8 B3L_boxTexData[128]={
 	0X14, 0XAD, 0XAA, 0XAA, 0XAA, 0XAA, 0X5A, 0X49, 0X14, 0X2D, 0X22, 0XFF, 0XFF, 0X77, 0X57, 0X49, 
 	0X14, 0X11, 0X11, 0X11, 0X11, 0X11, 0X11, 0X44, 0X66, 0X66, 0X66, 0X66, 0X66, 0X66, 0X66, 0X66, 
 };
-const B3L_Mesh_t B3L_box = {.id      = 0,
+const B3L_Mesh_t B3L_box = {
                       .vectNum = 8,
                       .triNum  = 12,
                       .pVect   = (f32 *)B3L_boxVect,
@@ -157,7 +157,7 @@ const B3L_Mesh_t B3L_box = {.id      = 0,
                       .pUv     = (u8 *)B3L_boxUV,
                       .pNormal = (f32 *)B3L_boxNormal
                       };
-const B3L_Mesh_NoTex_t B3L_box_noTex = {.id      = 1,
+const B3L_Mesh_NoTex_t B3L_box_noTex = {
                       .vectNum = 8,
                       .triNum  = 12,
                       .pVect   = (f32 *)B3L_boxVect,
@@ -166,7 +166,7 @@ const B3L_Mesh_NoTex_t B3L_box_noTex = {.id      = 1,
                       .pNormal = (f32 *)B3L_boxNormal
                       };
 
-const B3L_Polygon_t B3L_box_Polygon = {.id  =  2,
+const B3L_Polygon_t B3L_box_Polygon = {
                         .vectNum = 8,
                         .lineNum = 12,
                         .pVect = (f32 *)B3L_boxVect,
@@ -174,7 +174,7 @@ const B3L_Polygon_t B3L_box_Polygon = {.id  =  2,
                         };
 
 
-const B3L_texture_t B3L_boxTexture = { .id      = 0,
+const B3L_texture_t B3L_boxTexture = { 
                                  .type    = LUT16,
                                  .uvSize  = 16,
                                  #if FRAME_BUFF_COLOR_TYPE == 0
@@ -770,7 +770,7 @@ __attribute__((always_inline)) static inline void MakeClipMatrix(f32 focalLength
 
 }
 
-void B3L_InitMat4(mat4_t *pMat){
+void B3L_InitMat4One(mat4_t *pMat){
     #define M(x,y) (pMat)->m##x##y
     M(0,0) = 1.0f; M(1,0) = 0.0f; M(2,0) = 0.0f; M(3,0) = 0.0f; 
     M(0,1) = 0.0f; M(1,1) = 1.0f; M(2,1) = 0.0f; M(3,1) = 0.0f; 
@@ -1342,6 +1342,13 @@ static void AddObjToTwoWayList(B3LObj_t *pObj, B3LObj_t **pStart){
     }
     
 }
+u32      B3L_GetFreeObjNum(render_t *pRender){
+    return pRender->scene.freeObjNum;
+}
+
+u32      B3L_GetFreeParticleNum(render_t *pRender){
+    return pRender->scene.freeParticleNum;
+}
 
 B3LObj_t * B3L_GetFreeObj(render_t *pRender){
     B3LObj_t *returnObj;
@@ -1678,9 +1685,7 @@ static void ClearZbuff(zBuff_t *pZbuff,u32 length){
 }
 
 static void RenderNoTexMesh(B3LMeshNoTexObj_t *pObj,render_t *pRender, mat4_t *pMat,u32 renderLevel){
-#ifdef B3L_DEBUG
-printf("Draw a no texture mesh");
-#endif
+
     int32_t i;
     B3L_Mesh_NoTex_t *pMesh= pObj->pMesh;
     vect3_t *pVectSource = ((vect3_t *)(pMesh->pVect));
