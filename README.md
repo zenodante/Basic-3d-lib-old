@@ -18,7 +18,7 @@ All the obj in the lib should in the scene list. Only those in the render.scene.
 Todo:
 - [x] Texture mapping triangle drawing
 - [ ] 2d Sprite drawing
-- [*] Polygon drawing
+- [x] Polygon drawing
 - [ ] 3d particles drawing, dev branch current working on it
 - [x] fast flat color triangle drawing
 
