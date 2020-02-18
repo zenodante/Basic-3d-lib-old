@@ -93,7 +93,7 @@ void update(uint32_t time){
     db = (b + ((db * ia) >> 8)); \
 
 void render(uint32_t time) {
-    B3L_NewFrame( &B3Lrender);
+    B3L_NewRenderStart( &B3Lrender);
     B3L_RenderScence(&B3Lrender);
 /*
 B3L_DrawTriColor(

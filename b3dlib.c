@@ -268,7 +268,7 @@ static void ClearFrameBuff(frameBuff_t *pFramebuff,frameBuff_t value,u32 length)
 static void ClearZbuff(zBuff_t *pZbuff,u32 length);
 //draw call functions
 static void B3L_DrawMeshObjs(render_t *pRender);
-static void B3L_DrawParticleObjs(render_t *pRender,u32 time);
+static void B3L_DrawParticleObjs(render_t *pRender);
 static void B3L_DrawMesh(B3LMeshObj_t *pObj,render_t *pRender, mat4_t *pMat,u32 renderLevel);
 static void B3L_DrawMeshNoTexture(B3LMeshNoTexObj_t *pObj,render_t *pRender, mat4_t *pMat,u32 renderLevel);
 static void B3L_DrawPolygon(B3LPolygonObj_t *pObj,render_t *pRender, mat4_t *pMat);
@@ -753,7 +753,6 @@ Matrix functions
 __attribute__((always_inline)) static inline void B3L_MakeClipMatrix(f32 focalLength, f32 aspectRatio,mat4_t *mat){
 
     #define M(x,y) (mat)->m##x##y
-
     M(0,0) = focalLength; M(1,0) = 0.0f;   M(2,0) = 0.0f;   M(3,0) = 0.0f; 
     M(0,1) = 0.0f;   M(1,1) = focalLength*aspectRatio; M(2,1) = 0.0f;   M(3,1) = 0.0f; 
     M(0,2) = 0.0f;   M(1,2) = 0.0f;   M(2,2) = FAR_PLANE/(FAR_PLANE-NEAR_PLANE); M(3,2) = 1.0f; 
@@ -1100,10 +1099,11 @@ void B3L_CameraLookAt(camera_t *pCam, vect3_t *pAt){
 /*-----------------------------------------------------------------------------
 obj functions
 -----------------------------------------------------------------------------*/
-static void B3L_DrawParticleObjs(render_t *pRender, u32 time){
+static void B3L_DrawParticleObjs(render_t *pRender){
     B3LParticleGenObj_t *pCurrentObj =(B3LParticleGenObj_t *) (pRender->scene.pActiveParticleGenObjs);
     u32 state;
-    mat4_t mat;
+    mat4_t mat0,mat1;
+    
     //switch(state & OBJ_TYPE_MASK)
     while(pCurrentObj != (B3LObj_t *)NULL){
         state = pCurrentObj->state;
@@ -1111,20 +1111,9 @@ static void B3L_DrawParticleObjs(render_t *pRender, u32 time){
             pCurrentObj = pCurrentObj->next;
             continue;
         }
-        //update the time
+        //project the particle from world space to screen space
 
-        //
-        B3L_MakeRotationMatrixZXY(pCurrentObj->rotation.x,
-                                  pCurrentObj->rotation.y,
-                                  pCurrentObj->rotation.z,&mat);
-        //create matrix
-
-                //update
-        //((B3LParticleGenObj_t *)pCurrentObj)->pUpdFunc(time,((B3LParticleGenObj_t *)pCurrentObj));
-                //particle ->camera matrix
-
-                //draw particles
-                
+        //call the draw function to draw all the particle based on render level?
 
         
     }
@@ -1143,6 +1132,8 @@ static void B3L_DrawMeshObjs(render_t *pRender){
 //get the list enter point obj
     B3LObj_t *pCurrentObj = pRender->scene.pActiveMeshObjs;
 //printf("start draw obj\n");
+    f32 lvl0Distance = pRender->lvl0Distance;
+    f32 lvl1Distance = pRender->lvl1Distance;
     while(pCurrentObj != (B3LObj_t *)NULL){
       
         state = pCurrentObj->state;
@@ -1200,9 +1191,9 @@ static void B3L_DrawMeshObjs(render_t *pRender){
         if (B3L_TEST(state ,OBJ_IGNORE_RENDER_LEVEL)){
             renderLevel = (state & OBJ_RENDER_LEVEL_MASK)>>OBJ_FIX_RENDER_LEVEL_SHIFT;
         }else{
-            if (distance < LEVEL_0_DISTANCE){
+            if (distance < lvl0Distance){
                 renderLevel = 0;
-            }else if (distance < LEVEL_1_DISTANCE){
+            }else if (distance < lvl1Distance){
                 renderLevel = 1;
             }else{
                 renderLevel = 2;
@@ -1227,7 +1218,7 @@ static void B3L_DrawMeshObjs(render_t *pRender){
 
 }
 
-void B3L_RenderScence(render_t *pRender,u32 time){
+void B3L_RenderScence(render_t *pRender){
 
     //printf("start render\n");
     //set world to clip matrix
@@ -1240,12 +1231,17 @@ void B3L_RenderScence(render_t *pRender,u32 time){
     //TODO
     //draw particleObj
 #ifdef B3L_USING_PARTICLE
-    B3L_DrawParticleObjs(pRender,time);
+    B3L_DrawParticleObjs(pRender);
 #endif
 
 }
 
-void B3L_NewFrame(render_t *pRender){
+void B3L_Update(render_t *pRender,u32 time){
+    //TODO: Add particle update and other hook here
+
+}
+
+void B3L_NewRenderStart(render_t *pRender){
     ClearFrameBuff(pRender->pFrameBuff,0xFF003423,BUFF_LENTH);
     ClearZbuff(pRender->pZBuff,BUFF_LENTH);
 }    
@@ -1386,7 +1382,9 @@ void B3L_RenderInit(render_t *pRender,frameBuff_t *pFrameBuff){
     B3L_ResetScene(&(pRender->scene));
     B3L_InitCamera(&(pRender->camera));
     B3L_ResetLight(&(pRender->light));
-
+    pRender->lvl0Distance = LEVEL_0_DEFAULT_DISTANCE;
+    pRender->lvl1Distance = LEVEL_1_DEFAULT_DISTANCE;
+    pRender->lvl1Light = LEVEL_1_DEFAULT_LIGHT;
 }
 /*-----------------------------------------------------------------------------
 Testing functions
@@ -1694,7 +1692,7 @@ printf("Draw a no texture mesh");
     f32   normalDotLight;
     frameBuff_t color;
     //if the render level is not zero, then the lightValue would fix at 0xff
-    u32 lightValue=B3L_LEVEL_1_DEFAULT_LIGHT;
+    u32 lightValue=pRender->lvl1Light;
 //draw tri loop
     for (i=pMesh->triNum -1;i>=0;i--){
         //pTriRenderState[i]=0;
@@ -1852,7 +1850,7 @@ printf("Draw a mesh");
     vect3_t normalVect;
     f32   normalDotLight;
     //if the render level is not zero, then the lightValue would fix at 0xff
-    u32 lightValue=B3L_LEVEL_1_DEFAULT_LIGHT;
+    u32 lightValue=pRender->lvl1Light;
 //draw tri loop
     for (i=pMesh->triNum -1;i>=0;i--){
         //pTriRenderState[i]=0;

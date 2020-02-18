@@ -36,11 +36,12 @@ type 2: 16bit 8:8     AL
 //1.0f == 90 degree fov,smaller is larger fov
 #define DEFAULT_FOCUS_LENGTH    (1.0f)
 
+//maybe all here parameter could be dynamic set in render struct to balance render load?
 #define FAR_PLANE                    800.0f
 #define NEAR_PLANE                   0.1f
-#define LEVEL_0_DISTANCE             400.0f
-#define LEVEL_1_DISTANCE             800.0f
-#define B3L_LEVEL_1_DEFAULT_LIGHT    0xA0
+#define LEVEL_0_DEFAULT_DISTANCE     400.0f
+#define LEVEL_1_DEFAULT_DISTANCE     800.0f
+#define LEVEL_1_DEFAULT_LIGHT        0xA0
 //level 0, calculate light, texture
 //level 1, calculate texture
 
@@ -265,7 +266,7 @@ typedef struct B3LOBJ{
     #ifdef B3L_ARM      
     u32                 dummy[2];
     #else    
-    u32                 dummy[4];
+    u32                 dummy[5];
     #endif
 }B3LObj_t;//15 words on ARM32, 20words on win64
 
@@ -305,7 +306,23 @@ typedef struct{
     B3LObj_t            *next;
     u32                 state;
 }B3LBitmapObj_t;
-
+/*
+B3LParticleGenObj_t state
+   31     2423     1615      87
+   ------------------------------------
+31|        |      II|    H FE|   DCB A|0
+  ------------------------------------
+  A-- mesh obj with texture
+  B-- polygon obj
+  C-- mesh obj without texture
+  D-- particle obj
+  E-- obj visualization
+  F-- obj Active
+  
+  H-- fix render level switch
+  I-- fix render level number
+*/
+#define OBJ_PARTICLE_ACTIVE            (9)
 typedef void (*B3L_PtlUpdFunc_t)(u32, mat4_t *, B3L_Particle_t *, screen3f_t *);
 typedef void (*B3L_DrawFunc_t)(B3L_Particle_t *, screen3f_t *,frameBuff_t *,zBuff_t *);
 //user need to provide 2 functions to update particle state and draw methods
@@ -313,6 +330,7 @@ typedef struct{
     B3LObj_t            *privous;
     B3LObj_t            *next;
     u32                 state;
+    B3LObj_t            *mother;//option, which could help to bound generater to other obj
     vect3_t             translation;//for particle generate 
     vect3_t             rotation;//for particle generate 
     u32                 startTime;
@@ -320,7 +338,7 @@ typedef struct{
     B3L_Particle_t      *pParticleActive; 
     B3L_PtlUpdFunc_t    *pUpdFunc;   
     B3L_DrawFunc_t      *pDrawFunc;     
-}B3LParticleGenObj_t; //14 words on ARM32 19 words on win64
+}B3LParticleGenObj_t; //15 words on ARM32 21 words on win64
 
 
 typedef struct{
@@ -364,10 +382,13 @@ typedef struct{
 typedef struct{   
     frameBuff_t         *pFrameBuff;
     zBuff_t             *pZBuff;
+    screen3f_t          *pVectBuff;
     camera_t            camera;
     light_t             light;    
     scene_t             scene;
-    screen3f_t          *pVectBuff;
+    f32                 lvl0Distance;
+    f32                 lvl1Distance;
+    u8                  lvl1Light;
 }render_t;   
 
 /*Useful macros--------------------------------------------------------------*/
@@ -418,7 +439,8 @@ extern void B3L_CameraLookAt(camera_t *pCam, vect3_t *pAt);
 //extern void B3L_CameraUpDirection(camera_t *pCam, vect3_t *pUp);
 //render functions
 extern void B3L_RenderInit(render_t *pRender,frameBuff_t *pFrameBuff);
-extern void B3L_NewFrame(render_t *pRender);
+extern void B3L_NewRenderStart(render_t *pRender);
+extern void B3L_Update(render_t *pRender,u32 time);
 extern void B3L_RenderScence(render_t *pRender,u32 time);
 extern void B3L_ResetScene(scene_t *pScene);
 //light functions
