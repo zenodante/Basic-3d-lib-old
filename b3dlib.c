@@ -1108,52 +1108,83 @@ void B3L_CameraLookAt(camera_t *pCam, vect3_t *pAt){
 obj functions
 -----------------------------------------------------------------------------*/
 static void UpdateParticleObjs(render_t *pRender, u32 time){
-    B3LParticleGenObj_t *pCurrentObj =(B3LParticleGenObj_t *) (pRender->scene.pActiveParticleGenObjs);
+    B3LObj_t  *pCurrentObj =(pRender->scene.pActiveParticleGenObjs);
     u32 state;
     mat4_t mat0,mat1;
+    u32 i;
+
     //switch(state & OBJ_TYPE_MASK)
-    while(pCurrentObj != (B3LParticleGenObj_t *)NULL){
+    while(pCurrentObj != (B3LObj_t  *)NULL){
         state = pCurrentObj->state;
         //only update those active particle generater
         if (B3L_TEST(state ,OBJ_PARTICLE_ACTIVE)==0){  //obj active is fail
-            pCurrentObj = (B3LParticleGenObj_t *)(pCurrentObj->next);
+            pCurrentObj = pCurrentObj->next;
             continue;
         }
-        //cal project function
-            
+        //Create generator -> world matrix into mat1
+//TODO: generate matrix
+        //if it has a mother obj
+        if (((B3LParticleGenObj_t *)pCurrentObj)->mother !=  (B3LObj_t  *)NULL){
+            //calculate mother -> world matrix
+            B3L_MakeWorldMatrix(&(((B3LParticleGenObj_t *)pCurrentObj)->mother->transform), &mat0);
+        }
+        B3L_Mat4Xmat4(&mat1,&mat0);
+        //u32,struct PARTICLEGENOBJ *,mat4_t *,B3L_Particle_t *
+        ((B3LParticleGenObj_t *)pCurrentObj)->PtlUpdFunc(time,(B3LParticleGenObj_t *)pCurrentObj,
+                                                         &mat1,&(pRender->scene.freeParticleNum),
+                                                        pRender->scene.pfreeParticles);
+        //update all the particles
+        
+        pCurrentObj = pCurrentObj->next;    
     }
 }
 
 static void RenderParticleObjs(render_t *pRender) {
-    B3LParticleGenObj_t *pCurrentObj =(B3LParticleGenObj_t *) (pRender->scene.pActiveParticleGenObjs);
+    B3LObj_t  *pCurrentObj =(pRender->scene.pActiveParticleGenObjs);
     u32 state;
     mat4_t *pCamMat = &(pRender->camera.camMat);
-    screen3f_t *pVectTarget = pRender->pVectBuff;
+    screen3_t screenVect;
     u32 i;
     B3L_Particle_t *pParticle;
-    //switch(state & OBJ_TYPE_MASK)
-    while(pCurrentObj != (B3LParticleGenObj_t *)NULL){
+    fBuff_t *pFBuff = pRender->pFrameBuff;
+    zBuff_t *pZBuff = pRender->pZBuff;
+    while(pCurrentObj != (B3LObj_t  *)NULL){
         state = pCurrentObj->state;
-        if (B3L_TEST(state ,OBJ_VISUALIZABLE)==0){  //obj visual is false
-            pCurrentObj = (B3LParticleGenObj_t *)(pCurrentObj->next);
+        i =((B3LParticleGenObj_t *)pCurrentObj)->particleNum;
+        if ((B3L_TEST(state ,OBJ_VISUALIZABLE)==0)||(i == 0)){  //obj visual is false, or no particle is alive
+            pCurrentObj = (pCurrentObj->next);
             continue;
         }
-        pParticle = pCurrentObj->pParticleActive;
-        i = Min_u32(pCurrentObj->particleNum,VECT_BUFF_SIZE);//due to the buff limit 
-        
-        while(i--){
-            Vect3Xmat4WithTest_f(&(pParticle->position), pCamMat, pVectTarget);
-            pParticle = pParticle->next;
-            pVectTarget++;
-        }
+       
+        pParticle = ((B3LParticleGenObj_t *)pCurrentObj)->pParticleActive;        
         //project the particle from world space to screen space
-
-        //call the draw function to draw all the particle based on render level?
-
-        pCurrentObj = (B3LParticleGenObj_t *)(pCurrentObj->next);    
+        while(i--){
+            Vect3Xmat4WithTest(&(pParticle->position), pCamMat, &screenVect);
+            //get the screen position
+            u32 test = screenVect.test;
+            if (B3L_TEST(test,B3L_IN_SPACE)){
+                //draw it
+                 ((B3LParticleGenObj_t *)pCurrentObj)->DrawFunc(pParticle,&screenVect,pFBuff,pZBuff);
+            } 
+            pParticle = pParticle->next;
+        }
+        pCurrentObj = pCurrentObj->next;    
     }
 }
+void B3L_DefaultParticleDrawFunc(B3L_Particle_t *pParticle, screen3f_t *pScreenVect,fBuff_t *pFBuff,zBuff_t *pZBuff){
 
+    zBuff_t compZ = CalZbuffValue(pScreenVect->z);
+    s32     intX = pScreenVect->x;
+    s32     intY = pScreenVect->y;
+    u32     shift = RENDER_RESOLUTION_X*intY + intX;
+    pZBuff = (pZBuff+shift);
+    pFBuff = (pFBuff+shift);
+    if (compZ<= *pZBuff){
+        *pZBuff = compZ;
+        *pFBuff = 0XFFFFFFFF;
+    }
+
+}
 
 static void RenderMeshObjs(render_t *pRender){
     

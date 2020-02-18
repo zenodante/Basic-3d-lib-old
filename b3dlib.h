@@ -315,10 +315,10 @@ B3LParticleGenObj_t state
   I-- fix render level number
 */
 #define OBJ_PARTICLE_ACTIVE            (9)
-typedef void (*B3L_PtlUpdFunc_t)(u32, mat4_t *, B3L_Particle_t *, screen3f_t *);
-typedef void (*B3L_DrawFunc_t)(B3L_Particle_t *, screen3f_t *,fBuff_t *,zBuff_t *);
+//typedef void (*B3L_PtlUpdFunc_t)(u32, mat4_t *, B3L_Particle_t *);
+//typedef void (*B3L_DrawFunc_t)(B3L_Particle_t *, screen3_t *,fBuff_t *,zBuff_t *);
 //user need to provide 2 functions to update particle state and draw methods
-typedef struct{
+typedef struct PARTICLEGENOBJ{
     B3LObj_t            *privous;
     B3LObj_t            *next;
     u32                 state;
@@ -327,9 +327,10 @@ typedef struct{
     vect3_t             rotation;//for particle generate 
     u32                 lastTime;
     u32                 particleNum;
-    B3L_Particle_t      *pParticleActive; 
-    B3L_PtlUpdFunc_t    *pUpdFunc;   
-    B3L_DrawFunc_t      *pDrawFunc;     
+    B3L_Particle_t      *pParticleActive;   
+    void      (*DrawFunc)(B3L_Particle_t *, screen3_t *,fBuff_t *,zBuff_t *);
+    void      (*PtlUpdFunc)(u32,struct PARTICLEGENOBJ *,mat4_t *,u32 *,B3L_Particle_t *);   
+    //time, self, obj->world matrix,free particle num pointer,free particle pool  
 }B3LParticleGenObj_t; //15 words on ARM32 21 words on win64
 
 
@@ -449,7 +450,8 @@ extern void     B3L_ReturnObjToInactiveList(B3LObj_t *pObj,  render_t *pRender);
 extern void     B3L_InitBoxObj(B3LMeshObj_t *pObj,f32 size);
 extern void     B3L_InitBoxObjNoTexture(B3LMeshNoTexObj_t *pObj,f32 size);
 extern void     B3L_InitBoxObjPolygon(B3LPolygonObj_t *pObj,f32 size);
-
+//particle function
+extern void     B3L_DefaultParticleDrawFunc(B3L_Particle_t *pParticle, screen3f_t *pScreenVect,fBuff_t *pFBuff,zBuff_t *pZBuff);
 
 //extern void RenderMeshObjs(render_t *pRender);
 /*
