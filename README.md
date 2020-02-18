@@ -1,5 +1,5 @@
 # Basic-3d-lib
-#### a 3d lab for cortex m4/7 mcu
+#### a 3d lib for cortex m4/7 mcu
 ![title image](/images/screenshot2.jpg)
 
 ![title image](/images/Annotation%202020-02-12%20225941.jpg)
@@ -18,8 +18,8 @@ All the obj in the lib should in the scene list. Only those in the render.scene.
 Todo:
 - [x] Texture mapping triangle drawing
 - [ ] 2d Sprite drawing
-- [ ] Polygon drawing
-- [ ] 3d particles drawing
+- [*] Polygon drawing
+- [ ] 3d particles drawing, dev branch current working on it
 - [x] fast flat color triangle drawing
 
 Model swapping system to manage the model loading from nor flash into sram buff.
