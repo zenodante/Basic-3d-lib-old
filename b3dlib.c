@@ -266,6 +266,7 @@ __attribute__((always_inline)) static  inline void     DrawDepthLineClip(s32 Ax,
 //camera functions
 static void SetCameraMatrix(camera_t *pCam);
 //obj list functions
+static void ResetObjList(scene_t *pScene);
 static void AddObjToTwoWayList(B3LObj_t *pObj, B3LObj_t **pStart);
 static void ResetParticleList(B3L_Particle_t *pPool,B3L_Particle_t **pStart,u32 num);
 static void ReturnParticleToPool(B3L_Particle_t *pParticle,scene_t *pScene);
@@ -275,8 +276,10 @@ static void ClearFrameBuff(fBuff_t *pFramebuff,fBuff_t value,u32 length);
 static void ClearZbuff(zBuff_t *pZbuff,u32 length);
 //Render call functions
 static void RenderMeshObjs(render_t *pRender);
+#ifdef B3L_USING_PARTICLE
 static void UpdateParticleObjs(render_t *pRender, u32 time);
 static void RenderParticleObjs(render_t *pRender);
+#endif
 static void RenderTexMesh(B3LMeshObj_t *pObj,render_t *pRender, mat4_t *pMat,u32 renderLevel);
 static void RenderNoTexMesh(B3LMeshNoTexObj_t *pObj,render_t *pRender, mat4_t *pMat,u32 renderLevel);
 static void RenderPolygon(B3LPolygonObj_t *pObj,render_t *pRender, mat4_t *pMat);
@@ -1141,6 +1144,7 @@ void B3L_CameraLookAt(camera_t *pCam, vect3_t *pAt){
 /*-----------------------------------------------------------------------------
 obj functions
 -----------------------------------------------------------------------------*/
+#ifdef B3L_USING_PARTICLE
 static void UpdateParticleObjs(render_t *pRender, u32 time){
     B3LObj_t  *pCurrentObj =(pRender->scene.pActiveParticleGenObjs);
     u32 state;
@@ -1200,8 +1204,10 @@ static void RenderParticleObjs(render_t *pRender) {
     B3L_Particle_t *pParticle;
     fBuff_t *pFBuff = pRender->pFrameBuff;
     zBuff_t *pZBuff = pRender->pZBuff;
-    B3L_DrawFunc_t DrawFunc = ((B3LParticleGenObj_t *)pCurrentObj)->DrawFunc;
+
+    
     while(pCurrentObj != (B3LObj_t  *)NULL){
+        B3L_DrawFunc_t DrawFunc = ((B3LParticleGenObj_t *)pCurrentObj)->DrawFunc;
         state = pCurrentObj->state;
         i =((B3LParticleGenObj_t *)pCurrentObj)->particleNum;
         if ((B3L_TEST(state ,OBJ_VISUALIZABLE)==0)||(i == 0)){  //obj visual is false, or no particle is alive
@@ -1239,7 +1245,7 @@ void B3L_DefaultParticleDrawFunc(B3L_Particle_t *pParticle, screen3f_t *pScreenV
     }
 
 }
-
+#endif
 static void RenderMeshObjs(render_t *pRender){
     
     mat4_t mat; //64 byte
@@ -1371,25 +1377,32 @@ void B3L_NewRenderStart(render_t *pRender){
 }    
 
 void B3L_ResetScene(scene_t *pScene){
-    u32 i;
-    pScene->freeObjNum = OBJ_BUFF_SIZE;
-    pScene->pActiveMeshObjs = (B3LObj_t *)NULL;
-    pScene->pActiveParticleGenObjs = (B3LObj_t *)NULL;
-    pScene->pFreeObjs = pScene->objBuff;
-    pScene->objBuff[0].privous = pScene->pFreeObjs;
-    pScene->objBuff[0].next= &(pScene->objBuff[1]);
-    for (i = 1;i<OBJ_BUFF_SIZE;i++){
-        pScene->objBuff[i].privous = &(pScene->objBuff[i-1]);
-        pScene->objBuff[i].next = &(pScene->objBuff[i+1]);
-    }
-    pScene->objBuff[OBJ_BUFF_SIZE - 1].next = (B3LObj_t *)NULL;
-#ifdef B3L_USING_PARTICLE   
-    pScene->freeParticleNum = B3L_PARTICLE_BUFF_DEPTH;   
-    ResetParticleList(particleBuff,&(pScene->pfreeParticles),B3L_PARTICLE_BUFF_DEPTH);
+    pScene->freeObjNum = OBJ_BUFF_SIZE; //reset free obj numbers
+    pScene->pActiveMeshObjs = (B3LObj_t *)NULL; //reset active obj list
+    ResetObjList(pScene);
+#ifdef B3L_USING_PARTICLE
+    pScene->pActiveParticleGenObjs = (B3LObj_t *)NULL;//reset particle generator obj list 
+    pScene->freeParticleNum = B3L_PARTICLE_BUFF_DEPTH;   //reset particle numbers
+    ResetParticleList(particleBuff,&(pScene->pfreeParticles),B3L_PARTICLE_BUFF_DEPTH); //reset particle list
     //call reset particle one-way list function
 #endif
 }
 
+static void ResetObjList(scene_t *pScene){
+    u32 i;
+    pScene->pFreeObjs = pScene->objBuff;  //reset all the obj buffer
+    pScene->objBuff[0].state = 0x00000000;
+    pScene->objBuff[0].privous = pScene->pFreeObjs;
+    pScene->objBuff[0].next= &(pScene->objBuff[1]);
+    for (i = 1;i<OBJ_BUFF_SIZE;i++){
+        pScene->objBuff[i].state = 0x00000000;
+        pScene->objBuff[i].privous = &(pScene->objBuff[i-1]);
+        pScene->objBuff[i].next = &(pScene->objBuff[i+1]);
+    }
+    pScene->objBuff[OBJ_BUFF_SIZE - 1].next = (B3LObj_t *)NULL;
+}
+
+#ifdef B3L_USING_PARTICLE
 static void ResetParticleList(B3L_Particle_t *pPool,B3L_Particle_t **pStart,u32 num){
     u32 i;
     *pStart = pPool;
@@ -1398,6 +1411,7 @@ static void ResetParticleList(B3L_Particle_t *pPool,B3L_Particle_t **pStart,u32 
         pPool[i].next = &(pPool[i+1]);
     }
     pPool[(num-1)].next = (B3L_Particle_t *)NULL;
+
 }
 static void ReturnParticleToPool(B3L_Particle_t *pParticle,scene_t *pScene){
     
@@ -1418,7 +1432,7 @@ static B3L_Particle_t *GetFreeParticle(scene_t *pScene){
     pScene->pfreeParticles = pScene->pfreeParticles->next;
     return popParticle;
 }
-
+#endif
 
 static void AddObjToTwoWayList(B3LObj_t *pObj, B3LObj_t **pStart){
     pObj->next = *pStart;
@@ -1435,7 +1449,11 @@ u32      B3L_GetFreeObjNum(render_t *pRender){
 }
 
 u32      B3L_GetFreeParticleNum(render_t *pRender){
+    #ifdef  B3L_USING_PARTICLE 
     return pRender->scene.freeParticleNum;
+    #else
+    return 0;
+    #endif
 }
 
 B3LObj_t * B3L_GetFreeObj(render_t *pRender){
@@ -1454,7 +1472,78 @@ B3LObj_t * B3L_GetFreeObj(render_t *pRender){
     }
 }
 
+B3LMeshObj_t *B3L_GetFreeMeshObj(render_t *pRender){
+    B3LObj_t *pObj = B3L_GetFreeObj(pRender);
+    if (pObj !=  (B3LObj_t *)NULL){
+        B3L_SET(pObj->state,MESH_OBJ);
+        B3L_SET(pObj->state,OBJ_VISUALIZABLE);
+        pObj->transform.translation.x = 0.0f;
+        pObj->transform.translation.y = 0.0f;
+        pObj->transform.translation.z = 0.0f;
+        pObj->transform.rotation.x = 0.0f;
+        pObj->transform.rotation.y = 0.0f;
+        pObj->transform.rotation.z = 0.0f;
+        pObj->transform.scale.x = 1.0f;
+        pObj->transform.scale.y = 1.0f;
+        pObj->transform.scale.z = 1.0f;
+    }
+    return (B3LMeshObj_t *)pObj;
+}
 
+B3LMeshNoTexObj_t *B3L_GetFreeMeshNoTexObj(render_t *pRender){
+    B3LObj_t *pObj = B3L_GetFreeObj(pRender);
+    if (pObj !=  (B3LObj_t *)NULL){
+        B3L_SET(pObj->state,NOTEX_MESH_OBJ);
+        B3L_SET(pObj->state,OBJ_VISUALIZABLE);
+        pObj->transform.translation.x = 0.0f;
+        pObj->transform.translation.y = 0.0f;
+        pObj->transform.translation.z = 0.0f;
+        pObj->transform.rotation.x = 0.0f;
+        pObj->transform.rotation.y = 0.0f;
+        pObj->transform.rotation.z = 0.0f;
+        pObj->transform.scale.x = 1.0f;
+        pObj->transform.scale.y = 1.0f;
+        pObj->transform.scale.z = 1.0f;
+    }
+    return (B3LMeshNoTexObj_t *)pObj;
+}
+
+B3LPolygonObj_t    *B3L_GetFreePolygonObj(render_t *pRender){
+    B3LObj_t *pObj = B3L_GetFreeObj(pRender);
+    if (pObj !=  (B3LObj_t *)NULL){
+        B3L_SET(pObj->state,POLYGON_OBJ);
+        B3L_SET(pObj->state,OBJ_VISUALIZABLE);
+        pObj->transform.translation.x = 0.0f;
+        pObj->transform.translation.y = 0.0f;
+        pObj->transform.translation.z = 0.0f;
+        pObj->transform.rotation.x = 0.0f;
+        pObj->transform.rotation.y = 0.0f;
+        pObj->transform.rotation.z = 0.0f;
+        pObj->transform.scale.x = 1.0f;
+        pObj->transform.scale.y = 1.0f;
+        pObj->transform.scale.z = 1.0f;
+    }
+    return (B3LPolygonObj_t *)pObj;
+}
+
+B3LParticleGenObj_t  *B3L_GetFreeParticleGeneratorObj(render_t *pRender){
+    B3LObj_t *pObj = B3L_GetFreeObj(pRender);
+    if (pObj !=  (B3LObj_t *)NULL){
+        B3L_SET(pObj->state,PARTICLE_GEN_OBJ);
+        B3L_SET(pObj->state,OBJ_VISUALIZABLE);
+        B3L_SET(pObj->state,OBJ_PARTICLE_ACTIVE);
+        ((B3LParticleGenObj_t  *)pObj)->rotation.x = 0.0f;
+        ((B3LParticleGenObj_t  *)pObj)->rotation.y = 0.0f;
+        ((B3LParticleGenObj_t  *)pObj)->rotation.z = 0.0f;
+        ((B3LParticleGenObj_t  *)pObj)->translation.x = 0.0f;
+        ((B3LParticleGenObj_t  *)pObj)->translation.y = 0.0f;
+        ((B3LParticleGenObj_t  *)pObj)->translation.z = 0.0f;
+        ((B3LParticleGenObj_t  *)pObj)->particleNum = 0;
+        ((B3LParticleGenObj_t  *)pObj)->pParticleActive = (B3L_Particle_t *)NULL;
+        ((B3LParticleGenObj_t  *)pObj)->lastTime = 0;
+    }
+    return (B3LParticleGenObj_t  *)pObj;
+}
 
 void B3L_AddObjToRenderList(B3LObj_t *pObj, render_t *pRender){
     //get the statement
@@ -1463,9 +1552,11 @@ void B3L_AddObjToRenderList(B3LObj_t *pObj, render_t *pRender){
     if ((type == (1<<MESH_OBJ))||(type == (1<<POLYGON_OBJ))||(type == (1<<NOTEX_MESH_OBJ))){
         AddObjToTwoWayList(pObj, &(pRender->scene.pActiveMeshObjs));    
     }
-    if (type == (1<<PARTICLE_OBJ)){
+    #ifdef B3L_USING_PARTICLE
+    if (type == (1<<PARTICLE_GEN_OBJ)){
         AddObjToTwoWayList(pObj, &(pRender->scene.pActiveParticleGenObjs)); 
     }
+    #endif
     
 }
 
@@ -1485,12 +1576,14 @@ void B3L_PopObjFromRenderList(B3LObj_t *pObj, render_t *pRender){
                 pObj->next->privous = pRender->scene.pActiveMeshObjs;
             }
         }
-        if (type == (1<<PARTICLE_OBJ)){
+        #ifdef B3L_USING_PARTICLE
+        if (type == (1<<PARTICLE_GEN_OBJ)){
             pRender->scene.pActiveParticleGenObjs = pObj->next;
             if (pObj->next != (B3LObj_t *)NULL){
                 pObj->next->privous = pRender->scene.pActiveParticleGenObjs;
             }
         }
+        #endif
         
     }
     
@@ -1979,7 +2072,7 @@ printf("Draw a mesh");
     u16 *pTriIdx = pMesh->pTri;
 
 
-    u32 cullingState = ((pObj->state)&OBJ_CULLING_MASK)>>OBJ_CILLING_SHIFT;
+    u32 cullingState = ((pObj->state)&OBJ_CULLING_MASK)>>OBJ_CULLING_SHIFT;
 
     u32 vect0Idx,vect1Idx,vect2Idx;
     vect3_t normalVect;

@@ -231,7 +231,7 @@ B3LObj_t state
 #define MESH_OBJ                            (0)
 #define POLYGON_OBJ                         (1)
 #define NOTEX_MESH_OBJ                      (2)
-#define PARTICLE_OBJ                        (3)
+#define PARTICLE_GEN_OBJ                        (3)
 #define BITMAP_OBJ                          (4)
 //obj visualizable control
 #define OBJ_VISUALIZABLE                    (8)
@@ -412,6 +412,8 @@ extern void     B3L_MakeRotationMatrixZXY(f32 byX,f32 byY,f32 byZ,mat4_t *pMat);
 extern void     B3L_MakeScaleMatrix(f32 scaleX,f32 scaleY,f32 scaleZ,mat4_t *pMat);
 extern void     B3L_MakeTranslationMat(f32 offsetX,f32 offsetY,f32 offsetZ,mat4_t *pMat);
 extern void     B3L_MakeWorldMatrix(transform3D_t *pWorldTransform, mat4_t *pMat);
+//public matrix functions
+
 //camera functions
 extern void     B3L_InitCamera(camera_t *pCam);
 extern void     B3L_CameraMoveTo(vect3_t position,camera_t *pCam);
@@ -430,7 +432,11 @@ extern void     B3L_SetLightVect(render_t *pRender, f32 x,f32 y,f32 z);
 //render obj functions
 extern u32      B3L_GetFreeObjNum(render_t *pRender);
 extern u32      B3L_GetFreeParticleNum(render_t *pRender);
-extern B3LObj_t *B3L_GetFreeObj(render_t *pRender);
+extern B3LObj_t             *B3L_GetFreeObj(render_t *pRender);
+extern B3LMeshObj_t         *B3L_GetFreeMeshObj(render_t *pRender);
+extern B3LMeshNoTexObj_t    *B3L_GetFreeMeshNoTexObj(render_t *pRender);
+extern B3LPolygonObj_t      *B3L_GetFreePolygonObj(render_t *pRender);
+extern B3LParticleGenObj_t  *B3L_GetFreeParticleGeneratorObj(render_t *pRender);
 extern void     B3L_AddObjToRenderList(B3LObj_t *pObj, render_t *pRender);
 extern void     B3L_PopObjFromRenderList(B3LObj_t *pObj, render_t *pRender);
 extern void     B3L_ReturnObjToInactiveList(B3LObj_t *pObj,  render_t *pRender);
@@ -439,8 +445,9 @@ extern void     B3L_InitBoxObj(B3LMeshObj_t *pObj,f32 size);
 extern void     B3L_InitBoxObjNoTexture(B3LMeshNoTexObj_t *pObj,f32 size);
 extern void     B3L_InitBoxObjPolygon(B3LPolygonObj_t *pObj,f32 size);
 //particle function
+#ifdef B3L_USING_PARTICLE
 extern void     B3L_DefaultParticleDrawFunc(B3L_Particle_t *pParticle, screen3f_t *pScreenVect,fBuff_t *pFBuff,zBuff_t *pZBuff);
-
+#endif
 //extern void RenderMeshObjs(render_t *pRender);
 /*
 void DrawTriTexture(
