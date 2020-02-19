@@ -1175,22 +1175,8 @@ static void UpdateParticleObjs(render_t *pRender, u32 time){
             mat.m13 = ((B3LParticleGenObj_t *)pCurrentObj)->translation.y;
             mat.m23 = ((B3LParticleGenObj_t *)pCurrentObj)->translation.z; 
             ((B3LParticleGenObj_t *)pCurrentObj)->PtlUpdFunc(time,(B3LParticleGenObj_t *)pCurrentObj,
-                                                         &mat,&(pRender->scene.freeParticleNum),
-                                                        pRender->scene.pfreeParticles);   
+                                                         &mat,pRender);   
         }
-        
-        //if the particle generator obj has mother obj
-        /*
-        if (((B3LParticleGenObj_t *)pCurrentObj)->mother !=  (B3LObj_t  *)NULL){
-            //calculate mother -> world matrix
-            B3L_MakeWorldMatrix(&(((B3LParticleGenObj_t *)pCurrentObj)->mother->transform), &mat0);
-            B3L_Mat4Xmat4(&mat1,&mat0);
-        }
-        */
-        //u32,struct PARTICLEGENOBJ *,mat4_t *,B3L_Particle_t *
-       
-        //update all the particles
-        
         pCurrentObj = pCurrentObj->next;    
     }
 }
@@ -1245,7 +1231,14 @@ void B3L_DefaultParticleDrawFunc(B3L_Particle_t *pParticle, screen3f_t *pScreenV
     }
 
 }
+
+void     B3L_DefaultParticleUpdFunc(u32 time,B3LParticleGenObj_t *pSelf,mat4_t *mat,render_t *pRender){
+//TODO here
+
+}
+
 #endif
+
 static void RenderMeshObjs(render_t *pRender){
     
     mat4_t mat; //64 byte

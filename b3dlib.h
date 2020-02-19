@@ -316,7 +316,7 @@ typedef struct PARTICLEGENOBJ{
     u32                 particleNum;
     B3L_Particle_t      *pParticleActive;   
     void      (*DrawFunc)(B3L_Particle_t *, screen3_t *,fBuff_t *,zBuff_t *);
-    void      (*PtlUpdFunc)(u32,struct PARTICLEGENOBJ *,mat4_t *,u32 *,B3L_Particle_t *);   
+    void      (*PtlUpdFunc)(u32,struct PARTICLEGENOBJ *,mat4_t *,render_t *);   
     //time, self, obj->world matrix,free particle num pointer,free particle pool  
 }B3LParticleGenObj_t; //11 not common on ARM32,14 not common on WIN64
 
@@ -447,6 +447,7 @@ extern void     B3L_InitBoxObjPolygon(B3LPolygonObj_t *pObj,f32 size);
 //particle function
 #ifdef B3L_USING_PARTICLE
 extern void     B3L_DefaultParticleDrawFunc(B3L_Particle_t *pParticle, screen3f_t *pScreenVect,fBuff_t *pFBuff,zBuff_t *pZBuff);
+extern void     B3L_DefaultParticleUpdFunc(u32 time,B3LParticleGenObj_t *pSelf,mat4_t *mat,render_t *pRender);
 #endif
 //extern void RenderMeshObjs(render_t *pRender);
 /*
