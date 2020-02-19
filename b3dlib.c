@@ -1394,6 +1394,7 @@ static void ResetParticleList(B3L_Particle_t *pPool,B3L_Particle_t **pStart,u32 
     u32 i;
     *pStart = pPool;
     for (i=0;i<(num-1);i++){
+        pPool->state = 0x00000000;
         pPool[i].next = &(pPool[i+1]);
     }
     pPool[(num-1)].next = (B3L_Particle_t *)NULL;
@@ -1401,6 +1402,7 @@ static void ResetParticleList(B3L_Particle_t *pPool,B3L_Particle_t **pStart,u32 
 static void ReturnParticleToPool(B3L_Particle_t *pParticle,scene_t *pScene){
     
     B3L_Particle_t *temp=pScene->pfreeParticles;
+    pParticle->state = 0x00000000;
     pScene->pfreeParticles = pParticle;
     pParticle->next = temp;
     pScene->freeParticleNum +=1;

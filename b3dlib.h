@@ -53,10 +53,10 @@ type 2: 16bit 8:8     AL
   
 
 
-//the obj buff at least has 1 slot
-#if OBJ_BUFF_SIZE<=0
+//the obj buff at least has 2 slot
+#if OBJ_BUFF_SIZE<2
 #undef OBJ_BUFF_SIZE
-#define OBJ_BUFF_SIZE            1
+#define OBJ_BUFF_SIZE            2
 #endif
 
 
