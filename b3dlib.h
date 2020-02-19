@@ -215,35 +215,37 @@ typedef struct{
 B3LObj_t state
    31     2423     1615      87
    ------------------------------------
-31|        |      II|    HGFE|   DCB A|0
+31|        |      SR|   MLKJI|   EDCBA|0
   ------------------------------------
   A-- mesh obj with texture
   B-- polygon obj
   C-- mesh obj without texture
-  D-- particle obj
-  E-- obj visualization
-  F-- Back face culling clock wise
-  G-- Back face culling anti-clock wise
-  H-- fix render level switch
-  I-- fix render level number
+  D-- particle generator obj
+  E-- Bitmap obj
+  I-- obj visualization
+  J-- Back face culling clock wise
+  K-- Back face culling anti-clock wise
+  L-- fix render level switch
+  M-- use customerize matrix
+  SR-- fix render level number
 */
 #define OBJ_TYPE_MASK            0x000000FF
-#define MESH_OBJ                    (0)
-//the texture 2d obj should be seperated and sorted before draw, then we could use
-//alpha mix correctly
-//so the new plan would be:draw all 3d objs, then 2d objs overthen with z buff check
-#define POLYGON_OBJ                 (1)
-#define NOTEX_MESH_OBJ              (2)
-#define PARTICLE_OBJ                (3)
-#define BITMAP_OBJ                  (4)
+#define MESH_OBJ                            (0)
+#define POLYGON_OBJ                         (1)
+#define NOTEX_MESH_OBJ                      (2)
+#define PARTICLE_OBJ                        (3)
+#define BITMAP_OBJ                          (4)
 //obj visualizable control
-#define OBJ_VISUALIZABLE            (8)
+#define OBJ_VISUALIZABLE                    (8)
 
-#define OBJ_BACK_CULLING_CLOCK            (9)
-#define OBJ_BACK_CULLING_ANTICLOCK        (10)
+#define OBJ_BACK_CULLING_CLOCK              (9)
+#define OBJ_BACK_CULLING_ANTICLOCK   (10)
 #define OBJ_CILLING_MASK             0x00000600  
-#define OBJ_CILLING_SHIFT                  (9)
+#define OBJ_CILLING_SHIFT             (9)
+
 #define OBJ_IGNORE_RENDER_LEVEL            (11)
+#define OBJ_USING_CUSTOMERIZE_MAT          (12)
+#define OBJ_PARTICLE_ACTIVE                (13)
 //render stage information
 #define OBJ_RENDER_LEVEL_MASK        0x00030000
 #define OBJ_FIX_RENDER_LEVEL_SHIFT         (16)
@@ -253,76 +255,63 @@ typedef struct B3LOBJ{
     struct B3LOBJ       *privous;
     struct B3LOBJ       *next;
     u32                 state;
+    mat4_t              *pCustMat;
     f32                 *pBoundBox;
     transform3D_t       transform;  
     #ifdef B3L_ARM      
     u32                 dummy[2];
     #else    
-    u32                 dummy[5];
+    u32                 dummy[4];
     #endif
-}B3LObj_t;//15 words on ARM32, 20words on win64
+}B3LObj_t;//12 not common on ARM32,15 not common on WIN64
 
 typedef struct{
     B3LObj_t            *privous;
     B3LObj_t            *next;
     u32                 state;
+    mat4_t              *pCustMat;
     f32                 *pBoundBox;
     transform3D_t       transform; 
     B3L_Mesh_t          *pMesh;
     B3L_texture_t       *pTexture;   
-}B3LMeshObj_t;//15 on ARM32 20 on win64
+}B3LMeshObj_t;//12 not common on ARM32,15 not common on WIN64
 
 
 typedef struct{
     B3LObj_t            *privous;
     B3LObj_t            *next;
     u32                 state;
+    mat4_t              *pCustMat;
     f32                 *pBoundBox;
     transform3D_t       transform; 
     B3L_Mesh_NoTex_t    *pMesh; 
     texLUT_t            *pLUT;
-}B3LMeshNoTexObj_t;//15 on ARM32 20 on win64
+}B3LMeshNoTexObj_t;//12 not common on ARM32,15 not common on WIN64
 
 typedef struct{
     B3LObj_t            *privous;
     B3LObj_t            *next;
     u32                 state;
+    mat4_t              *pCustMat;
     f32                 *pBoundBox;
     transform3D_t       transform; 
     B3L_Polygon_t       *pPolygon; 
     texLUT_t            color;
-}B3LPolygonObj_t;//15 on ARM32 19 on win64
+}B3LPolygonObj_t;//12 not common on ARM32,14 not common on WIN64
 
 typedef struct{
     B3LObj_t            *privous;
     B3LObj_t            *next;
     u32                 state;
 }B3LBitmapObj_t;
-/*
-B3LParticleGenObj_t state
-   31     2423     1615      87
-   ------------------------------------
-31|        |      II|    H FE|   DCB A|0
-  ------------------------------------
-  A-- mesh obj with texture
-  B-- polygon obj
-  C-- mesh obj without texture
-  D-- particle obj
-  E-- obj visualization
-  F-- obj Active
-  
-  H-- fix render level switch
-  I-- fix render level number
-*/
-#define OBJ_PARTICLE_ACTIVE            (9)
+
 //typedef void (*B3L_PtlUpdFunc_t)(u32, mat4_t *, B3L_Particle_t *);
 //typedef void (*B3L_DrawFunc_t)(B3L_Particle_t *, screen3_t *,fBuff_t *,zBuff_t *);
-//user need to provide 2 functions to update particle state and draw methods
 typedef struct PARTICLEGENOBJ{
     B3LObj_t            *privous;
     B3LObj_t            *next;
     u32                 state;
-    B3LObj_t            *mother;//option, which could help to bound generater to other obj
+    mat4_t              *pCustMat;
     vect3_t             translation;//for particle generate 
     vect3_t             rotation;//for particle generate 
     u32                 lastTime;
@@ -331,8 +320,9 @@ typedef struct PARTICLEGENOBJ{
     void      (*DrawFunc)(B3L_Particle_t *, screen3_t *,fBuff_t *,zBuff_t *);
     void      (*PtlUpdFunc)(u32,struct PARTICLEGENOBJ *,mat4_t *,u32 *,B3L_Particle_t *);   
     //time, self, obj->world matrix,free particle num pointer,free particle pool  
-}B3LParticleGenObj_t; //15 words on ARM32 21 words on win64
+}B3LParticleGenObj_t; //11 not common on ARM32,14 not common on WIN64
 
+typedef void (*B3L_DrawFunc_t)(B3L_Particle_t *, screen3_t *,fBuff_t *,zBuff_t *);
 
 typedef struct{
     B3LObj_t            objBuff[OBJ_BUFF_SIZE];

@@ -223,6 +223,7 @@ __attribute__((always_inline)) static  inline void     Vect4Xmat4(vect4_t *pV, m
 __attribute__((always_inline)) static  inline bool     Vect4BoundTest(vect4_t *pV);
 __attribute__((always_inline)) static  inline f32      FastInvertSqrt(f32 x);
 __attribute__((always_inline)) static  inline zBuff_t  CalZbuffValue(f32 z);
+__attribute__((always_inline)) static  inline void     CopyMat4(mat4_t *target, mat4_t *source);
 //light functions
 __attribute__((always_inline)) static  inline void     UpdateLightVect(render_t *pRender);
 __attribute__((always_inline)) static  inline u32      CalLightFactor(f32 normalDotLight, f32 lightFactor0,f32 lightFactor1);
@@ -582,6 +583,29 @@ __attribute__((always_inline)) static  inline bool Vect4BoundTest(vect4_t *pV){
 
 }
 
+__attribute__((always_inline)) static  inline void     CopyMat4(mat4_t *target, mat4_t *source){
+    target->m00 =   source->m00;
+    target->m01 =   source->m01;
+    target->m02 =   source->m02;
+    target->m03 =   source->m03;
+
+    target->m10 =   source->m10;
+    target->m11 =   source->m11;
+    target->m12 =   source->m12;
+    target->m13 =   source->m13;
+
+    target->m20 =   source->m20;
+    target->m21 =   source->m21;
+    target->m22 =   source->m22;
+    target->m23 =   source->m23;
+
+    target->m30 =   source->m30;
+    target->m31 =   source->m31;
+    target->m32 =   source->m32;
+    target->m33 =   source->m33;
+    
+}
+
 vect2_t B3L_Vect2(f32 x,f32 y){
     vect2_t output = {.x=x,.y=y};
     return output;
@@ -918,11 +942,15 @@ void B3L_MakeWorldMatrix(transform3D_t *pWorldTransform, mat4_t *pMat){
                                 pWorldTransform->rotation.z,&temp);
 
     B3L_Mat4Xmat4(pMat,&temp); 
-       
+    /*   
     B3L_MakeTranslationMat(pWorldTransform->translation.x,
                                 pWorldTransform->translation.y,
                                 pWorldTransform->translation.z,&temp);
     B3L_Mat4Xmat4(pMat,&temp);   
+    */
+    pMat->m03 = pWorldTransform->translation.x;
+    pMat->m13 = pWorldTransform->translation.y;
+    pMat->m23 = pWorldTransform->translation.z;
 #ifdef B3L_DEBUG
 printf("pWorldTransform %.3f,%.3f,%.3f,\n",pWorldTransform->rotation.x,pWorldTransform->rotation.y,pWorldTransform->rotation.z);
 printf("In make world matrix, temp matrix:\n");
@@ -1110,7 +1138,7 @@ obj functions
 static void UpdateParticleObjs(render_t *pRender, u32 time){
     B3LObj_t  *pCurrentObj =(pRender->scene.pActiveParticleGenObjs);
     u32 state;
-    mat4_t mat0,mat1;
+    mat4_t mat;
     u32 i;
 
     //switch(state & OBJ_TYPE_MASK)
@@ -1124,15 +1152,33 @@ static void UpdateParticleObjs(render_t *pRender, u32 time){
         //Create generator -> world matrix into mat1
 //TODO: generate matrix
         //if it has a mother obj
+        if(B3L_TEST(pCurrentObj->state,OBJ_USING_CUSTOMERIZE_MAT)){
+            ((B3LParticleGenObj_t *)pCurrentObj)->PtlUpdFunc(time,(B3LParticleGenObj_t *)pCurrentObj,
+                                                         pCurrentObj->pCustMat,&(pRender->scene.freeParticleNum),
+                                                        pRender->scene.pfreeParticles);
+        }else{
+            f32 x = ((B3LParticleGenObj_t *)pCurrentObj)->rotation.x;
+            f32 y = ((B3LParticleGenObj_t *)pCurrentObj)->rotation.y;
+            f32 z = ((B3LParticleGenObj_t *)pCurrentObj)->rotation.z;
+            B3L_MakeRotationMatrixZXY(x,y,z,&mat);
+            mat.m03 = ((B3LParticleGenObj_t *)pCurrentObj)->translation.x;
+            mat.m13 = ((B3LParticleGenObj_t *)pCurrentObj)->translation.y;
+            mat.m23 = ((B3LParticleGenObj_t *)pCurrentObj)->translation.z; 
+            ((B3LParticleGenObj_t *)pCurrentObj)->PtlUpdFunc(time,(B3LParticleGenObj_t *)pCurrentObj,
+                                                         &mat,&(pRender->scene.freeParticleNum),
+                                                        pRender->scene.pfreeParticles);   
+        }
+        
+        //if the particle generator obj has mother obj
+        /*
         if (((B3LParticleGenObj_t *)pCurrentObj)->mother !=  (B3LObj_t  *)NULL){
             //calculate mother -> world matrix
             B3L_MakeWorldMatrix(&(((B3LParticleGenObj_t *)pCurrentObj)->mother->transform), &mat0);
+            B3L_Mat4Xmat4(&mat1,&mat0);
         }
-        B3L_Mat4Xmat4(&mat1,&mat0);
+        */
         //u32,struct PARTICLEGENOBJ *,mat4_t *,B3L_Particle_t *
-        ((B3LParticleGenObj_t *)pCurrentObj)->PtlUpdFunc(time,(B3LParticleGenObj_t *)pCurrentObj,
-                                                         &mat1,&(pRender->scene.freeParticleNum),
-                                                        pRender->scene.pfreeParticles);
+       
         //update all the particles
         
         pCurrentObj = pCurrentObj->next;    
@@ -1148,6 +1194,7 @@ static void RenderParticleObjs(render_t *pRender) {
     B3L_Particle_t *pParticle;
     fBuff_t *pFBuff = pRender->pFrameBuff;
     zBuff_t *pZBuff = pRender->pZBuff;
+    B3L_DrawFunc_t DrawFunc = ((B3LParticleGenObj_t *)pCurrentObj)->DrawFunc;
     while(pCurrentObj != (B3LObj_t  *)NULL){
         state = pCurrentObj->state;
         i =((B3LParticleGenObj_t *)pCurrentObj)->particleNum;
@@ -1164,7 +1211,8 @@ static void RenderParticleObjs(render_t *pRender) {
             u32 test = screenVect.test;
             if (B3L_TEST(test,B3L_IN_SPACE)){
                 //draw it
-                 ((B3LParticleGenObj_t *)pCurrentObj)->DrawFunc(pParticle,&screenVect,pFBuff,pZBuff);
+                //((B3LParticleGenObj_t *)pCurrentObj)->DrawFunc(pParticle,&screenVect,pFBuff,pZBuff);
+                DrawFunc(pParticle,&screenVect,pFBuff,pZBuff);
             } 
             pParticle = pParticle->next;
         }
@@ -1209,8 +1257,12 @@ static void RenderMeshObjs(render_t *pRender){
             continue;
         }
         //create the obj->clip matrix
-        B3L_MakeWorldMatrix(&(pCurrentObj->transform), &mat);
-        
+        if(B3L_TEST(pCurrentObj->state,OBJ_USING_CUSTOMERIZE_MAT)){
+            //copy mat
+            CopyMat4(&mat,pCurrentObj->pCustMat);
+        }else{    
+            B3L_MakeWorldMatrix(&(pCurrentObj->transform), &mat);
+        }
         B3L_Mat4Xmat4(&mat, &(pRender->camera.camMat));
         //B3L_logMat4(mat);
         //calculate the bound box position in the clip space
@@ -1235,9 +1287,6 @@ static void RenderMeshObjs(render_t *pRender){
                 
             }
         }
-
-        
-
         //test boundBoxTestFactor to check if the obj out of clip range
         if (inClipSpace != true){  //all points outside the clip range
             pCurrentObj = pCurrentObj->next;
@@ -1442,9 +1491,13 @@ void B3L_PopObjFromRenderList(B3LObj_t *pObj, render_t *pRender){
 }
 
 void B3L_ReturnObjToInactiveList(B3LObj_t *pObj,  render_t *pRender){
+    
+    
     if (pObj->privous != (B3LObj_t *)NULL){ //it is now in the active list
         B3L_PopObjFromRenderList(pObj,  pRender);
     }
+    //clean the obj statement
+    pObj->state = 0x00000000;
     pRender->scene.freeObjNum +=1;
     AddObjToTwoWayList(pObj, &(pRender->scene.pFreeObjs));
 }
