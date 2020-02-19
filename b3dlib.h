@@ -215,7 +215,7 @@ typedef struct{
 B3LObj_t state
    31     2423     1615      87
    ------------------------------------
-31|        |      SR|   MLKJI|   EDCBA|0
+31|        |      SR|  NMLKJI|   EDCBA|0
   ------------------------------------
   A-- mesh obj with texture
   B-- polygon obj
@@ -227,6 +227,7 @@ B3LObj_t state
   K-- Back face culling anti-clock wise
   L-- fix render level switch
   M-- use customerize matrix
+  N-- Particle generator acitve state
   SR-- fix render level number
 */
 #define OBJ_TYPE_MASK            0x000000FF
@@ -239,7 +240,7 @@ B3LObj_t state
 #define OBJ_VISUALIZABLE                    (8)
 
 #define OBJ_BACK_CULLING_CLOCK              (9)
-#define OBJ_BACK_CULLING_ANTICLOCK   (10)
+#define OBJ_BACK_CULLING_ANTICLOCK         (10)
 #define OBJ_CILLING_MASK             0x00000600  
 #define OBJ_CILLING_SHIFT             (9)
 
