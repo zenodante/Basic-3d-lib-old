@@ -11,8 +11,7 @@
 
 //#define B3L_DEBUG
 /*Config area----------------------------------------------------------------*/
-//not used fix math 
-#define B3L_FIX_BITS            10
+
 //vect buff is limited the max vectors in single obj
 #define VECT_BUFF_SIZE          512
 #define OBJ_BUFF_SIZE           64
@@ -44,8 +43,6 @@ type 2: 16bit 8:8     AL
 #define LEVEL_1_DEFAULT_LIGHT        0xA0
 //level 0, calculate light, texture
 //level 1, calculate texture
-
-
 
 #define B3L_USING_PARTICLE   
 #ifdef B3L_USING_PARTICLE
@@ -241,15 +238,15 @@ B3LObj_t state
 
 #define OBJ_BACK_CULLING_CLOCK              (9)
 #define OBJ_BACK_CULLING_ANTICLOCK         (10)
-#define OBJ_CILLING_MASK             0x00000600  
-#define OBJ_CILLING_SHIFT             (9)
+#define OBJ_CULLING_MASK             0x00000600  
+#define OBJ_CULLING_SHIFT             (9)
 
 #define OBJ_IGNORE_RENDER_LEVEL            (11)
 #define OBJ_USING_CUSTOMERIZE_MAT          (12)
 #define OBJ_PARTICLE_ACTIVE                (13)
 //render stage information
 #define OBJ_RENDER_LEVEL_MASK        0x00030000
-#define OBJ_FIX_RENDER_LEVEL_SHIFT         (16)
+#define OBJ_FIX_RENDER_LEVEL_SHIFT   (16)
 
 //all different obj types's size is <= sizeof(B3LObj_t)
 typedef struct B3LOBJ{

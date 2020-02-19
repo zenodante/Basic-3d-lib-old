@@ -18,6 +18,9 @@ B3L_Particle_t  particleBuff[B3L_PARTICLE_BUFF_DEPTH];
 #endif
 
 #define B3L_MATH_TABLE_SIZE      256
+//not used fix math 
+#define B3L_FIX_BITS            10
+
 
 #if Z_BUFF_LEVEL == 2
     #define Z_LIMIT_NUM      (1.0f)
@@ -1033,6 +1036,9 @@ __attribute__((always_inline)) static inline u32 CalLightFactor(f32 normalDotLig
     normalDotLight += lightFactor0;
     lightValue =(s32) (normalDotLight*lightFactor1);
     lightValue = Max_s32(lightValue,0);
+#if FRAME_BUFF_COLOR_TYPE == 1
+    lightValue = lightValue>>4; //only use high 4 bit
+#endif
     return lightValue;
 }
 
@@ -1811,7 +1817,7 @@ static void RenderNoTexMesh(B3LMeshNoTexObj_t *pObj,render_t *pRender, mat4_t *p
     u16 *pTriIdx = pMesh->pTri;
 
 
-    u32 cullingState = ((pObj->state)&OBJ_CILLING_MASK)>>OBJ_CILLING_SHIFT;
+    u32 cullingState = ((pObj->state)&OBJ_CULLING_MASK)>>OBJ_CULLING_SHIFT;
 
     
     u32 vect0Idx,vect1Idx,vect2Idx;
@@ -1971,7 +1977,7 @@ printf("Draw a mesh");
     u16 *pTriIdx = pMesh->pTri;
 
 
-    u32 cullingState = ((pObj->state)&OBJ_CILLING_MASK)>>OBJ_CILLING_SHIFT;
+    u32 cullingState = ((pObj->state)&OBJ_CULLING_MASK)>>OBJ_CILLING_SHIFT;
 
     u32 vect0Idx,vect1Idx,vect2Idx;
     vect3_t normalVect;
