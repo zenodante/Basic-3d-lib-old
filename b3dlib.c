@@ -11,8 +11,9 @@
 
 
 //config the ram position if necessary
-screen3f_t      vectBuff[VECT_BUFF_SIZE]; //8KB
+screen3f_t     vectBuff[VECT_BUFF_SIZE]; //8KB
 zBuff_t        zBuff[VIDEO_BUFF_LENTH];        //75KB
+
 #ifdef B3L_USING_PARTICLE
 B3L_Particle_t  particleBuff[B3L_PARTICLE_BUFF_DEPTH];
 #endif
@@ -216,6 +217,8 @@ __attribute__((always_inline)) static  inline u32      Min_u32(u32 v1, u32 v2);
 __attribute__((always_inline)) static  inline f32      Max_f(f32 v1, f32 v2);
 __attribute__((always_inline)) static  inline s32      Max_u32(u32 v1, s32 v2);
 __attribute__((always_inline)) static  inline s32      Max_s32(s32 v1, s32 v2);
+__attribute__((always_inline)) static  inline void     Vect3_Scale(vect3_t *pV,f32 scale,vect3_t *pResult);
+__attribute__((always_inline)) static  inline void     Vect3_Add(vect3_t *pV1,vect3_t *pV2,vect3_t *pResult);
 __attribute__((always_inline)) static  inline void     MakeClipMatrix(f32 focalLength, f32 aspectRatio,mat4_t *mat);
 __attribute__((always_inline)) static  inline void     Vect3Xmat4(vect3_t *pV, mat4_t *pMat, vect4_t *pResult);
 __attribute__((always_inline)) static  inline void     Vect3Xmat4WithTest(vect3_t *pV, mat4_t *pMat, screen3_t *pResult);
@@ -227,6 +230,7 @@ __attribute__((always_inline)) static  inline bool     Vect4BoundTest(vect4_t *p
 __attribute__((always_inline)) static  inline f32      FastInvertSqrt(f32 x);
 __attribute__((always_inline)) static  inline zBuff_t  CalZbuffValue(f32 z);
 __attribute__((always_inline)) static  inline void     CopyMat4(mat4_t *target, mat4_t *source);
+   
 //light functions
 __attribute__((always_inline)) static  inline void     UpdateLightVect(render_t *pRender);
 __attribute__((always_inline)) static  inline u32      CalLightFactor(f32 normalDotLight, f32 lightFactor0,f32 lightFactor1);
@@ -269,8 +273,8 @@ static void SetCameraMatrix(camera_t *pCam);
 static void ResetObjList(scene_t *pScene);
 static void AddObjToTwoWayList(B3LObj_t *pObj, B3LObj_t **pStart);
 static void ResetParticleList(B3L_Particle_t *pPool,B3L_Particle_t **pStart,u32 num);
-static void ReturnParticleToPool(B3L_Particle_t *pParticle,scene_t *pScene);
-static B3L_Particle_t *GetFreeParticle(scene_t *pScene);
+void B3L_ReturnParticleToPool(B3L_Particle_t *pParticle,scene_t *pScene);
+
 //buff functions
 static void ClearFrameBuff(fBuff_t *pFramebuff,fBuff_t value,u32 length);
 static void ClearZbuff(zBuff_t *pZbuff,u32 length);
@@ -401,8 +405,17 @@ __attribute__((always_inline)) static inline f32 Interp_f(f32 x1, f32 x2, f32 t)
     return x1 + (x2 - x1) * t;
 }
 
+__attribute__((always_inline)) static  inline void     Vect3_Scale(vect3_t *pV,f32 scale,vect3_t *pResult){
+    pResult->x = scale*pV->x;
+    pResult->y = scale*pV->y;
+    pResult->z = scale*pV->z;
+}
 
-
+__attribute__((always_inline)) static  inline void     Vect3_Add(vect3_t *pV1,vect3_t *pV2,vect3_t *pResult){
+    pResult->x = pV1->x + pV2->x;
+    pResult->y = pV1->y + pV2->y;
+    pResult->z = pV1->z + pV2->z;
+}
 
 /*
 __attribute__((always_inline)) static inline void B3L_ClipToScreen(vect4Test_t *pV, screen4_t *pResult){
@@ -553,6 +566,50 @@ __attribute__((always_inline)) static  inline void  Norm3Xmat4Normalize(vect3_t 
     #undef dotCol 
 
 }
+
+void     B3L_Vect3MulMat4(vect3_t *pV, mat4_t *mat, vect3_t *pResult){
+    f32 x,y,z,rx,ry,rz;
+    x = pV->x;
+    y = pV->y;
+    z = pV->z;
+
+    #define dotCol(col)\
+        (x*(pMat->m##col##0)) +\
+        (y*(pMat->m##col##1)) +\
+        (z*(pMat->m##col##2)) 
+    
+    rx = dotCol(0);
+    ry = dotCol(1);
+    rz = dotCol(2);
+
+    pResult->x = rx;
+    pResult->y = ry;
+    pResult->z = rz;
+    #undef dotCol 
+}
+
+void     B3L_Point3MulMat4(vect3_t *pV, mat4_t *mat, vect3_t *pResult){
+    f32 x,y,z,rx,ry,rz;
+    x = pV->x;
+    y = pV->y;
+    z = pV->z;
+
+    #define dotCol(col)\
+        (x*(pMat->m##col##0)) +\
+        (y*(pMat->m##col##1)) +\
+        (z*(pMat->m##col##2)) +\
+        pMat->m##col##3
+    
+    rx = dotCol(0);
+    ry = dotCol(1);
+    rz = dotCol(2);
+
+    pResult->x = rx;
+    pResult->y = ry;
+    pResult->z = rz;
+    #undef dotCol
+}
+
 __attribute__((always_inline)) static  inline void  Norm3Xmat4(vect3_t *pV, mat4_t *pMat, vect3_t *pResult){
     f32 x,y,z,rx,ry,rz;
     x = pV->x;
@@ -710,7 +767,8 @@ f32 B3L_sin(f32 in){
   /* Return output value */
   return (sinVal);
 
- }
+}
+
 f32 B3L_cos(f32 in){
     return B3L_sin(in + 0.25f);
 }
@@ -784,6 +842,22 @@ void B3L_CrossProductVect3(vect3_t *pA, vect3_t *pB, vect3_t *pResult){
 
 f32 B3L_DotProductVect3(vect3_t *pA, vect3_t *pB){
     return (pA->x*pB->x+pA->y*pB->y+pA->z*pB->z);
+}
+
+//random function
+u32 prng_lfsr = 0;
+const u16 prng_tap = 0x74b8;
+
+void   B3L_SetSeed(u32 seed){
+    prng_lfsr = seed;
+}
+u32    B3L_Random(void){
+    u8 lsb = prng_lfsr & 1;
+    prng_lfsr = prng_lfsr>>1;
+    if (lsb){
+        prng_lfsr ^=prng_tap;
+    }
+    return prng_lfsr;
 }
 /*-----------------------------------------------------------------------------
 Matrix functions
@@ -1232,9 +1306,78 @@ void B3L_DefaultParticleDrawFunc(B3L_Particle_t *pParticle, screen3f_t *pScreenV
 
 }
 
-void     B3L_DefaultParticleUpdFunc(u32 time,B3LParticleGenObj_t *pSelf,mat4_t *mat,render_t *pRender){
+void     B3L_DefaultParticleUpdFunc(u32 time,B3LParticleGenObj_t *pSelf,mat4_t *pMat,render_t *pRender){
 //TODO here
+    u32 deltaTime;
+    u32 i;
+    B3L_Particle_t *pParticle;
+    B3L_Particle_t *pPrevParticle;
+    vect3_t  delta;
+    vect3_t  force ={.x=0.0f,.y=-0.01f,.z=0.0f};
+    u32      newParticleNum =  (u32)(time*0.1f);
+    if(pSelf->lastTime == 0){//this is the first time a generator is updated, only get the time
+        pSelf->lastTime = time;
+        return;
+    }else{
+        //calculate the delta time 
+        deltaTime = time - pSelf->lastTime;
+        pSelf->lastTime = time;
+        //add necessary new particles into the list
+        i = Min_u32(pRender->scene.freeParticleNum,newParticleNum);
+        u32 randValue;
+        f32 inv256 = 0.00390625f;
+        while(i--){
+            pParticle = B3L_GetFreeParticle(&(pRender->scene));
+            //setup position
+            pParticle->position.x = pMat->m03;
+            pParticle->position.y = pMat->m13;
+            pParticle->position.z = pMat->m23;
+            //setup lifetime
+            pParticle->life = 2000;
+            //setup init delta
+            randValue = B3L_Random();
+            randValue = randValue&0x000000FF;
+            delta.x = 0.05f*((f32)randValue)*inv256;//need a fast rendom function here!
+            randValue = B3L_Random();
+            randValue = randValue&0x000000FF;
+            delta.y = 0.05f*((f32)randValue)*inv256;
+            randValue = B3L_Random();
+            randValue = randValue&0x000000FF;
+            delta.z = 0.05f*((f32)randValue)*inv256;
+            B3L_Vect3MulMat4(&delta, pMat, &delta);
+            pParticle->delta.x = delta.x;
+            pParticle->delta.y = delta.y;
+            pParticle->delta.z = delta.z;
+            B3L_AddParticleToGenerator(pParticle,pSelf);
+        }
+        //update all particle statement
+        i = pSelf->particleNum ;
 
+        pParticle = pSelf->pParticleActive;
+        Vect3_Scale(&force,(f32)deltaTime,&force);//force * time
+
+        while(i--){
+            pParticle->life -= deltaTime;
+            if (pParticle->life <= 0){
+                //dead particle, remove it back to the free particle pool
+                if (pSelf->pParticleActive == pParticle){ //the first one
+                    pSelf->pParticleActive = pParticle->next;
+                }else{
+                    pPrevParticle->next = pParticle->next;
+                }           
+                pSelf->particleNum -=1;   
+                B3L_ReturnParticleToPool(pParticle,&(pRender->scene));
+                
+            }else{
+                Vect3_Add(&(pParticle->delta), &force ,&(pParticle->delta));//update the delta
+                Vect3_Scale(&(pParticle->delta),(f32)deltaTime,&delta);
+                Vect3_Add(&(pParticle->position),&(delta),&(pParticle->position));//update the position
+
+            }
+            pPrevParticle = pParticle;
+            pParticle = pParticle->next;
+        }
+    }
 }
 
 #endif
@@ -1406,7 +1549,7 @@ static void ResetParticleList(B3L_Particle_t *pPool,B3L_Particle_t **pStart,u32 
     pPool[(num-1)].next = (B3L_Particle_t *)NULL;
 
 }
-static void ReturnParticleToPool(B3L_Particle_t *pParticle,scene_t *pScene){
+void B3L_ReturnParticleToPool(B3L_Particle_t *pParticle,scene_t *pScene){
     
     B3L_Particle_t *temp=pScene->pfreeParticles;
     pParticle->state = 0x00000000;
@@ -1415,7 +1558,15 @@ static void ReturnParticleToPool(B3L_Particle_t *pParticle,scene_t *pScene){
     pScene->freeParticleNum +=1;
 }
 
-static B3L_Particle_t *GetFreeParticle(scene_t *pScene){
+void B3L_AddParticleToGenerator(B3L_Particle_t *pParticle,B3LParticleGenObj_t  *pGenerator){
+    B3L_Particle_t *pTemp = pGenerator->pParticleActive;
+    pGenerator->pParticleActive = pParticle;
+    pParticle->next = pTemp;
+    pGenerator->particleNum +=1;
+}
+
+
+B3L_Particle_t *B3L_GetFreeParticle(scene_t *pScene){
     //todo
     if (pScene->freeParticleNum == 0){
         return (B3L_Particle_t *)NULL;
@@ -1692,6 +1843,11 @@ void B3L_InitBoxObjPolygon(B3LPolygonObj_t *pObj,f32 size){
 
     //B3L_SET(pObj->state,OBJ_BACK_CULLING_CLOCK);
 
+}
+
+void     B3L_InitDemoParticleGenObj(B3LParticleGenObj_t  *pParticleGen){
+    //todo create a generator based on default functions
+    
 }
 /*-----------------------------------------------------------------------------
 Draw functions

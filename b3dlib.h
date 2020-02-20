@@ -190,7 +190,7 @@ typedef struct {
 typedef struct B3L_PARTICLE{
     struct B3L_PARTICLE *next;
     uint32_t            state;
-    uint32_t            life;
+    int32_t             life;
     vect3_t             position;
     vect3_t             delta;
 }B3L_Particle_t;
@@ -412,8 +412,13 @@ extern void     B3L_MakeRotationMatrixZXY(f32 byX,f32 byY,f32 byZ,mat4_t *pMat);
 extern void     B3L_MakeScaleMatrix(f32 scaleX,f32 scaleY,f32 scaleZ,mat4_t *pMat);
 extern void     B3L_MakeTranslationMat(f32 offsetX,f32 offsetY,f32 offsetZ,mat4_t *pMat);
 extern void     B3L_MakeWorldMatrix(transform3D_t *pWorldTransform, mat4_t *pMat);
+//vect mul will not add translate m03, m13, m23
+//point mul will add translate m03, m13, m23
+extern void     B3L_Vect3MulMat4(vect3_t *pV, mat4_t *mat, vect3_t *pResult);
+extern void     B3L_Point3MulMat4(vect3_t *pV, mat4_t *mat, vect3_t *pResult);
 //public matrix functions
-
+extern void     B3L_SetSeed(u32 seed);
+extern u32      B3L_Random(void);  
 //camera functions
 extern void     B3L_InitCamera(camera_t *pCam);
 extern void     B3L_CameraMoveTo(vect3_t position,camera_t *pCam);
@@ -429,17 +434,24 @@ extern void     B3L_ResetScene(scene_t *pScene);
 extern void     B3L_ResetLight(light_t *pLight);
 extern void     B3L_SetLightType(render_t *pRender,lightType_e type);
 extern void     B3L_SetLightVect(render_t *pRender, f32 x,f32 y,f32 z);
+
 //render obj functions
-extern u32      B3L_GetFreeObjNum(render_t *pRender);
-extern u32      B3L_GetFreeParticleNum(render_t *pRender);
+
+extern B3L_Particle_t       *B3L_GetFreeParticle(scene_t *pScene);
+extern u32                  B3L_GetFreeParticleNum(render_t *pRender);
+extern void                 B3L_ReturnParticleToPool(B3L_Particle_t *pParticle,scene_t *pScene);
+extern void                 B3L_AddParticleToGenerator(B3L_Particle_t *pParticle,B3LParticleGenObj_t  *pGenerator);
+
+extern u32                  B3L_GetFreeObjNum(render_t *pRender);
 extern B3LObj_t             *B3L_GetFreeObj(render_t *pRender);
 extern B3LMeshObj_t         *B3L_GetFreeMeshObj(render_t *pRender);
 extern B3LMeshNoTexObj_t    *B3L_GetFreeMeshNoTexObj(render_t *pRender);
 extern B3LPolygonObj_t      *B3L_GetFreePolygonObj(render_t *pRender);
 extern B3LParticleGenObj_t  *B3L_GetFreeParticleGeneratorObj(render_t *pRender);
-extern void     B3L_AddObjToRenderList(B3LObj_t *pObj, render_t *pRender);
-extern void     B3L_PopObjFromRenderList(B3LObj_t *pObj, render_t *pRender);
-extern void     B3L_ReturnObjToInactiveList(B3LObj_t *pObj,  render_t *pRender);
+extern void                 B3L_AddObjToRenderList(B3LObj_t *pObj, render_t *pRender);
+extern void                 B3L_PopObjFromRenderList(B3LObj_t *pObj, render_t *pRender);
+extern void                 B3L_ReturnObjToInactiveList(B3LObj_t *pObj,  render_t *pRender);
+
 //helper function for testing objs
 extern void     B3L_InitBoxObj(B3LMeshObj_t *pObj,f32 size);
 extern void     B3L_InitBoxObjNoTexture(B3LMeshNoTexObj_t *pObj,f32 size);
@@ -447,7 +459,7 @@ extern void     B3L_InitBoxObjPolygon(B3LPolygonObj_t *pObj,f32 size);
 //particle function
 #ifdef B3L_USING_PARTICLE
 extern void     B3L_DefaultParticleDrawFunc(B3L_Particle_t *pParticle, screen3f_t *pScreenVect,fBuff_t *pFBuff,zBuff_t *pZBuff);
-extern void     B3L_DefaultParticleUpdFunc(u32 time,B3LParticleGenObj_t *pSelf,mat4_t *mat,render_t *pRender);
+extern void     B3L_DefaultParticleUpdFunc(u32 time,B3LParticleGenObj_t *pSelf,mat4_t *pMat,render_t *pRender);
 #endif
 //extern void RenderMeshObjs(render_t *pRender);
 /*
