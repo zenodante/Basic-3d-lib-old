@@ -14,10 +14,18 @@ vect3_t at ={.x=0.0f,.y=0.0f,.z=0.0f};
 f32 i = 0.0f;
 f32 lightY = 0.0f;
 /* setup */
+B3LParticleGenObj_t  *pParticleGen;
 void init() {
+    B3L_SetSeed(0x31415926);
     set_screen_mode(screen_mode::lores);
     //you need a 32bit framebuff here!
     B3L_RenderInit(&B3Lrender,(fBuff_t *)fb.data);
+    
+    pParticleGen = B3L_GetFreeParticleGeneratorObj(&B3Lrender);
+    B3L_InitDemoParticleGenObj(pParticleGen);
+    pParticleGen->translation.x = 100.0f;
+    pParticleGen->translation.y = 50.0f;
+    B3L_AddObjToRenderList((B3LObj_t *)pParticleGen, &B3Lrender);
 
     pBox2 = (B3LPolygonObj_t *)B3L_GetFreeObj(&B3Lrender);
     pBox = (B3LMeshObj_t *)B3L_GetFreeObj(&B3Lrender);
@@ -53,7 +61,6 @@ void init() {
 
 void update(uint32_t time){
     B3L_Update(&B3Lrender,time);
-    
     //box.transform.rotation.x += 0.001f;
     //box.transform.rotation.y += 0.001f;
     //pBox->transform.rotation.x -= 0.001f;
@@ -86,11 +93,12 @@ void update(uint32_t time){
     i +=0.002f;
 
     B3L_SetLightVect(&B3Lrender, 0.0f,lightY,0.0f);    
-    //B3Lrender.camera.transform.translation.z =  B3L_sin(i)*200.0f;
+    B3Lrender.camera.transform.translation.z =  B3L_sin(i)*200.0f;
     
-    //B3Lrender.camera.transform.translation.x =  B3L_cos(i)*200.0f;
+    B3Lrender.camera.transform.translation.x =  B3L_cos(i)*200.0f;
 
-    //B3L_CameraLookAt(&(B3Lrender.camera), &at);
+    B3L_CameraLookAt(&(B3Lrender.camera), &at);
+
 }
 
 #define RGB_BLEND(sr, sg, sb, dr, dg, db, a) \
@@ -104,7 +112,9 @@ void update(uint32_t time){
 
 void render(uint32_t time) {
     B3L_NewRenderStart( &B3Lrender);
-    B3L_RenderScence(&B3Lrender,time);
+
+    B3L_RenderScence(&B3Lrender);
+    //printf("finished render scence\n");
 /*
 DrawTriColor(
                                                                         0.0f,0.0f,0.1f,

@@ -305,22 +305,7 @@ typedef struct{
 
 //typedef void (*B3L_PtlUpdFunc_t)(u32, mat4_t *, B3L_Particle_t *);
 //typedef void (*B3L_DrawFunc_t)(B3L_Particle_t *, screen3_t *,fBuff_t *,zBuff_t *);
-typedef struct PARTICLEGENOBJ{
-    B3LObj_t            *privous;
-    B3LObj_t            *next;
-    u32                 state;
-    mat4_t              *pCustMat;
-    vect3_t             translation;//for particle generate 
-    vect3_t             rotation;//for particle generate 
-    u32                 lastTime;
-    u32                 particleNum;
-    B3L_Particle_t      *pParticleActive;   
-    void      (*DrawFunc)(B3L_Particle_t *, screen3_t *,fBuff_t *,zBuff_t *);
-    void      (*PtlUpdFunc)(u32,struct PARTICLEGENOBJ *,mat4_t *,render_t *);   
-    //time, self, obj->world matrix,free particle num pointer,free particle pool  
-}B3LParticleGenObj_t; //11 not common on ARM32,14 not common on WIN64
 
-typedef void (*B3L_DrawFunc_t)(B3L_Particle_t *, screen3_t *,fBuff_t *,zBuff_t *);
 
 typedef struct{
     B3LObj_t            objBuff[OBJ_BUFF_SIZE];
@@ -372,6 +357,23 @@ typedef struct{
     u8                  lvl1Light;
 }render_t;   
 
+
+typedef struct PARTICLEGENOBJ{
+    B3LObj_t            *privous;
+    B3LObj_t            *next;
+    u32                 state;
+    mat4_t              *pCustMat;
+    vect3_t             translation;//for particle generate 
+    vect3_t             rotation;//for particle generate 
+    u32                 lastTime;
+    u32                 particleNum;
+    B3L_Particle_t      *pParticleActive;   
+    void      (*DrawFunc)(B3L_Particle_t *, screen3_t *,fBuff_t *,zBuff_t *);
+    void      (*PtlUpdFunc)(u32,struct PARTICLEGENOBJ *,mat4_t *,render_t *);   
+    //time, self, obj->world matrix,free particle num pointer,free particle pool  
+}B3LParticleGenObj_t; //11 not common on ARM32,14 not common on WIN64
+
+typedef void (*B3L_DrawFunc_t)(B3L_Particle_t *, screen3_t *,fBuff_t *,zBuff_t *);
 /*Useful macros--------------------------------------------------------------*/
 #define B3L_SET(PIN,N)  (PIN |=  (1u<<N))
 #define B3L_CLR(PIN,N)  (PIN &= ~(1u<<N))
@@ -414,8 +416,8 @@ extern void     B3L_MakeTranslationMat(f32 offsetX,f32 offsetY,f32 offsetZ,mat4_
 extern void     B3L_MakeWorldMatrix(transform3D_t *pWorldTransform, mat4_t *pMat);
 //vect mul will not add translate m03, m13, m23
 //point mul will add translate m03, m13, m23
-extern void     B3L_Vect3MulMat4(vect3_t *pV, mat4_t *mat, vect3_t *pResult);
-extern void     B3L_Point3MulMat4(vect3_t *pV, mat4_t *mat, vect3_t *pResult);
+extern void     B3L_Vect3MulMat4(vect3_t *pV, mat4_t *pMat, vect3_t *pResult);
+extern void     B3L_Point3MulMat4(vect3_t *pV, mat4_t *pMat, vect3_t *pResult);
 //public matrix functions
 extern void     B3L_SetSeed(u32 seed);
 extern u32      B3L_Random(void);  
@@ -460,7 +462,7 @@ extern B3L_Particle_t       *B3L_GetFreeParticle(scene_t *pScene);
 extern u32                  B3L_GetFreeParticleNum(render_t *pRender);
 extern void                 B3L_ReturnParticleToPool(B3L_Particle_t *pParticle,scene_t *pScene);
 extern void                 B3L_AddParticleToGenerator(B3L_Particle_t *pParticle,B3LParticleGenObj_t  *pGenerator);
-extern void     B3L_DefaultParticleDrawFunc(B3L_Particle_t *pParticle, screen3f_t *pScreenVect,fBuff_t *pFBuff,zBuff_t *pZBuff);
+extern void     B3L_DefaultParticleDrawFunc(B3L_Particle_t *pParticle, screen3_t *pScreenVect,fBuff_t *pFBuff,zBuff_t *pZBuff);
 extern void     B3L_DefaultParticleUpdFunc(u32 time,B3LParticleGenObj_t *pSelf,mat4_t *pMat,render_t *pRender);
 #endif
 //extern void RenderMeshObjs(render_t *pRender);

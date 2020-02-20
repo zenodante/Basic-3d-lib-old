@@ -529,7 +529,7 @@ __attribute__((always_inline)) static  inline void  Vect3Xmat4WithTest(vect3_t *
     }else{
         if((rx<=rw)&&(rx>=-rw)&&(ry<=rw)&&(ry>=-rw)&&(rz<=rw)){
             B3L_SET(testResult,B3L_IN_SPACE);
-            pResult->test = testResult;    
+              
         }
     }
 
@@ -537,7 +537,7 @@ __attribute__((always_inline)) static  inline void  Vect3Xmat4WithTest(vect3_t *
     s32 intX = (int32_t)(HALF_RESOLUTION_X + rx *factor* HALF_RESOLUTION_X);
     s32 intY = (int32_t)(HALF_RESOLUTION_Y - ry *factor* HALF_RESOLUTION_Y);
     rz = rz*factor;
-
+    pResult->test = testResult;  
     pResult->x = intX;
     pResult->y = intY;
     pResult->z = rz;
@@ -567,7 +567,7 @@ __attribute__((always_inline)) static  inline void  Norm3Xmat4Normalize(vect3_t 
 
 }
 
-void     B3L_Vect3MulMat4(vect3_t *pV, mat4_t *mat, vect3_t *pResult){
+void     B3L_Vect3MulMat4(vect3_t *pV, mat4_t *pMat, vect3_t *pResult){
     f32 x,y,z,rx,ry,rz;
     x = pV->x;
     y = pV->y;
@@ -588,7 +588,7 @@ void     B3L_Vect3MulMat4(vect3_t *pV, mat4_t *mat, vect3_t *pResult){
     #undef dotCol 
 }
 
-void     B3L_Point3MulMat4(vect3_t *pV, mat4_t *mat, vect3_t *pResult){
+void     B3L_Point3MulMat4(vect3_t *pV, mat4_t *pMat, vect3_t *pResult){
     f32 x,y,z,rx,ry,rz;
     x = pV->x;
     y = pV->y;
@@ -1234,6 +1234,7 @@ static void UpdateParticleObjs(render_t *pRender, u32 time){
 
     //switch(state & OBJ_TYPE_MASK)
     while(pCurrentObj != (B3LObj_t  *)NULL){
+
         state = pCurrentObj->state;
         //only update those active particle generater
         if (B3L_TEST(state ,OBJ_PARTICLE_ACTIVE)==0){  //obj active is fail
@@ -1244,10 +1245,11 @@ static void UpdateParticleObjs(render_t *pRender, u32 time){
 //TODO: generate matrix
         //if it has a mother obj
         if(B3L_TEST(pCurrentObj->state,OBJ_USING_CUSTOMERIZE_MAT)){
+
             ((B3LParticleGenObj_t *)pCurrentObj)->PtlUpdFunc(time,(B3LParticleGenObj_t *)pCurrentObj,
-                                                         pCurrentObj->pCustMat,&(pRender->scene.freeParticleNum),
-                                                        pRender->scene.pfreeParticles);
+                                                         pCurrentObj->pCustMat,pRender);
         }else{
+            
             f32 x = ((B3LParticleGenObj_t *)pCurrentObj)->rotation.x;
             f32 y = ((B3LParticleGenObj_t *)pCurrentObj)->rotation.y;
             f32 z = ((B3LParticleGenObj_t *)pCurrentObj)->rotation.z;
@@ -1258,6 +1260,7 @@ static void UpdateParticleObjs(render_t *pRender, u32 time){
             ((B3LParticleGenObj_t *)pCurrentObj)->PtlUpdFunc(time,(B3LParticleGenObj_t *)pCurrentObj,
                                                          &mat,pRender);   
         }
+        
         pCurrentObj = pCurrentObj->next;    
     }
 }
@@ -1282,7 +1285,7 @@ static void RenderParticleObjs(render_t *pRender) {
             continue;
         }
        
-        pParticle = ((B3LParticleGenObj_t *)pCurrentObj)->pParticleActive;        
+        pParticle = ((B3LParticleGenObj_t *)pCurrentObj)->pParticleActive;     
         //project the particle from world space to screen space
         while(i--){
             Vect3Xmat4WithTest(&(pParticle->position), pCamMat, &screenVect);
@@ -1298,7 +1301,7 @@ static void RenderParticleObjs(render_t *pRender) {
         pCurrentObj = pCurrentObj->next;    
     }
 }
-void B3L_DefaultParticleDrawFunc(B3L_Particle_t *pParticle, screen3f_t *pScreenVect,fBuff_t *pFBuff,zBuff_t *pZBuff){
+void B3L_DefaultParticleDrawFunc(B3L_Particle_t *pParticle, screen3_t *pScreenVect,fBuff_t *pFBuff,zBuff_t *pZBuff){
 
     zBuff_t compZ = CalZbuffValue(pScreenVect->z);
     s32     intX = pScreenVect->x;
@@ -1321,7 +1324,7 @@ void     B3L_DefaultParticleUpdFunc(u32 time,B3LParticleGenObj_t *pSelf,mat4_t *
     B3L_Particle_t *pPrevParticle;
     vect3_t  delta;
     vect3_t  force ={.x=0.0f,.y=-0.01f,.z=0.0f};
-    u32      newParticleNum =  (u32)(time*0.1f);
+    u32      newParticleNum =  (u32)(time*0.01f);
     if(pSelf->lastTime == 0){//this is the first time a generator is updated, only get the time
         pSelf->lastTime = time;
         return;
@@ -1340,17 +1343,17 @@ void     B3L_DefaultParticleUpdFunc(u32 time,B3LParticleGenObj_t *pSelf,mat4_t *
             pParticle->position.y = pMat->m13;
             pParticle->position.z = pMat->m23;
             //setup lifetime
-            pParticle->life = 2000;
+            pParticle->life = 800;
             //setup init delta
             randValue = B3L_Random();
             randValue = randValue&0x000000FF;
-            delta.x = 0.05f*((f32)randValue -128.0f)*inv256;//need a fast rendom function here!
+            delta.x = 0.3f*((f32)randValue)*inv256;//need a fast rendom function here!
             randValue = B3L_Random();
             randValue = randValue&0x000000FF;
-            delta.y = 0.05f*((f32)randValue)*inv256;
+            delta.y = 0.1f*((f32)randValue)*inv256;
             randValue = B3L_Random();
             randValue = randValue&0x000000FF;
-            delta.z = 0.05f*((f32)randValue -128.0f)*inv256;
+            delta.z = 0.3f*((f32)randValue)*inv256;
             B3L_Vect3MulMat4(&delta, pMat, &delta);
             pParticle->delta.x = delta.x;
             pParticle->delta.y = delta.y;
@@ -1361,6 +1364,7 @@ void     B3L_DefaultParticleUpdFunc(u32 time,B3LParticleGenObj_t *pSelf,mat4_t *
         i = pSelf->particleNum ;
 
         pParticle = pSelf->pParticleActive;
+        pPrevParticle = pSelf->pParticleActive;
         Vect3_Scale(&force,(f32)deltaTime,&force);//force * time
 
         while(i--){
@@ -1370,19 +1374,20 @@ void     B3L_DefaultParticleUpdFunc(u32 time,B3LParticleGenObj_t *pSelf,mat4_t *
                 if (pSelf->pParticleActive == pParticle){ //the first one
                     pSelf->pParticleActive = pParticle->next;
                 }else{
-                    pPrevParticle->next = pParticle->next;
+                    pPrevParticle->next = pParticle->next;                    
                 }           
-                pSelf->particleNum -=1;   
+                pSelf->particleNum -=1;  
                 B3L_ReturnParticleToPool(pParticle,&(pRender->scene));
-                
+                pParticle = pPrevParticle->next;
             }else{
                 Vect3_Add(&(pParticle->delta), &force ,&(pParticle->delta));//update the delta
                 Vect3_Scale(&(pParticle->delta),(f32)deltaTime,&delta);
                 Vect3_Add(&(pParticle->position),&(delta),&(pParticle->position));//update the position
-
+                pPrevParticle = pParticle;
+                pParticle = pParticle->next;
             }
-            pPrevParticle = pParticle;
-            pParticle = pParticle->next;
+            
+            
         }
     }
 }
