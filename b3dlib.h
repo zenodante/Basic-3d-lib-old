@@ -437,10 +437,7 @@ extern void     B3L_SetLightVect(render_t *pRender, f32 x,f32 y,f32 z);
 
 //render obj functions
 
-extern B3L_Particle_t       *B3L_GetFreeParticle(scene_t *pScene);
-extern u32                  B3L_GetFreeParticleNum(render_t *pRender);
-extern void                 B3L_ReturnParticleToPool(B3L_Particle_t *pParticle,scene_t *pScene);
-extern void                 B3L_AddParticleToGenerator(B3L_Particle_t *pParticle,B3LParticleGenObj_t  *pGenerator);
+
 
 extern u32                  B3L_GetFreeObjNum(render_t *pRender);
 extern B3LObj_t             *B3L_GetFreeObj(render_t *pRender);
@@ -459,6 +456,10 @@ extern void     B3L_InitBoxObjPolygon(B3LPolygonObj_t *pObj,f32 size);
 extern void     B3L_InitDemoParticleGenObj(B3LParticleGenObj_t  *pParticleGen);
 //particle function
 #ifdef B3L_USING_PARTICLE
+extern B3L_Particle_t       *B3L_GetFreeParticle(scene_t *pScene);
+extern u32                  B3L_GetFreeParticleNum(render_t *pRender);
+extern void                 B3L_ReturnParticleToPool(B3L_Particle_t *pParticle,scene_t *pScene);
+extern void                 B3L_AddParticleToGenerator(B3L_Particle_t *pParticle,B3LParticleGenObj_t  *pGenerator);
 extern void     B3L_DefaultParticleDrawFunc(B3L_Particle_t *pParticle, screen3f_t *pScreenVect,fBuff_t *pFBuff,zBuff_t *pZBuff);
 extern void     B3L_DefaultParticleUpdFunc(u32 time,B3LParticleGenObj_t *pSelf,mat4_t *pMat,render_t *pRender);
 #endif

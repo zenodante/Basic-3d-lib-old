@@ -845,19 +845,26 @@ f32 B3L_DotProductVect3(vect3_t *pA, vect3_t *pB){
 }
 
 //random function
-u32 prng_lfsr = 0;
-const u16 prng_tap = 0x74b8;
+u32 B3L_seed = 0;
+
 
 void   B3L_SetSeed(u32 seed){
-    prng_lfsr = seed;
+    B3L_seed = seed;
 }
+//using rand xorshift algorithm from george marsaglia's paper
 u32    B3L_Random(void){
+    B3L_seed ^=(B3L_seed<<13);
+    B3L_seed ^=(B3L_seed>>17);
+    B3L_seed ^=(B3L_seed<<5);
+    return B3L_seed;
+    /*
     u8 lsb = prng_lfsr & 1;
     prng_lfsr = prng_lfsr>>1;
     if (lsb){
         prng_lfsr ^=prng_tap;
     }
     return prng_lfsr;
+    */
 }
 /*-----------------------------------------------------------------------------
 Matrix functions
