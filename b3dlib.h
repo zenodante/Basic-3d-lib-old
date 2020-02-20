@@ -456,6 +456,7 @@ extern void                 B3L_ReturnObjToInactiveList(B3LObj_t *pObj,  render_
 extern void     B3L_InitBoxObj(B3LMeshObj_t *pObj,f32 size);
 extern void     B3L_InitBoxObjNoTexture(B3LMeshNoTexObj_t *pObj,f32 size);
 extern void     B3L_InitBoxObjPolygon(B3LPolygonObj_t *pObj,f32 size);
+extern void     B3L_InitDemoParticleGenObj(B3LParticleGenObj_t  *pParticleGen);
 //particle function
 #ifdef B3L_USING_PARTICLE
 extern void     B3L_DefaultParticleDrawFunc(B3L_Particle_t *pParticle, screen3f_t *pScreenVect,fBuff_t *pFBuff,zBuff_t *pZBuff);

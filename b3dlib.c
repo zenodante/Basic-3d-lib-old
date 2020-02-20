@@ -1337,13 +1337,13 @@ void     B3L_DefaultParticleUpdFunc(u32 time,B3LParticleGenObj_t *pSelf,mat4_t *
             //setup init delta
             randValue = B3L_Random();
             randValue = randValue&0x000000FF;
-            delta.x = 0.05f*((f32)randValue)*inv256;//need a fast rendom function here!
+            delta.x = 0.05f*((f32)randValue -128.0f)*inv256;//need a fast rendom function here!
             randValue = B3L_Random();
             randValue = randValue&0x000000FF;
             delta.y = 0.05f*((f32)randValue)*inv256;
             randValue = B3L_Random();
             randValue = randValue&0x000000FF;
-            delta.z = 0.05f*((f32)randValue)*inv256;
+            delta.z = 0.05f*((f32)randValue -128.0f)*inv256;
             B3L_Vect3MulMat4(&delta, pMat, &delta);
             pParticle->delta.x = delta.x;
             pParticle->delta.y = delta.y;
@@ -1847,7 +1847,22 @@ void B3L_InitBoxObjPolygon(B3LPolygonObj_t *pObj,f32 size){
 
 void     B3L_InitDemoParticleGenObj(B3LParticleGenObj_t  *pParticleGen){
     //todo create a generator based on default functions
-    
+    pParticleGen->DrawFunc = B3L_DefaultParticleDrawFunc;
+    pParticleGen->PtlUpdFunc = B3L_DefaultParticleUpdFunc;
+    pParticleGen->lastTime = 0;
+    pParticleGen->particleNum = 0;
+    pParticleGen->rotation.x = 0.0f;
+    pParticleGen->rotation.y = 0.0f;
+    pParticleGen->rotation.z = 0.0f;
+    pParticleGen->translation.x = 0.0f;
+    pParticleGen->translation.y = 0.0f;
+    pParticleGen->translation.z = 0.0f;
+    pParticleGen->pParticleActive = (B3L_Particle_t *)NULL;
+    B3L_SET(pParticleGen->state,PARTICLE_GEN_OBJ);
+    B3L_SET(pParticleGen->state,OBJ_VISUALIZABLE);
+    B3L_SET(pParticleGen->state,OBJ_PARTICLE_ACTIVE);
+
+
 }
 /*-----------------------------------------------------------------------------
 Draw functions
