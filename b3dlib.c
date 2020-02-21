@@ -218,7 +218,7 @@ __attribute__((always_inline)) static  inline f32      Min_f(f32 v1, f32 v2);
 __attribute__((always_inline)) static  inline s32      Min_s32(s32 v1, s32 v2);
 __attribute__((always_inline)) static  inline u32      Min_u32(u32 v1, u32 v2);
 __attribute__((always_inline)) static  inline f32      Max_f(f32 v1, f32 v2);
-__attribute__((always_inline)) static  inline s32      Max_u32(u32 v1, s32 v2);
+__attribute__((always_inline)) static  inline s32      Max_u32(u32 v1, u32 v2);
 __attribute__((always_inline)) static  inline s32      Max_s32(s32 v1, s32 v2);
 __attribute__((always_inline)) static  inline void     Vect3_Scale(vect3_t *pV,f32 scale,vect3_t *pResult);
 __attribute__((always_inline)) static  inline void     Vect3_Add(vect3_t *pV1,vect3_t *pV2,vect3_t *pResult);
