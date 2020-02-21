@@ -1370,9 +1370,10 @@ void     B3L_DefaultParticleUpdFunc(u32 time,B3LParticleGenObj_t *pSelf,mat4_t *
         while(i--){
             pParticle = B3L_GetFreeParticle(&(pRender->scene));
             //setup position
-            pParticle->position.x = pMat->m03;
-            pParticle->position.y = pMat->m13;
-            pParticle->position.z = pMat->m23;
+            B3L_SET_PARTICLE_POSITION(pParticle,pMat->m03,pMat->m13,pMat->m23);
+            //pParticle->position.x = pMat->m03;
+            //pParticle->position.y = pMat->m13;
+            //pParticle->position.z = pMat->m23;
             //setup lifetime
             pParticle->life = 800;
             //setup init delta
@@ -1386,9 +1387,10 @@ void     B3L_DefaultParticleUpdFunc(u32 time,B3LParticleGenObj_t *pSelf,mat4_t *
             randValue = randValue&0x000000FF;
             delta.z = 0.3f*((f32)randValue)*inv256;
             B3L_Vect3MulMat4(&delta, pMat, &delta);
-            pParticle->delta.x = delta.x;
-            pParticle->delta.y = delta.y;
-            pParticle->delta.z = delta.z;
+            B3L_SET_PARTICLE_DELTA(pParticle,delta.x,delta.y,delta.z);
+            //pParticle->delta.x = delta.x;
+            //pParticle->delta.y = delta.y;
+            //pParticle->delta.z = delta.z;
             B3L_AddParticleToGenerator(pParticle,pSelf);
         }
         Vect3_Scale(&force,(f32)deltaTime,&force);//force * time

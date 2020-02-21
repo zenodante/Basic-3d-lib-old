@@ -464,9 +464,13 @@ extern void                 B3L_ReturnParticleToPool(B3L_Particle_t *pParticle,s
 extern void                 B3L_AddParticleToGenerator(B3L_Particle_t *pParticle,B3LParticleGenObj_t  *pGenerator);
 extern void                 B3L_UpdateAllParticlesStatesInGen(render_t *pRender,B3LParticleGenObj_t *pGen,
                                                               u32 deltaTime,vect3_t *pForce);
+#define B3L_SET_PARTICLE_POSITION(pP,px,py,pz)   pP->position.x=px;pP->position.y=py;pP->position.z=pz                                                                                                
+#define B3L_SET_PARTICLE_DELTA(pP,dx,dy,dz)      pP->delta.x=dx;pP->delta.y=dy;pP->delta.z=dz                                                                                                
+
 
 extern void     B3L_DefaultParticleDrawFunc(B3L_Particle_t *pParticle, screen3_t *pScreenVect,fBuff_t *pFBuff,zBuff_t *pZBuff);
 extern void     B3L_DefaultParticleUpdFunc(u32 time,B3LParticleGenObj_t *pSelf,mat4_t *pMat,render_t *pRender);
+
 #endif
 //extern void RenderMeshObjs(render_t *pRender);
 /*
