@@ -462,6 +462,9 @@ extern B3L_Particle_t       *B3L_GetFreeParticle(scene_t *pScene);
 extern u32                  B3L_GetFreeParticleNum(render_t *pRender);
 extern void                 B3L_ReturnParticleToPool(B3L_Particle_t *pParticle,scene_t *pScene);
 extern void                 B3L_AddParticleToGenerator(B3L_Particle_t *pParticle,B3LParticleGenObj_t  *pGenerator);
+extern void                 B3L_UpdateAllParticlesStatesInGen(render_t *pRender,B3LParticleGenObj_t *pGen,
+                                                              u32 deltaTime,vect3_t *pForce);
+
 extern void     B3L_DefaultParticleDrawFunc(B3L_Particle_t *pParticle, screen3_t *pScreenVect,fBuff_t *pFBuff,zBuff_t *pZBuff);
 extern void     B3L_DefaultParticleUpdFunc(u32 time,B3LParticleGenObj_t *pSelf,mat4_t *pMat,render_t *pRender);
 #endif

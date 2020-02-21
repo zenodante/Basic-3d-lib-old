@@ -1318,7 +1318,32 @@ void B3L_DefaultParticleDrawFunc(B3L_Particle_t *pParticle, screen3_t *pScreenVe
     }
 
 }
-
+void B3L_UpdateAllParticlesStatesInGen(render_t *pRender,B3LParticleGenObj_t *pGen,u32 deltaTime,vect3_t *pForce){
+    u32 i = pGen->particleNum ;
+    vect3_t delta;
+    B3L_Particle_t *pParticle = pGen->pParticleActive;
+    B3L_Particle_t *pPrevParticle = pGen->pParticleActive;
+    while(i--){
+        pParticle->life -= deltaTime;
+        if (pParticle->life <= 0){
+            //dead particle, remove it back to the free particle pool
+            if (pGen->pParticleActive == pParticle){ //the first one
+                pGen->pParticleActive = pParticle->next;
+            }else{
+                pPrevParticle->next = pParticle->next;                    
+            }           
+            pGen->particleNum -=1;  
+            B3L_ReturnParticleToPool(pParticle,&(pRender->scene));
+            pParticle = pPrevParticle->next;
+        }else{
+            Vect3_Add(&(pParticle->delta), pForce ,&(pParticle->delta));//update the delta
+            Vect3_Scale(&(pParticle->delta),(f32)deltaTime,&delta);
+            Vect3_Add(&(pParticle->position),&(delta),&(pParticle->position));//update the position
+            pPrevParticle = pParticle;
+            pParticle = pParticle->next;
+        }            
+    }
+}
 
 
 
@@ -1327,7 +1352,7 @@ void     B3L_DefaultParticleUpdFunc(u32 time,B3LParticleGenObj_t *pSelf,mat4_t *
     u32 deltaTime;
     u32 i;
     B3L_Particle_t *pParticle;
-    B3L_Particle_t *pPrevParticle;
+    //B3L_Particle_t *pPrevParticle;
     vect3_t  delta;
     vect3_t  force ={.x=0.0f,.y=-0.01f,.z=0.0f};
     u32      newParticleNum =  (u32)(time*0.01f);
@@ -1366,37 +1391,8 @@ void     B3L_DefaultParticleUpdFunc(u32 time,B3LParticleGenObj_t *pSelf,mat4_t *
             pParticle->delta.z = delta.z;
             B3L_AddParticleToGenerator(pParticle,pSelf);
         }
-
-        //B3L_UpdateAllParticles(B3LParticleGenObj_t *pGen,u32 deltaTime,vect3_t *force)
-        //update all particle statement
-        i = pSelf->particleNum ;
-
-        pParticle = pSelf->pParticleActive;
-        pPrevParticle = pSelf->pParticleActive;
         Vect3_Scale(&force,(f32)deltaTime,&force);//force * time
-
-        while(i--){
-            pParticle->life -= deltaTime;
-            if (pParticle->life <= 0){
-                //dead particle, remove it back to the free particle pool
-                if (pSelf->pParticleActive == pParticle){ //the first one
-                    pSelf->pParticleActive = pParticle->next;
-                }else{
-                    pPrevParticle->next = pParticle->next;                    
-                }           
-                pSelf->particleNum -=1;  
-                B3L_ReturnParticleToPool(pParticle,&(pRender->scene));
-                pParticle = pPrevParticle->next;
-            }else{
-                Vect3_Add(&(pParticle->delta), &force ,&(pParticle->delta));//update the delta
-                Vect3_Scale(&(pParticle->delta),(f32)deltaTime,&delta);
-                Vect3_Add(&(pParticle->position),&(delta),&(pParticle->position));//update the position
-                pPrevParticle = pParticle;
-                pParticle = pParticle->next;
-            }
-            
-            
-        }
+        B3L_UpdateAllParticlesStatesInGen(pRender,pSelf,deltaTime,&force);
     }
 }
 
