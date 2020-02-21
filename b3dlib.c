@@ -6,7 +6,9 @@
 #ifndef   __ASM
 #define   __ASM                                  __asm
 #endif
-
+#ifdef WIN32 
+#define __attribute__(A)
+#endif
 #pragma GCC optimize("-O3")
 
 
