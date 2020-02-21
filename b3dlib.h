@@ -386,27 +386,41 @@ typedef void (*B3L_DrawFunc_t)(B3L_Particle_t *, screen3_t *,fBuff_t *,zBuff_t *
 #define B3L_logVec4(v)\
   printf("Vector 4: %.3f %.3f %.3f %.3f\n",((v).x),((v).y),((v).z),((v).w))
 #define B3L_logMat4(m)\
-  printf("Matix4:\n  %.3f %.3f %.3f %.3f\n  %.3f %.3f %.3f %.3f\n  %.3f %.3f %.3f %.3f\n  %.3f %.3f %.3f %.3f\n"\
+  printf("Matrix4:\n  %.3f %.3f %.3f %.3f\n  %.3f %.3f %.3f %.3f\n  %.3f %.3f %.3f %.3f\n  %.3f %.3f %.3f %.3f\n"\
    ,(m).m00,(m).m10,(m).m20,(m).m30,\
     (m).m01,(m).m11,(m).m21,(m).m31,\
     (m).m02,(m).m12,(m).m22,(m).m32,\
     (m).m03,(m).m13,(m).m23,(m).m33)
 
 /*Function declear-----------------------------------------------------------*/
-//math functions
+/*-----------------------------------------------------------------------------
+Math functions
+-----------------------------------------------------------------------------*/
 extern f32      B3L_sin(f32 in);
 extern f32      B3L_cos(f32 in);
 extern f32      B3L_asin(f32 in);
-extern void     B3L_NormalizeVec3(vect3_t *pV);
+extern void     B3L_SetSeed(u32 seed);
+extern u32      B3L_Random(void); 
+/*-----------------------------------------------------------------------------
+Vector functions
+-----------------------------------------------------------------------------*/
 extern vect2_t  B3L_Vect2(f32 x,f32 y);
 extern vect3_t  B3L_Vect3(f32 x,f32 y,f32 z);
 extern vect4_t  B3L_Vect4(f32 x,f32 y,f32 z,f32 w);
+#define         B3L_VECT2_SET(v,vx,vy)         v.x=vx;v.y=vy
+#define         B3L_VECT3_SET(v,vx,vy,vz)      v.x=vx;v.y=vy;v.z=vz
+#define         B3L_VECT4_SET(v,vx,vy,vz,vw)   v.x=vx;v.y=vy;v.z=vz;v.w=vw
 extern f32      B3L_Vec2Length(vect2_t *pV);
 extern f32      B3L_Vec3Length(vect3_t *pV);
+extern void     B3L_NormalizeVec2(vect2_t *pV);
+extern void     B3L_NormalizeVec3(vect3_t *pV);
 extern void     B3L_Vec3Add(vect3_t *pVa,vect3_t *pVb,vect3_t *pVc);
 extern void     B3L_VecInterp(vect3_t *pVa,vect3_t *pVb,vect3_t *pVc,f32 t);
 extern void     B3L_CrossProductVect3(vect3_t *pA, vect3_t *pB, vect3_t *pResult);
 extern f32      B3L_DotProductVect3(vect3_t *pA, vect3_t *pB);
+/*-----------------------------------------------------------------------------
+Matrix functions
+-----------------------------------------------------------------------------*/
 extern void     B3L_InitMat4One(mat4_t *pMat);
 extern void     B3L_TransposeMat4(mat4_t *pMat);
 extern void     B3L_Mat4Xmat4(mat4_t *pMat1, mat4_t *pMat2);
@@ -418,29 +432,31 @@ extern void     B3L_MakeWorldMatrix(transform3D_t *pWorldTransform, mat4_t *pMat
 //point mul will add translate m03, m13, m23
 extern void     B3L_Vect3MulMat4(vect3_t *pV, mat4_t *pMat, vect3_t *pResult);
 extern void     B3L_Point3MulMat4(vect3_t *pV, mat4_t *pMat, vect3_t *pResult);
-//public matrix functions
-extern void     B3L_SetSeed(u32 seed);
-extern u32      B3L_Random(void);  
-//camera functions
+/*-----------------------------------------------------------------------------
+Camera functions
+-----------------------------------------------------------------------------*/
 extern void     B3L_InitCamera(camera_t *pCam);
 extern void     B3L_CameraMoveTo(vect3_t position,camera_t *pCam);
 extern void     B3L_CameraLookAt(camera_t *pCam, vect3_t *pAt);
 //extern void B3L_CameraUpDirection(camera_t *pCam, vect3_t *pUp);
-//render functions
+/*-----------------------------------------------------------------------------
+Render functions
+-----------------------------------------------------------------------------*/
 extern void     B3L_RenderInit(render_t *pRender,fBuff_t *pFrameBuff);
-extern void     B3L_NewRenderStart(render_t *pRender);
-extern void     B3L_Update(render_t *pRender,u32 time);
-extern void     B3L_RenderScence(render_t *pRender);
-extern void     B3L_ResetScene(scene_t *pScene);
-//light functions
+extern void     B3L_ResetScene(scene_t *pScene); //reset all the scene resource
+extern void     B3L_NewRenderStart(render_t *pRender); //clear buffs
+extern void     B3L_Update(render_t *pRender,u32 time); //update particles etc
+extern void     B3L_RenderScence(render_t *pRender); //draw work 
+/*-----------------------------------------------------------------------------
+Light functions
+-----------------------------------------------------------------------------*/
 extern void     B3L_ResetLight(light_t *pLight);
 extern void     B3L_SetLightType(render_t *pRender,lightType_e type);
 extern void     B3L_SetLightVect(render_t *pRender, f32 x,f32 y,f32 z);
 
-//render obj functions
-
-
-
+/*-----------------------------------------------------------------------------
+Render obj functions
+-----------------------------------------------------------------------------*/
 extern u32                  B3L_GetFreeObjNum(render_t *pRender);
 extern B3LObj_t             *B3L_GetFreeObj(render_t *pRender);
 extern B3LMeshObj_t         *B3L_GetFreeMeshObj(render_t *pRender);
@@ -450,13 +466,16 @@ extern B3LParticleGenObj_t  *B3L_GetFreeParticleGeneratorObj(render_t *pRender);
 extern void                 B3L_AddObjToRenderList(B3LObj_t *pObj, render_t *pRender);
 extern void                 B3L_PopObjFromRenderList(B3LObj_t *pObj, render_t *pRender);
 extern void                 B3L_ReturnObjToInactiveList(B3LObj_t *pObj,  render_t *pRender);
-
-//helper function for testing objs
-extern void     B3L_InitBoxObj(B3LMeshObj_t *pObj,f32 size);
-extern void     B3L_InitBoxObjNoTexture(B3LMeshNoTexObj_t *pObj,f32 size);
-extern void     B3L_InitBoxObjPolygon(B3LPolygonObj_t *pObj,f32 size);
-extern void     B3L_InitDemoParticleGenObj(B3LParticleGenObj_t  *pParticleGen);
-//particle function
+/*-----------------------------------------------------------------------------
+Demo objs functions
+-----------------------------------------------------------------------------*/
+extern void                 B3L_InitBoxObj(B3LMeshObj_t *pObj,f32 size);
+extern void                 B3L_InitBoxObjNoTexture(B3LMeshNoTexObj_t *pObj,f32 size);
+extern void                 B3L_InitBoxObjPolygon(B3LPolygonObj_t *pObj,f32 size);
+extern void                 B3L_InitDemoParticleGenObj(B3LParticleGenObj_t  *pParticleGen);
+/*-----------------------------------------------------------------------------
+Particle functions
+-----------------------------------------------------------------------------*/
 #ifdef B3L_USING_PARTICLE
 extern B3L_Particle_t       *B3L_GetFreeParticle(scene_t *pScene);
 extern u32                  B3L_GetFreeParticleNum(render_t *pRender);
@@ -464,29 +483,11 @@ extern void                 B3L_ReturnParticleToPool(B3L_Particle_t *pParticle,s
 extern void                 B3L_AddParticleToGenerator(B3L_Particle_t *pParticle,B3LParticleGenObj_t  *pGenerator);
 extern void                 B3L_UpdateAllParticlesStatesInGen(render_t *pRender,B3LParticleGenObj_t *pGen,
                                                               u32 deltaTime,vect3_t *pForce);
-#define B3L_SET_PARTICLE_POSITION(pP,px,py,pz)   pP->position.x=px;pP->position.y=py;pP->position.z=pz                                                                                                
-#define B3L_SET_PARTICLE_DELTA(pP,dx,dy,dz)      pP->delta.x=dx;pP->delta.y=dy;pP->delta.z=dz                                                                                                
+#define                     B3L_SET_PARTICLE_POSITION(pP,px,py,pz)   pP->position.x=px;pP->position.y=py;pP->position.z=pz                                                                                                
+#define                     B3L_SET_PARTICLE_DELTA(pP,dx,dy,dz)      pP->delta.x=dx;pP->delta.y=dy;pP->delta.z=dz                                                                                                
+extern void                 B3L_DefaultParticleDrawFunc(B3L_Particle_t *pParticle, screen3_t *pScreenVect,fBuff_t *pFBuff,zBuff_t *pZBuff);
+extern void                 B3L_DefaultParticleUpdFunc(u32 time,B3LParticleGenObj_t *pSelf,mat4_t *pMat,render_t *pRender);
+#endif  //end of  B3L_USING_PARTICLE
 
 
-extern void     B3L_DefaultParticleDrawFunc(B3L_Particle_t *pParticle, screen3_t *pScreenVect,fBuff_t *pFBuff,zBuff_t *pZBuff);
-extern void     B3L_DefaultParticleUpdFunc(u32 time,B3LParticleGenObj_t *pSelf,mat4_t *pMat,render_t *pRender);
-
-#endif
-//extern void RenderMeshObjs(render_t *pRender);
-/*
-void DrawTriTexture(
-s32 x0,s32 y0,s32 u0,s32 v0,f32 z0,
-s32 x1,s32 y1,s32 u1,s32 v1,f32 z1,
-s32 x2,s32 y2,s32 u2,s32 v2,f32 z2,
-u32 renderLevel,u16 lightFactor,B3L_texture_t *pTexture,
-fBuff_t *pFrameBuff,zBuff_t *pZbuff);
-*/
-/*
-extern void  DrawTriColor(
-                                                                        f32 x0,f32 y0,f32 z0,
-                                                                        f32 x1,f32 y1,f32 z1,
-                                                                        f32 x2,f32 y2,f32 z2,
-                                                                        u32 renderLevel,u8 lightFactor,fBuff_t color,
-                                                                        fBuff_t *pFrameBuff,zBuff_t *pZbuff);
-*/
-#endif
+#endif//end of file

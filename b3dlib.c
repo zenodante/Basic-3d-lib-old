@@ -4,7 +4,7 @@
 #include "b3dlib.h"
 
 #ifndef   __ASM
-#define   __ASM                                  __asm
+#define   __ASM        __asm
 #endif
 #ifdef WIN32 
 #define __attribute__(A)
@@ -14,6 +14,7 @@
 
 
 //config the ram position if necessary
+u32            B3L_seed = 0x31415926;
 screen3f_t     vectBuff[VECT_BUFF_SIZE]; //8KB
 zBuff_t        zBuff[VIDEO_BUFF_LENTH];        //75KB
 
@@ -23,7 +24,7 @@ B3L_Particle_t  particleBuff[B3L_PARTICLE_BUFF_DEPTH];
 
 #define B3L_MATH_TABLE_SIZE      256
 //not used fix math 
-#define B3L_FIX_BITS            10
+#define B3L_FIX_BITS             10
 
 
 #if Z_BUFF_LEVEL == 2
@@ -197,15 +198,16 @@ const B3L_texture_t B3L_boxTexture = {
                                  .transColorIdx = 16
 };
 /*Private Fuction declare ---------------------------------------------------*/ 
+/*-----------------------------------------------------------------------------
+Math functions
+-----------------------------------------------------------------------------*/
 #ifdef B3L_ARM
 __attribute__((always_inline)) static  inline f32   B3L_Sqrtf(f32 in);
 __attribute__((always_inline)) static  inline f32   B3L_Absf(f32 in);
-
 #else
 #define B3L_Sqrtf   sqrtf
 #define B3L_Absf    abs
 #endif   
-//math functions   
 __attribute__((always_inline)) static  inline s32      VcvtF32ToS32_Fix(f32 in);
 __attribute__((always_inline)) static  inline f32      VcvtS32ToF32_Fix(s32 in);
 __attribute__((always_inline)) static  inline u32      SatToU8(u32 in);
@@ -233,15 +235,21 @@ __attribute__((always_inline)) static  inline bool     Vect4BoundTest(vect4_t *p
 __attribute__((always_inline)) static  inline f32      FastInvertSqrt(f32 x);
 __attribute__((always_inline)) static  inline zBuff_t  CalZbuffValue(f32 z);
 __attribute__((always_inline)) static  inline void     CopyMat4(mat4_t *target, mat4_t *source);
-   
-//light functions
+/*-----------------------------------------------------------------------------
+Light functions
+-----------------------------------------------------------------------------*/
 __attribute__((always_inline)) static  inline void     UpdateLightVect(render_t *pRender);
 __attribute__((always_inline)) static  inline u32      CalLightFactor(f32 normalDotLight, f32 lightFactor0,f32 lightFactor1);
-//triangle testing functions   
+ /*-----------------------------------------------------------------------------
+Triangle testing functions
+-----------------------------------------------------------------------------*/
 __attribute__((always_inline)) static  inline bool     TriangleFaceToViewer(s32 x0, s32 y0, s32 x1, s32 y1, s32 x2, s32 y2);
 __attribute__((always_inline)) static  inline bool     TriangleFaceToViewer_f(f32 x0, f32 y0, f32 x1, f32 y1, f32 x2, f32 y2);
 __attribute__((always_inline)) static  inline bool     TriVisable(u32 r0,u32 r1,u32 r2);
-//draw functions   
+ /*-----------------------------------------------------------------------------
+Draw functions
+-----------------------------------------------------------------------------*/ 
+__attribute__((always_inline)) static  inline fBuff_t  GetFinalColor(fBuff_t color,u32 lightFactor);
 __attribute__((always_inline)) static  inline fBuff_t  GetColorValue(texLUT_t *lut,u8 colorIdx,u32 lightFactor);
 __attribute__((always_inline)) static  inline void     DrawPixel(fBuff_t color,s32 x,s32 y,f32 z,
                                                                         fBuff_t *pFrameBuff,zBuff_t *pZbuff);
@@ -270,18 +278,28 @@ __attribute__((always_inline)) static  inline void     DrawDepthLineNoClip(s32 A
                                                                         texLUT_t color,fBuff_t *pFrameBuff,zBuff_t *pZbuff);  
 __attribute__((always_inline)) static  inline void     DrawDepthLineClip(s32 Ax,s32 Ay,f32 Az,s32 Bx,s32 By,f32 Bz, 
                                                                         texLUT_t color,fBuff_t *pFrameBuff,zBuff_t *pZbuff);             
-//camera functions
+ /*-----------------------------------------------------------------------------
+Camera functions
+-----------------------------------------------------------------------------*/
 static void SetCameraMatrix(camera_t *pCam);
-//obj list functions
+ /*-----------------------------------------------------------------------------
+Obj list functions
+-----------------------------------------------------------------------------*/
 static void ResetObjList(scene_t *pScene);
 static void AddObjToTwoWayList(B3LObj_t *pObj, B3LObj_t **pStart);
+ /*-----------------------------------------------------------------------------
+Particle list functions
+-----------------------------------------------------------------------------*/
 static void ResetParticleList(B3L_Particle_t *pPool,B3L_Particle_t **pStart,u32 num);
 void B3L_ReturnParticleToPool(B3L_Particle_t *pParticle,scene_t *pScene);
-
-//buff functions
+ /*-----------------------------------------------------------------------------
+Buffer functions
+-----------------------------------------------------------------------------*/
 static void ClearFrameBuff(fBuff_t *pFramebuff,fBuff_t value,u32 length);
 static void ClearZbuff(zBuff_t *pZbuff,u32 length);
-//Render call functions
+ /*-----------------------------------------------------------------------------
+Obj render functions
+-----------------------------------------------------------------------------*/
 static void RenderMeshObjs(render_t *pRender);
 #ifdef B3L_USING_PARTICLE
 static void UpdateParticleObjs(render_t *pRender, u32 time);
@@ -291,7 +309,7 @@ static void RenderTexMesh(B3LMeshObj_t *pObj,render_t *pRender, mat4_t *pMat,u32
 static void RenderNoTexMesh(B3LMeshNoTexObj_t *pObj,render_t *pRender, mat4_t *pMat,u32 renderLevel);
 static void RenderPolygon(B3LPolygonObj_t *pObj,render_t *pRender, mat4_t *pMat);
 
-
+/*Function defines-----------------------------------------------------------*/
 /*-----------------------------------------------------------------------------
 Math function
 -----------------------------------------------------------------------------*/
@@ -633,7 +651,7 @@ __attribute__((always_inline)) static  inline void  Norm3Xmat4(vect3_t *pV, mat4
     pResult->z = rz;
     #undef dotCol 
 }
-//todo
+
 __attribute__((always_inline)) static  inline bool Vect4BoundTest(vect4_t *pV){
     f32 x,y,z,w;
 
@@ -726,49 +744,44 @@ static const f32 sinTable_f32[B3L_MATH_TABLE_SIZE + 1] = {
 };
 f32 B3L_sin(f32 in){
     f32 sinVal, fract;                   /* Temporary input, output variables */
-  uint16_t index;                                /* Index variable */
-  f32 a, b;                                /* Two nearest output values */
-  int32_t n;
-  f32 findex;
+    uint16_t index;                                /* Index variable */
+    f32 a, b;                                /* Two nearest output values */
+    int32_t n;
+    f32 findex;
 
-  /* input x is in radians */
-  /* Scale input to [0 1] range from [0 2*PI] , divide input by 2*pi */
+    /* Calculation of floor value of input */
+    n = (int32_t) in;
 
+    /* Make negative values towards -infinity */
+    if (in < 0.0f){
+        n--;
+    }
 
-  /* Calculation of floor value of input */
-  n = (int32_t) in;
+    /* Map input value to [0 1] */
+    in = in - (f32) n;
 
-  /* Make negative values towards -infinity */
-  if (in < 0.0f)
-  {
-    n--;
-  }
+    /* Calculation of index of the table */
+    findex = (f32)B3L_MATH_TABLE_SIZE * in;
+    index = (uint16_t)findex;
 
-  /* Map input value to [0 1] */
-  in = in - (f32) n;
+    /* when "in" is exactly 1, we need to rotate the index down to 0 */
+    if (index >= B3L_MATH_TABLE_SIZE) {
+        index = 0;
+        findex -= (f32)B3L_MATH_TABLE_SIZE;
+    }
 
-  /* Calculation of index of the table */
-  findex = (f32)B3L_MATH_TABLE_SIZE * in;
-  index = (uint16_t)findex;
+    /* fractional value calculation */
+    fract = findex - (f32) index;
 
-  /* when "in" is exactly 1, we need to rotate the index down to 0 */
-  if (index >= B3L_MATH_TABLE_SIZE) {
-    index = 0;
-    findex -= (f32)B3L_MATH_TABLE_SIZE;
-  }
+    /* Read two nearest values of input value from the sin table */
+    a = sinTable_f32[index];
+    b = sinTable_f32[index+1];
 
-  /* fractional value calculation */
-  fract = findex - (f32) index;
+    /* Linear interpolation process */
+    sinVal = (1.0f - fract) * a + fract * b;
 
-  /* Read two nearest values of input value from the sin table */
-  a = sinTable_f32[index];
-  b = sinTable_f32[index+1];
-
-  /* Linear interpolation process */
-  sinVal = (1.0f - fract) * a + fract * b;
-
-  /* Return output value */
-  return (sinVal);
+    /* Return output value */
+    return (sinVal);
 
 }
 
@@ -792,13 +805,14 @@ f32 B3L_asin(f32 in){
     ret += 1.5707288f;
     //#ifdef B3L_ARM
     ret = 3.14159265358979f*0.5f - B3L_Sqrtf(1.0f - in)*ret;
-    //#else
-    //ret = 3.14159265358979f*0.5f - sqrtf(1.0 - in)*ret;
-    //#endif
     ret = (ret - 2 * negate * ret)*0.15915494309f;
-    //ret = sign + ret*0.3183098861837f;
-    //printf("%.3f\n",ret);
     return ret;
+}
+
+void B3L_NormalizeVec2(vect2_t *pV){
+    f32 factor = FastInvertSqrt(pV->x*pV->x+pV->y*pV->y);
+    pV->x = (pV->x*factor);
+    pV->y = (pV->y*factor);
 }
 
 void B3L_NormalizeVec3(vect3_t *pV){
@@ -809,20 +823,12 @@ void B3L_NormalizeVec3(vect3_t *pV){
 }
 
 f32 B3L_Vec2Length(vect2_t *pV){
-    
-    //#ifdef B3L_ARM
     return B3L_Sqrtf(pV->x*pV->x+pV->y*pV->y);
-    //#else
-    //return sqrtf(pV->x*pV->x+pV->y*pV->y);
-   // #endif
+
 }
 
 f32 B3L_Vec3Length(vect3_t *pV){
-    //#ifdef B3L_ARM
     return B3L_Sqrtf(pV->x * pV->x + pV->y * pV->y + pV->z * pV->z);  
-    //#else
-    //return sqrtf(pV->x * pV->x + pV->y * pV->y + pV->z * pV->z);  
-    //#endif
 }
 
 void B3L_Vec3Add(vect3_t *pVa,vect3_t *pVb,vect3_t *pVc){
@@ -848,7 +854,6 @@ f32 B3L_DotProductVect3(vect3_t *pA, vect3_t *pB){
 }
 
 //random function
-u32 B3L_seed = 0;
 
 
 void   B3L_SetSeed(u32 seed){
@@ -1606,6 +1611,7 @@ static void AddObjToTwoWayList(B3LObj_t *pObj, B3LObj_t **pStart){
     }
     
 }
+
 u32      B3L_GetFreeObjNum(render_t *pRender){
     return pRender->scene.freeObjNum;
 }
@@ -1722,8 +1728,6 @@ void B3L_AddObjToRenderList(B3LObj_t *pObj, render_t *pRender){
     
 }
 
-
-
 void B3L_PopObjFromRenderList(B3LObj_t *pObj, render_t *pRender){
     if (pObj->privous != pObj){
         if (pObj->next != (B3LObj_t *)NULL){
@@ -1764,8 +1768,6 @@ void B3L_ReturnObjToInactiveList(B3LObj_t *pObj,  render_t *pRender){
     pRender->scene.freeObjNum +=1;
     AddObjToTwoWayList(pObj, &(pRender->scene.pFreeObjs));
 }
-
-
 
 void B3L_RenderInit(render_t *pRender,fBuff_t *pFrameBuff){
     pRender->pFrameBuff = pFrameBuff;
@@ -1913,6 +1915,7 @@ __attribute__((always_inline)) static  inline void     DrawPixel(fBuff_t color,s
         }
 
 }
+
 __attribute__((always_inline)) static  inline void     DrawPixelWithTest(fBuff_t color,s32 x,s32 y,f32 z,
                                                                         fBuff_t *pFrameBuff,zBuff_t *pZbuff){
         if ((x<0)||(y<0)||(x>=RENDER_RESOLUTION_X)||(y>=RENDER_RESOLUTION_Y)){
@@ -1927,6 +1930,7 @@ __attribute__((always_inline)) static  inline void     DrawPixelWithTest(fBuff_t
         }
 
 }
+
 static void ClearFrameBuff(fBuff_t *pFramebuff,fBuff_t value,u32 length){
 //in stm32, we could use DMA to do this job   
     int32_t i;   
@@ -2282,20 +2286,13 @@ printf("Draw a mesh");
         f32 y2 = pVectTarget[vect2Idx].y;
 
         bool backFaceCullingResult = TriangleFaceToViewer_f(x0, y0, x1, y1, x2, y2);
-#ifdef B3L_DEBUG
-        printf("backFaceCullingResult = %d\n",backFaceCullingResult);
-#endif
-
-
-            
+           
         if ((cullingState==1) && backFaceCullingResult){    
             continue;
         }
         if ((cullingState==2) && (!backFaceCullingResult)){  
             continue;
         }
-
-
         if (renderLevel==0){
             Norm3Xmat4Normalize(pVectSource+i, pMat, &normalVect); 
             //dot multi light and normalvect to get the light factor
@@ -2303,7 +2300,6 @@ printf("Draw a mesh");
             //normalDotLight is in the range -1.0f to 1.0f
             lightValue = CalLightFactor(normalDotLight,lightFactor0,lightFactor1);
         }
-
 
         DrawTriTexture(
             x0,y0,(f32)(pUV[i*6]),(f32)(pUV[i*6+1]),pVectTarget[vect0Idx].z,
@@ -2356,13 +2352,11 @@ __attribute__((always_inline)) static inline void DrawDepthLineNoClip(s32 Ax,s32
         err += dx;
     }
   }
-    //now A is in the left and B is in the right
 
 }
 
 __attribute__((always_inline)) static inline void DrawDepthLineClip(s32 Ax,s32 Ay,f32 Az,s32 Bx,s32 By,f32 Bz, 
                                                                         texLUT_t color,fBuff_t *pFrameBuff,zBuff_t *pZbuff){
-//todo here~
 
     //now A is in the left and B is in the right
     s32 steep = abs(Ay - By) > abs(Ax - Bx);
@@ -2562,13 +2556,10 @@ __attribute__((always_inline)) static  inline void  DrawTriTexture(
                                                                         u32 renderLevel,u32 lightFactor,B3L_texture_t *pTexture,
                                                                         fBuff_t *pFrameBuff,zBuff_t *pZbuff){
 //to calculate 0.5 pixel, if it works, then we will modified the project functions
-    #ifndef _swap_f32_t
-    #define _swap_f32_t(a, b) { f32 t = a; a = b; b = t; }
-    #endif
- 
-
+    //#ifndef _swap_f32_t
+    //#define _swap_f32_t(a, b) { f32 t = a; a = b; b = t; }
+    //#endif
     s32 y,last;
-    
     if(y0 > y1){
         //B3L_SWAP_DRAW_TRI_VECT(0,1);
         _swap_f32_t(y0,y1);
@@ -2696,12 +2687,22 @@ __attribute__((always_inline)) static  inline void  DrawTriTexture(
         bV += dv02;
         aZ += dz12;
         bZ += dz02; 
-
     }
-
-
-
 }
+
+__attribute__((always_inline)) static  inline fBuff_t GetFinalColor(fBuff_t color,u32 lightFactor){
+    #if FRAME_BUFF_COLOR_TYPE == 0               
+            fBuff_t  finalColor = (color&0x00FFFFFF)|(((u32)lightFactor)<<24);
+    #endif
+    #if FRAME_BUFF_COLOR_TYPE == 1
+            fBuff_t  finalColor  = (color&0x0FFF)|(((u16)lightFactor)<<12);
+    #endif
+    #if FRAME_BUFF_COLOR_TYPE == 2
+            fBuff_t  finalColor  = (color&0x00FF)|(((u16)lightFactor)<<8);
+    #endif
+    return finalColor;
+}
+
 
 __attribute__((always_inline)) static  inline void  DrawTriColor(
                                                                         f32 x0,f32 y0,f32 z0,
@@ -2710,26 +2711,24 @@ __attribute__((always_inline)) static  inline void  DrawTriColor(
                                                                         u32 renderLevel,u32 lightFactor,fBuff_t color,
                                                                         fBuff_t *pFrameBuff,zBuff_t *pZbuff){
 //to calculate 0.5 pixel, if it works, then we will modified the project functions
-    #ifndef _swap_f32_t
-    #define _swap_f32_t(a, b) { f32 t = a; a = b; b = t; }
-    #endif
-    #ifndef _swap_int32_t
-    #define _swap_int32_t(a, b) { int32_t t = a; a = b; b = t; }
-    #endif
-
-
-    #if FRAME_BUFF_COLOR_TYPE == 0
-                
+    //#ifndef _swap_f32_t
+    //#define _swap_f32_t(a, b) { f32 t = a; a = b; b = t; }
+    //#endif
+    //#ifndef _swap_int32_t
+    //#define _swap_int32_t(a, b) { int32_t t = a; a = b; b = t; }
+    //#endif
+    /*
+    #if FRAME_BUFF_COLOR_TYPE == 0               
             fBuff_t  finalColor = (color&0x00FFFFFF)|(((u32)lightFactor)<<24);
     #endif
     #if FRAME_BUFF_COLOR_TYPE == 1
-
             fBuff_t  finalColor  = (color&0x0FFF)|(((u16)lightFactor)<<12);
     #endif
     #if FRAME_BUFF_COLOR_TYPE == 2
             fBuff_t  finalColor  = (color&0x00FF)|(((u16)lightFactor)<<8);
     #endif
-
+    */
+    fBuff_t finalColor = GetFinalColor(color,lightFactor);
     s32 y,last;
     
     if(y0 > y1){
