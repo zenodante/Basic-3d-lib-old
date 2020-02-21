@@ -261,7 +261,7 @@ typedef struct B3LOBJ{
     #else    
     u32                 dummy[4];
     #endif
-}B3LObj_t;//12 not common on ARM32,15 not common on WIN64
+}B3LObj_t;//16 not common on ARM32,24 not common on WIN64 ?why 96byte not 88?
 
 typedef struct{
     B3LObj_t            *privous;
@@ -272,7 +272,7 @@ typedef struct{
     transform3D_t       transform; 
     B3L_Mesh_t          *pMesh;
     B3L_texture_t       *pTexture;   
-}B3LMeshObj_t;//12 not common on ARM32,15 not common on WIN64
+}B3LMeshObj_t;//16 not common on ARM32,24 not common on WIN64
 
 
 typedef struct{
@@ -284,7 +284,7 @@ typedef struct{
     transform3D_t       transform; 
     B3L_Mesh_NoTex_t    *pMesh; 
     texLUT_t            *pLUT;
-}B3LMeshNoTexObj_t;//12 not common on ARM32,15 not common on WIN64
+}B3LMeshNoTexObj_t;//16 not common on ARM32,24 not common on WIN64
 
 typedef struct{
     B3LObj_t            *privous;
@@ -295,7 +295,7 @@ typedef struct{
     transform3D_t       transform; 
     B3L_Polygon_t       *pPolygon; 
     texLUT_t            color;
-}B3LPolygonObj_t;//12 not common on ARM32,14 not common on WIN64
+}B3LPolygonObj_t;//16 not common on ARM32,23 not common on WIN64
 
 typedef struct{
     B3LObj_t            *privous;
@@ -371,7 +371,7 @@ typedef struct PARTICLEGENOBJ{
     void      (*DrawFunc)(B3L_Particle_t *, screen3_t *,fBuff_t *,zBuff_t *);
     void      (*PtlUpdFunc)(u32,struct PARTICLEGENOBJ *,mat4_t *,render_t *);   
     //time, self, obj->world matrix,free particle num pointer,free particle pool  
-}B3LParticleGenObj_t; //11 not common on ARM32,14 not common on WIN64
+}B3LParticleGenObj_t; //15 not common on ARM32,22 not common on WIN64
 
 typedef void (*B3L_DrawFunc_t)(B3L_Particle_t *, screen3_t *,fBuff_t *,zBuff_t *);
 /*Useful macros--------------------------------------------------------------*/

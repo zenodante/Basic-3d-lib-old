@@ -9,6 +9,7 @@
 #ifdef WIN32 
 #define __attribute__(A)
 #endif
+
 #pragma GCC optimize("-O3")
 
 
@@ -370,7 +371,7 @@ __attribute__((always_inline)) static  inline s32 Min_s32(s32 v1, s32 v2){
     return v1 >= v2 ? v2 : v1;
 }
 
-__attribute__((always_inline)) static  inline s32 Max_u32(u32 v1, s32 v2){
+__attribute__((always_inline)) static  inline s32 Max_u32(u32 v1, u32 v2){
     return v1 >= v2 ? v1 : v2;
 }
 
@@ -780,7 +781,7 @@ f32 B3L_asin(f32 in){
     float negate = (f32)(in < 0);
     
     if (in < 0.0f){
-        in = -1.0*in;
+        in = -1.0f*in;
     }
     float ret = -0.0187293f;
     ret *= in;
@@ -790,7 +791,7 @@ f32 B3L_asin(f32 in){
     ret *= in;
     ret += 1.5707288f;
     //#ifdef B3L_ARM
-    ret = 3.14159265358979f*0.5f - B3L_Sqrtf(1.0 - in)*ret;
+    ret = 3.14159265358979f*0.5f - B3L_Sqrtf(1.0f - in)*ret;
     //#else
     //ret = 3.14159265358979f*0.5f - sqrtf(1.0 - in)*ret;
     //#endif
@@ -1232,7 +1233,7 @@ static void UpdateParticleObjs(render_t *pRender, u32 time){
     B3LObj_t  *pCurrentObj =(pRender->scene.pActiveParticleGenObjs);
     u32 state;
     mat4_t mat;
-    u32 i;
+    //u32 i;
 
     //switch(state & OBJ_TYPE_MASK)
     while(pCurrentObj != (B3LObj_t  *)NULL){
@@ -1318,6 +1319,9 @@ void B3L_DefaultParticleDrawFunc(B3L_Particle_t *pParticle, screen3_t *pScreenVe
 
 }
 
+
+
+
 void     B3L_DefaultParticleUpdFunc(u32 time,B3LParticleGenObj_t *pSelf,mat4_t *pMat,render_t *pRender){
 //TODO here
     u32 deltaTime;
@@ -1362,6 +1366,8 @@ void     B3L_DefaultParticleUpdFunc(u32 time,B3LParticleGenObj_t *pSelf,mat4_t *
             pParticle->delta.z = delta.z;
             B3L_AddParticleToGenerator(pParticle,pSelf);
         }
+
+        //B3L_UpdateAllParticles(B3LParticleGenObj_t *pGen,u32 deltaTime,vect3_t *force)
         //update all particle statement
         i = pSelf->particleNum ;
 
@@ -2316,7 +2322,7 @@ __attribute__((always_inline)) static inline void DrawDepthLineNoClip(s32 Ax,s32
                                                             texLUT_t color,fBuff_t *pFrameBuff,zBuff_t *pZbuff){
 //todo here~
     s32 steep = abs(Ay - By) > abs(Ax - Bx);
-    fBuff_t drawColor;
+    //fBuff_t drawColor;
     if (steep){
         _swap_int32_t(Ax,Ay);
         _swap_int32_t(Bx,By);
@@ -2361,8 +2367,8 @@ __attribute__((always_inline)) static inline void DrawDepthLineClip(s32 Ax,s32 A
 //todo here~
 
     //now A is in the left and B is in the right
-        s32 steep = abs(Ay - By) > abs(Ax - Bx);
-    fBuff_t drawColor;
+    s32 steep = abs(Ay - By) > abs(Ax - Bx);
+    //fBuff_t drawColor;
     if (steep){
         _swap_int32_t(Ax,Ay);
         _swap_int32_t(Bx,By);
@@ -2416,7 +2422,7 @@ __attribute__((always_inline)) static inline void DrawColorHLine(f32 x,s32 y,f32
     //s32 sU = du;
     //s32 sV = dv;
     f32 skip;
-    u32 intu,intv;
+    //u32 intu,intv;
     if (intx< clipL){
         skip = (f32)(clipL -intx);
         intx = clipL;
@@ -2497,7 +2503,7 @@ f32 aU,f32 aV,f32 bU,f32 bV, u32 lightFactor, fBuff_t *pFrameBuff,zBuff_t *pZbuf
 
 
     u8  colorIdx = 0;
-    fBuff_t color;
+    //fBuff_t color;
     u8 transColorIdx = pTexture->transColorIdx;
     zBuff_t compZ;
     switch(pTexture->type){
