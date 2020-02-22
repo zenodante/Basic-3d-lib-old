@@ -1504,15 +1504,13 @@ static void RenderMeshObjs(render_t *pRender){
 void B3L_RenderScence(render_t *pRender){
 
     //printf("start render\n");
-    //set world to clip matrix
-    SetCameraMatrix(&(pRender->camera));
-
+    if (!B3L_TEST(pRender->camera.state,B3L_USE_CAM_MATRIX_DIRECTLY)){
+        SetCameraMatrix(&(pRender->camera));
+    }
     UpdateLightVect(pRender);
 
     RenderMeshObjs(pRender);
-    //draw bitmapObj
-    //TODO
-    //draw particleObj
+
 #ifdef B3L_USING_PARTICLE
     RenderParticleObjs(pRender);
 #endif

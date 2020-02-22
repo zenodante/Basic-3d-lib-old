@@ -153,8 +153,18 @@ typedef struct{
     vect3_t             scale;
     vect3_t             translation;
 }transform3D_t;
+/*
+camera_t state
+   31     2423     1615      87
+   ------------------------------------
+31|        |        |        |       A|0
+  ------------------------------------
+A   use the camMat directly, not call set camera matrix function during rendering
+*/
+#define  B3L_USE_CAM_MATRIX_DIRECTLY         (0)
 
 typedef struct{
+    u32                 state;
     f32                 aspectRate;
     f32                 focalLength;
     transform3D_t       transform;
