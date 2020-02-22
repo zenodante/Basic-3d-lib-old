@@ -1,4 +1,4 @@
-#include "game.hpp"
+#include "32blit.hpp"
 
 extern "C" {
 #include "b3dlib.h"
@@ -10,16 +10,20 @@ B3LPolygonObj_t *pBox2;
 B3LMeshObj_t *pBox;
 render_t B3Lrender;
 B3LMeshObj_t box;
-vect3_t at ={.x=0.0f,.y=0.0f,.z=0.0f};
+vect3_t at ;
 f32 i = 0.0f;
 f32 lightY = 0.0f;
 /* setup */
 B3LParticleGenObj_t  *pParticleGen;
 void init() {
+    printf("obj %d\n",sizeof(B3LObj_t));
+    printf("mesh obj %d\n",sizeof(B3LMeshObj_t));
+    printf("particle gen obj %d\n",sizeof(B3LParticleGenObj_t));
+    at.x=0.0f;at.y=0.0f;at.z=0.0f;
     B3L_SetSeed(0x31415926);
-    set_screen_mode(screen_mode::lores);
+    blit::set_screen_mode(ScreenMode::lores);
     //you need a 32bit framebuff here!
-    B3L_RenderInit(&B3Lrender,(fBuff_t *)fb.data);
+    B3L_RenderInit(&B3Lrender,(fBuff_t *)screen.data);
     
     pParticleGen = B3L_GetFreeParticleGeneratorObj(&B3Lrender);
     B3L_InitDemoParticleGenObj(pParticleGen);
@@ -125,8 +129,8 @@ DrawTriColor(
 
 */
     //printf("result is %d\n",result);
-    uint8_t *buff = (uint8_t *)fb.data;
-    uint32_t *u4buff = (uint32_t *)fb.data;
+    uint8_t *buff = (uint8_t *)screen.data;
+    uint32_t *u4buff = (uint32_t *)screen.data;
     uint32_t backColor = B3Lrender.light.color;
     uint8_t r,g,b;
     uint32_t i;
@@ -148,9 +152,9 @@ DrawTriColor(
         g =  (backColor &(0x0000FF00))>>8;
         b = (backColor &(0x000000FF));
         RGB_BLEND(buff[i*4+2],buff[i*4+1],buff[i*4],r,g,b,buff[i*4+3])
-        u4buff[i]=(r<<24)|(g<<16)|(b<<8);
+        u4buff[i]=(0xFF000000)|(r<<16)|(g<<8)|(b<<0);
     }
     
-    fb.watermark();
+    screen.watermark();
      
 }
