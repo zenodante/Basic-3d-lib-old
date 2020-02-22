@@ -216,12 +216,6 @@ __attribute__((always_inline)) static  inline f32      NonZero(f32 value);
 __attribute__((always_inline)) static  inline f32      Interp_f(f32 x1, f32 x2, f32 t);
 __attribute__((always_inline)) static  inline s32      IntClamp(s32 v, s32 v1, s32 v2);
 __attribute__((always_inline)) static  inline f32      B3L_Clamp_f(f32 v, f32 v1, f32 v2);
-__attribute__((always_inline)) static  inline f32      Min_f(f32 v1, f32 v2);
-__attribute__((always_inline)) static  inline s32      Min_s32(s32 v1, s32 v2);
-__attribute__((always_inline)) static  inline u32      Min_u32(u32 v1, u32 v2);
-__attribute__((always_inline)) static  inline f32      Max_f(f32 v1, f32 v2);
-__attribute__((always_inline)) static  inline s32      Max_u32(u32 v1, u32 v2);
-__attribute__((always_inline)) static  inline s32      Max_s32(s32 v1, s32 v2);
 __attribute__((always_inline)) static  inline void     Vect3_Scale(vect3_t *pV,f32 scale,vect3_t *pResult);
 __attribute__((always_inline)) static  inline void     Vect3_Add(vect3_t *pV1,vect3_t *pV2,vect3_t *pResult);
 __attribute__((always_inline)) static  inline void     MakeClipMatrix(f32 focalLength, f32 aspectRatio,mat4_t *mat);
@@ -381,27 +375,6 @@ __attribute__((always_inline)) static  inline f32 B3L_Clamp_f(f32 v, f32 v1, f32
 __attribute__((always_inline)) static  inline s32 IntClamp(s32 v, s32 v1, s32 v2)
 {
     return v >= v1 ? (v <= v2 ? v : v2) : v1;
-}
-__attribute__((always_inline)) static  inline u32 Min_u32(u32 v1, u32 v2){
-    return v1 >= v2 ? v2 : v1;
-}
-__attribute__((always_inline)) static  inline s32 Min_s32(s32 v1, s32 v2){
-    return v1 >= v2 ? v2 : v1;
-}
-
-__attribute__((always_inline)) static  inline s32 Max_u32(u32 v1, u32 v2){
-    return v1 >= v2 ? v1 : v2;
-}
-
-__attribute__((always_inline)) static  inline s32 Max_s32(s32 v1, s32 v2){
-    return v1 >= v2 ? v1 : v2;
-}
-__attribute__((always_inline)) static inline f32 Min_f(f32 v1, f32 v2){
-    return v1 >= v2 ? v2 : v1;
-}
-
-__attribute__((always_inline)) static inline f32 Max_f(f32 v1, f32 v2){
-    return v1 >= v2 ? v1 : v2;
 }
 
 //inv sqrt black magic from quake 
@@ -1119,7 +1092,7 @@ __attribute__((always_inline)) static inline u32 CalLightFactor(f32 normalDotLig
     s32 lightValue;
     normalDotLight += lightFactor0;
     lightValue =(s32) (normalDotLight*lightFactor1);
-    lightValue = Max_s32(lightValue,0);
+    lightValue = B3L_MAX(lightValue,0);
 #if FRAME_BUFF_COLOR_TYPE == 1
     lightValue = lightValue>>4; //only use high 4 bit
 #endif
@@ -1378,7 +1351,7 @@ void     B3L_DefaultParticleUpdFunc(u32 time,B3LParticleGenObj_t *pSelf,mat4_t *
         deltaTime = time - pSelf->lastTime;
         pSelf->lastTime = time;
         //add necessary new particles into the list
-        i = Min_u32(pRender->scene.freeParticleNum,newParticleNum);
+        i = B3L_MIN(pRender->scene.freeParticleNum,newParticleNum);
         s32 randValue;
         f32 inv256 = 0.00390625f;
         while(i--){
@@ -2460,7 +2433,6 @@ f32 aU,f32 aV,f32 bU,f32 bV, u32 lightFactor, fBuff_t *pFrameBuff,zBuff_t *pZbuf
     f32 invlength = 1.0f/((f32)(intb-intx));
     intb = intb - 1;
     //printf("invlength %.3f\n",invlength);
-    //length = Max_s32(length , 1) ;
 
     if ((intx>=clipR)||(b<clipL)){
         return;

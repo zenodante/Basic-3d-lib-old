@@ -430,6 +430,8 @@ extern f32      B3L_cos(f32 in);
 extern f32      B3L_asin(f32 in);
 extern void     B3L_SetSeed(u32 seed);
 extern u32      B3L_Random(void); 
+#define         B3L_MIN(a,b)      ((a) >= (b) ? (b) : (a))
+#define         B3L_MAX(a,b)      ((a) >= (b) ? (a) : (b))
 /*-----------------------------------------------------------------------------
 Vector functions
 -----------------------------------------------------------------------------*/
