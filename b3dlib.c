@@ -857,7 +857,7 @@ f32 B3L_DotProductVect3(vect3_t *pA, vect3_t *pB){
 
 
 void   B3L_SetSeed(u32 seed){
-    B3L_seed = seed;
+    B3L_seed = seed|1;
 }
 //using rand xorshift algorithm from george marsaglia's paper
 u32    B3L_Random(void){
@@ -926,48 +926,40 @@ void B3L_TransposeMat4(mat4_t *pMat){
     ((f32 *)pMat)[14] = temp;
 }
 
-//mat1 * mat2 -> mat1
-void B3L_Mat4Xmat4(mat4_t *pMat1, mat4_t *pMat2){
+//mat1 * mat2 -> mat3, it is safe to set mat1 same as mat3
+void B3L_Mat4XMat4(mat4_t *pMat1,mat4_t *pMat2, mat4_t *pMat3){
     f32 t0,t1,t2,t3;
+    f32 s0,s1,s2,s3;
     #define M(x,y) (pMat1)->m##x##y
     #define N(x,y) (pMat2)->m##x##y
-    t0 = M(0,0)*N(0,0)+M(1,0)*N(0,1)+M(2,0)*N(0,2)+M(3,0)*N(0,3);
-    t1 = M(0,0)*N(1,0)+M(1,0)*N(1,1)+M(2,0)*N(1,2)+M(3,0)*N(1,3);
-    t2 = M(0,0)*N(2,0)+M(1,0)*N(2,1)+M(2,0)*N(2,2)+M(3,0)*N(2,3);
-    t3 = M(0,0)*N(3,0)+M(1,0)*N(3,1)+M(2,0)*N(3,2)+M(3,0)*N(3,3);
-    M(0,0) = t0;
-    M(1,0) = t1;
-    M(2,0) = t2;
-    M(3,0) = t3;
-    
-    t0 = M(0,1)*N(0,0)+M(1,1)*N(0,1)+M(2,1)*N(0,2)+M(3,1)*N(0,3);
-    t1 = M(0,1)*N(1,0)+M(1,1)*N(1,1)+M(2,1)*N(1,2)+M(3,1)*N(1,3);
-    t2 = M(0,1)*N(2,0)+M(1,1)*N(2,1)+M(2,1)*N(2,2)+M(3,1)*N(2,3);
-    t3 = M(0,1)*N(3,0)+M(1,1)*N(3,1)+M(2,1)*N(3,2)+M(3,1)*N(3,3);
-    M(0,1) = t0;
-    M(1,1) = t1;
-    M(2,1) = t2;
-    M(3,1) = t3;
-
-    t0 = M(0,2)*N(0,0)+M(1,2)*N(0,1)+M(2,2)*N(0,2)+M(3,2)*N(0,3);
-    t1 = M(0,2)*N(1,0)+M(1,2)*N(1,1)+M(2,2)*N(1,2)+M(3,2)*N(1,3);
-    t2 = M(0,2)*N(2,0)+M(1,2)*N(2,1)+M(2,2)*N(2,2)+M(3,2)*N(2,3);
-    t3 = M(0,2)*N(3,0)+M(1,2)*N(3,1)+M(2,2)*N(3,2)+M(3,2)*N(3,3);
-    M(0,2) = t0;
-    M(1,2) = t1;
-    M(2,2) = t2;
-    M(3,2) = t3;
-
-    t0 = M(0,3)*N(0,0)+M(1,3)*N(0,1)+M(2,3)*N(0,2)+M(3,3)*N(0,3);
-    t1 = M(0,3)*N(1,0)+M(1,3)*N(1,1)+M(2,3)*N(1,2)+M(3,3)*N(1,3);
-    t2 = M(0,3)*N(2,0)+M(1,3)*N(2,1)+M(2,3)*N(2,2)+M(3,3)*N(2,3);
-    t3 = M(0,3)*N(3,0)+M(1,3)*N(3,1)+M(2,3)*N(3,2)+M(3,3)*N(3,3);
-    M(0,3) = t0;
-    M(1,3) = t1;
-    M(2,3) = t2;
-    M(3,3) = t3;
+    #define O(x,y) (pMat3)->m##x##y
+    s0=M(0,0);s1=M(1,0);s2=M(2,0);s3=M(3,0);
+    t0 = s0*N(0,0)+s1*N(0,1)+s2*N(0,2)+s3*N(0,3);
+    t1 = s0*N(1,0)+s1*N(1,1)+s2*N(1,2)+s3*N(1,3);
+    t2 = s0*N(2,0)+s1*N(2,1)+s2*N(2,2)+s3*N(2,3);
+    t3 = s0*N(3,0)+s1*N(3,1)+s2*N(3,2)+s3*N(3,3);
+    O(0,0) = t0;O(1,0) = t1;O(2,0) = t2;O(3,0) = t3;
+    s0=M(0,1);s1=M(1,1);s2=M(2,1);s3=M(3,1);
+    t0 =s0*N(0,0)+s1*N(0,1)+s2*N(0,2)+s3*N(0,3);
+    t1 =s0*N(1,0)+s1*N(1,1)+s2*N(1,2)+s3*N(1,3);
+    t2 =s0*N(2,0)+s1*N(2,1)+s2*N(2,2)+s3*N(2,3);
+    t3 =s0*N(3,0)+s1*N(3,1)+s2*N(3,2)+s3*N(3,3);
+    O(0,1) = t0;O(1,1) = t1;O(2,1) = t2;O(3,1) = t3;
+    s0=M(0,2);s1=M(1,2);s2=M(2,2);s3=M(3,2);
+    t0 =s0*N(0,0)+s1*N(0,1)+s2*N(0,2)+s3*N(0,3);
+    t1 =s0*N(1,0)+s1*N(1,1)+s2*N(1,2)+s3*N(1,3);
+    t2 =s0*N(2,0)+s1*N(2,1)+s2*N(2,2)+s3*N(2,3);
+    t3 =s0*N(3,0)+s1*N(3,1)+s2*N(3,2)+s3*N(3,3);
+    O(0,2) = t0;O(1,2) = t1;O(2,2) = t2;O(3,2) = t3;
+    s0=M(0,3);s1=M(1,3);s2=M(2,3);s3=M(3,3);
+    t0 = s0*N(0,0)+s1*N(0,1)+s2*N(0,2)+s3*N(0,3);
+    t1 = s0*N(1,0)+s1*N(1,1)+s2*N(1,2)+s3*N(1,3);
+    t2 = s0*N(2,0)+s1*N(2,1)+s2*N(2,2)+s3*N(2,3);
+    t3 = s0*N(3,0)+s1*N(3,1)+s2*N(3,2)+s3*N(3,3);
+    O(0,3) = t0;O(1,3) = t1;O(2,3) = t2;O(3,3) = t3;
     #undef M
     #undef N
+    #undef O
 }
 
 void B3L_MakeRotationMatrixZXY(f32 byX,f32 byY,f32 byZ,mat4_t *pMat){
@@ -1036,12 +1028,13 @@ void B3L_MakeWorldMatrix(transform3D_t *pWorldTransform, mat4_t *pMat){
                                 pWorldTransform->rotation.y,
                                 pWorldTransform->rotation.z,&temp);
 
-    B3L_Mat4Xmat4(pMat,&temp); 
+    B3L_Mat4XMat4(pMat,&temp,pMat);
+    //B3L_Mat4XMat4(pMat,&temp); 
     /*   
     B3L_MakeTranslationMat(pWorldTransform->translation.x,
                                 pWorldTransform->translation.y,
                                 pWorldTransform->translation.z,&temp);
-    B3L_Mat4Xmat4(pMat,&temp);   
+    B3L_Mat4XMat4(pMat,&temp);   
     */
     pMat->m03 = pWorldTransform->translation.x;
     pMat->m13 = pWorldTransform->translation.y;
@@ -1185,10 +1178,12 @@ static void SetCameraMatrix(camera_t *pCam){
     B3L_MakeRotationMatrixZXY(pCam->transform.rotation.x,
                               pCam->transform.rotation.y,
                               pCam->transform.rotation.z,&(temp)); 
-    B3L_TransposeMat4(&(temp));     
-    B3L_Mat4Xmat4(&(pCam->camMat),&temp); 
+    B3L_TransposeMat4(&(temp));   
+    B3L_Mat4XMat4(&(pCam->camMat),&temp,&(pCam->camMat));  
+    //B3L_Mat4XMat4(&(pCam->camMat),&temp); 
     MakeClipMatrix(pCam->focalLength,pCam->aspectRate,&temp);
-    B3L_Mat4Xmat4(&(pCam->camMat),&temp);   
+    B3L_Mat4XMat4(&(pCam->camMat),&temp,&(pCam->camMat));  
+    //B3L_Mat4XMat4(&(pCam->camMat),&temp);   
             
 }
 void B3L_CameraMoveTo(vect3_t position,camera_t *pCam){
@@ -1359,8 +1354,9 @@ void     B3L_DefaultParticleUpdFunc(u32 time,B3LParticleGenObj_t *pSelf,mat4_t *
     B3L_Particle_t *pParticle;
     //B3L_Particle_t *pPrevParticle;
     vect3_t  delta;
-    vect3_t  force ={.x=0.0f,.y=-0.01f,.z=0.0f};
-    u32      newParticleNum =  (u32)(time*0.01f);
+    vect3_t  force ={.x=0.0f,.y=-0.0001f,.z=0.0f};
+    //u32      newParticleNum =  (u32)(time*0.01f);
+    u32 newParticleNum = 1;
     if(pSelf->lastTime == 0){//this is the first time a generator is updated, only get the time
         pSelf->lastTime = time;
         return;
@@ -1370,7 +1366,7 @@ void     B3L_DefaultParticleUpdFunc(u32 time,B3LParticleGenObj_t *pSelf,mat4_t *
         pSelf->lastTime = time;
         //add necessary new particles into the list
         i = Min_u32(pRender->scene.freeParticleNum,newParticleNum);
-        u32 randValue;
+        s32 randValue;
         f32 inv256 = 0.00390625f;
         while(i--){
             pParticle = B3L_GetFreeParticle(&(pRender->scene));
@@ -1384,13 +1380,13 @@ void     B3L_DefaultParticleUpdFunc(u32 time,B3LParticleGenObj_t *pSelf,mat4_t *
             //setup init delta
             randValue = B3L_Random();
             randValue = randValue&0x000000FF;
-            delta.x = 0.3f*((f32)randValue)*inv256;//need a fast rendom function here!
+            delta.x = 0.5f*((f32)(randValue-128))*inv256;//need a fast rendom function here!
             randValue = B3L_Random();
             randValue = randValue&0x000000FF;
-            delta.y = 0.1f*((f32)randValue)*inv256;
+            delta.y = 0.5f*((f32)randValue)*inv256;
             randValue = B3L_Random();
             randValue = randValue&0x000000FF;
-            delta.z = 0.3f*((f32)randValue)*inv256;
+            delta.z = 0.5f*((f32)(randValue-128))*inv256;
             B3L_Vect3MulMat4(&delta, pMat, &delta);
             B3L_SET_PARTICLE_DELTA(pParticle,delta.x,delta.y,delta.z);
             //pParticle->delta.x = delta.x;
@@ -1429,12 +1425,13 @@ static void RenderMeshObjs(render_t *pRender){
         }
         //create the obj->clip matrix
         if(B3L_TEST(pCurrentObj->state,OBJ_USING_CUSTOMERIZE_MAT)){
-            //copy mat
-            CopyMat4(&mat,pCurrentObj->pCustMat);
+            B3L_Mat4XMat4(pCurrentObj->pCustMat,&(pRender->camera.camMat), &mat);
+            //CopyMat4(&mat,pCurrentObj->pCustMat);
         }else{    
             B3L_MakeWorldMatrix(&(pCurrentObj->transform), &mat);
-        }
-        B3L_Mat4Xmat4(&mat, &(pRender->camera.camMat));
+            B3L_Mat4XMat4(&mat, &(pRender->camera.camMat),&mat);
+            //B3L_Mat4XMat4(&mat, &(pRender->camera.camMat));
+        } 
         //B3L_logMat4(mat);
         //calculate the bound box position in the clip space
         inClipSpace = false;
@@ -2132,10 +2129,7 @@ static void RenderNoTexMesh(B3LMeshNoTexObj_t *pObj,render_t *pRender, mat4_t *p
         printf("backFaceCullingResult = %d\n",backFaceCullingResult);
 #endif
             
-        if ((cullingState==1) && backFaceCullingResult){     
-            continue;
-        }
-        if ((cullingState==2) && (!backFaceCullingResult)){     
+        if (((cullingState==1) && backFaceCullingResult)||((cullingState==2) && (!backFaceCullingResult))){    
             continue;
         }
 
@@ -2287,12 +2281,12 @@ printf("Draw a mesh");
 
         bool backFaceCullingResult = TriangleFaceToViewer_f(x0, y0, x1, y1, x2, y2);
            
-        if ((cullingState==1) && backFaceCullingResult){    
+        if (((cullingState==1) && backFaceCullingResult)||((cullingState==2) && (!backFaceCullingResult))){    
             continue;
         }
-        if ((cullingState==2) && (!backFaceCullingResult)){  
-            continue;
-        }
+        //if ((cullingState==2) && (!backFaceCullingResult)){  
+        //    continue;
+        //}
         if (renderLevel==0){
             Norm3Xmat4Normalize(pVectSource+i, pMat, &normalVect); 
             //dot multi light and normalvect to get the light factor

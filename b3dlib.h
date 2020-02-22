@@ -423,7 +423,7 @@ Matrix functions
 -----------------------------------------------------------------------------*/
 extern void     B3L_InitMat4One(mat4_t *pMat);
 extern void     B3L_TransposeMat4(mat4_t *pMat);
-extern void     B3L_Mat4Xmat4(mat4_t *pMat1, mat4_t *pMat2);
+extern void     B3L_Mat4XMat4(mat4_t *pMat1,mat4_t *pMat2, mat4_t *pMat3);
 extern void     B3L_MakeRotationMatrixZXY(f32 byX,f32 byY,f32 byZ,mat4_t *pMat);
 extern void     B3L_MakeScaleMatrix(f32 scaleX,f32 scaleY,f32 scaleZ,mat4_t *pMat);
 extern void     B3L_MakeTranslationMat(f32 offsetX,f32 offsetY,f32 offsetZ,mat4_t *pMat);
