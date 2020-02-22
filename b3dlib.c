@@ -281,7 +281,7 @@ __attribute__((always_inline)) static  inline void     DrawDepthLineClip(s32 Ax,
  /*-----------------------------------------------------------------------------
 Camera functions
 -----------------------------------------------------------------------------*/
-static void SetCameraMatrix(camera_t *pCam);
+
  /*-----------------------------------------------------------------------------
 Obj list functions
 -----------------------------------------------------------------------------*/
@@ -1165,10 +1165,10 @@ void B3L_InitCamera(camera_t *pCam){
     pCam->transform.translation.x = 0.0f;
     pCam->transform.translation.y = 0.0f;
     pCam->transform.translation.z = 0.0f;
-    SetCameraMatrix(pCam);
+    B3L_SetCameraMatrix(pCam);
 }
-
-static void SetCameraMatrix(camera_t *pCam){
+//If B3L_USE_CAM_MATRIX_DIRECTLY not set, this function will be call automaticly during render
+void B3L_SetCameraMatrix(camera_t *pCam){
 
     B3L_MakeTranslationMat(-1.0f * pCam->transform.translation.x,
                             -1.0f * pCam->transform.translation.y,
@@ -1219,10 +1219,15 @@ void B3L_CameraLookAt(camera_t *pCam, vect3_t *pAt){
     dx = v.x / NonZero(l);
 
     pCam->transform.rotation.x = B3L_asin(dx);
-    //printf("rotation y %.3f,rotation x %.3f\n",pCam->transform.rotation.y,pCam->transform.rotation.x);
 }
 
-
+void   B3L_SetCameraUpDirection(camera_t *pCam, vect3_t *pUp){
+    //calculate the length of vect
+    f32 length = B3L_Vec3Length(pUp);
+    f32 cosValue = (pUp->y)/length;
+    f32 zAngle = 0.25f - B3L_asin(cosValue);
+    pCam->transform.rotation.z = zAngle;
+}
 
 
 /*-----------------------------------------------------------------------------
@@ -1505,7 +1510,7 @@ void B3L_RenderScence(render_t *pRender){
 
     //printf("start render\n");
     if (!B3L_TEST(pRender->camera.state,B3L_USE_CAM_MATRIX_DIRECTLY)){
-        SetCameraMatrix(&(pRender->camera));
+        B3L_SetCameraMatrix(&(pRender->camera));
     }
     UpdateLightVect(pRender);
 

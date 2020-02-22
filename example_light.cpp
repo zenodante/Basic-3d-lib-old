@@ -102,6 +102,8 @@ void update(uint32_t time){
     B3Lrender.camera.transform.translation.x =  B3L_cos(i)*200.0f;
 
     B3L_CameraLookAt(&(B3Lrender.camera), &at);
+    vect3_t up ={2.0f,3.0f,0.0f};
+    B3L_SetCameraUpDirection(&(B3Lrender.camera),&up);
 
 }
 

@@ -448,7 +448,8 @@ Camera functions
 extern void     B3L_InitCamera(camera_t *pCam);
 extern void     B3L_CameraMoveTo(vect3_t position,camera_t *pCam);
 extern void     B3L_CameraLookAt(camera_t *pCam, vect3_t *pAt);
-//extern void B3L_CameraUpDirection(camera_t *pCam, vect3_t *pUp);
+extern void     B3L_SetCameraMatrix(camera_t *pCam);
+extern void     B3L_SetCameraUpDirection(camera_t *pCam, vect3_t *pUp);
 /*-----------------------------------------------------------------------------
 Render functions
 -----------------------------------------------------------------------------*/
