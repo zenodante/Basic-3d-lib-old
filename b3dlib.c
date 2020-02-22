@@ -1165,10 +1165,19 @@ void B3L_InitCamera(camera_t *pCam){
     pCam->transform.translation.x = 0.0f;
     pCam->transform.translation.y = 0.0f;
     pCam->transform.translation.z = 0.0f;
-    B3L_SetCameraMatrix(pCam);
+    B3L_SetCameraMatrixByTransform(pCam);
 }
+
+void B3L_SetCamToManualMatUpdate(camera_t *pCam){
+    B3L_SET(pCam->state,B3L_USE_CAM_MATRIX_DIRECTLY);
+}
+
+void B3L_SetCamToAutoMatUpdate(camera_t *pCam){
+    B3L_CLR(pCam->state,B3L_USE_CAM_MATRIX_DIRECTLY);
+}
+
 //If B3L_USE_CAM_MATRIX_DIRECTLY not set, this function will be call automaticly during render
-void B3L_SetCameraMatrix(camera_t *pCam){
+void B3L_SetCameraMatrixByTransform(camera_t *pCam){
 
     B3L_MakeTranslationMat(-1.0f * pCam->transform.translation.x,
                             -1.0f * pCam->transform.translation.y,
@@ -1510,7 +1519,7 @@ void B3L_RenderScence(render_t *pRender){
 
     //printf("start render\n");
     if (!B3L_TEST(pRender->camera.state,B3L_USE_CAM_MATRIX_DIRECTLY)){
-        B3L_SetCameraMatrix(&(pRender->camera));
+        B3L_SetCameraMatrixByTransform(&(pRender->camera));
     }
     UpdateLightVect(pRender);
 

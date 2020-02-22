@@ -446,10 +446,13 @@ extern void     B3L_Point3MulMat4(vect3_t *pV, mat4_t *pMat, vect3_t *pResult);
 Camera functions
 -----------------------------------------------------------------------------*/
 extern void     B3L_InitCamera(camera_t *pCam);
+extern void     B3L_SetCamToManualMatUpdate(camera_t *pCam);
+extern void     B3L_SetCamToAutoMatUpdate(camera_t *pCam);
 extern void     B3L_CameraMoveTo(vect3_t position,camera_t *pCam);
 extern void     B3L_CameraLookAt(camera_t *pCam, vect3_t *pAt);
-extern void     B3L_SetCameraMatrix(camera_t *pCam);
+extern void     B3L_SetCameraMatrixByTransform(camera_t *pCam);
 extern void     B3L_SetCameraUpDirection(camera_t *pCam, vect3_t *pUp);
+
 /*-----------------------------------------------------------------------------
 Render functions
 -----------------------------------------------------------------------------*/
@@ -464,7 +467,6 @@ Light functions
 extern void     B3L_ResetLight(light_t *pLight);
 extern void     B3L_SetLightType(render_t *pRender,lightType_e type);
 extern void     B3L_SetLightVect(render_t *pRender, f32 x,f32 y,f32 z);
-
 /*-----------------------------------------------------------------------------
 Render obj functions
 -----------------------------------------------------------------------------*/
