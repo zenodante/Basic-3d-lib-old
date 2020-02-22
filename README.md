@@ -19,7 +19,7 @@ Todo:
 - [x] Texture mapping triangle drawing
 - [ ] 2d Sprite drawing
 - [x] Polygon drawing
-- [ ] 3d particles drawing, dev branch current working on it
+- [x] 3d particles drawing, now first version is done
 - [x] fast flat color triangle drawing
 
 Model swapping system to manage the model loading from nor flash into sram buff.
