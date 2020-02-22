@@ -207,15 +207,19 @@ __attribute__((always_inline)) static  inline f32   B3L_Absf(f32 in);
 #else
 #define B3L_Sqrtf   sqrtf
 #define B3L_Absf    abs
-#endif   
+#endif 
+__attribute__((always_inline)) static  inline f32      FastInvertSqrt(f32 x);  
 __attribute__((always_inline)) static  inline s32      VcvtF32ToS32_Fix(f32 in);
 __attribute__((always_inline)) static  inline f32      VcvtS32ToF32_Fix(s32 in);
 __attribute__((always_inline)) static  inline u32      SatToU8(u32 in);
 __attribute__((always_inline)) static  inline u32      SatToU16(u32 in);
 __attribute__((always_inline)) static  inline f32      NonZero(f32 value);
 __attribute__((always_inline)) static  inline f32      Interp_f(f32 x1, f32 x2, f32 t);
-__attribute__((always_inline)) static  inline s32      IntClamp(s32 v, s32 v1, s32 v2);
-__attribute__((always_inline)) static  inline f32      B3L_Clamp_f(f32 v, f32 v1, f32 v2);
+__attribute__((always_inline)) static  inline s32      Clamp_i(s32 v, s32 v1, s32 v2);
+__attribute__((always_inline)) static  inline f32      Clamp_f(f32 v, f32 v1, f32 v2);
+/*-----------------------------------------------------------------------------
+Vector and matrix functions
+-----------------------------------------------------------------------------*/
 __attribute__((always_inline)) static  inline void     Vect3_Scale(vect3_t *pV,f32 scale,vect3_t *pResult);
 __attribute__((always_inline)) static  inline void     Vect3_Add(vect3_t *pV1,vect3_t *pV2,vect3_t *pResult);
 __attribute__((always_inline)) static  inline void     MakeClipMatrix(f32 focalLength, f32 aspectRatio,mat4_t *mat);
@@ -226,9 +230,11 @@ __attribute__((always_inline)) static  inline void     Norm3Xmat4(vect3_t *pV, m
 __attribute__((always_inline)) static  inline void     Norm3Xmat4Normalize(vect3_t *pV, mat4_t *pMat, vect3_t *pResult);
 __attribute__((always_inline)) static  inline void     Vect4Xmat4(vect4_t *pV, mat4_t *pMat, vect4_t *pResult);
 __attribute__((always_inline)) static  inline bool     Vect4BoundTest(vect4_t *pV);
-__attribute__((always_inline)) static  inline f32      FastInvertSqrt(f32 x);
-__attribute__((always_inline)) static  inline zBuff_t  CalZbuffValue(f32 z);
 __attribute__((always_inline)) static  inline void     CopyMat4(mat4_t *target, mat4_t *source);
+/*-----------------------------------------------------------------------------
+Z buff functions
+-----------------------------------------------------------------------------*/
+__attribute__((always_inline)) static  inline zBuff_t  CalZbuffValue(f32 z);
 /*-----------------------------------------------------------------------------
 Light functions
 -----------------------------------------------------------------------------*/
@@ -368,11 +374,11 @@ __attribute__((always_inline)) static  inline u32   SatToU16(u32 in){
 
 #endif
 
-__attribute__((always_inline)) static  inline f32 B3L_Clamp_f(f32 v, f32 v1, f32 v2){
+__attribute__((always_inline)) static  inline f32 Clamp_f(f32 v, f32 v1, f32 v2){
     return v > v1 ? (v < v2 ? v : v2) : v1;
 }
 
-__attribute__((always_inline)) static  inline s32 IntClamp(s32 v, s32 v1, s32 v2)
+__attribute__((always_inline)) static  inline s32 Clamp_i(s32 v, s32 v1, s32 v2)
 {
     return v >= v1 ? (v <= v2 ? v : v2) : v1;
 }
@@ -763,7 +769,7 @@ f32 B3L_cos(f32 in){
 }
 
 f32 B3L_asin(f32 in){
-    in = B3L_Clamp_f(in, -1.0f,1.0f);
+    in = Clamp_f(in, -1.0f,1.0f);
     float negate = (f32)(in < 0);
     
     if (in < 0.0f){
