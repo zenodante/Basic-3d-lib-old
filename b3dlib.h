@@ -1,21 +1,37 @@
 #ifndef __B3DLIB_H__
 #define __B3DLIB_H__
+/*
+Left-hand coordination was used in this lib
+    ^ y
+    |    ^ z
+    |  /
+    |/
+    +--------> x
+Screen coordination is [0,0] from top left corner.
+0,0 ---------> x
+   |
+   |
+   |
+ y v
+row vector, so v * mat -> new v
 
+Rotations use Euler angles in ZXY order
+Positive rotation about an axis rotates clock-wise when looking in the direction of the axis
+*/
 
 #include <stdint.h>
 #include <math.h>
-
-//#define  B3L_ARM
-
-
-
-//#define B3L_DEBUG
 /*Config area----------------------------------------------------------------*/
+
+
+#define  B3L_ARM                0
+
+#define  B3L_DEBUG              0
 
 //vect buff is limited the max vectors in single obj
 #define VECT_BUFF_SIZE          512
 #define OBJ_BUFF_SIZE           64
-//Zbuffer level 2: f32, 1:u16, 0: u8
+//Zbuffer level 2: f32, 1:u16, 0: u8  //may a half float 16bit would be better?
 #define Z_BUFF_LEVEL            2
 /*
 Type 0: 32bit 8:8:8:8 ARGB  
@@ -27,7 +43,7 @@ type 2: 16bit 8:8     AL
 
 #define RENDER_RESOLUTION_X     160
 #define RENDER_RESOLUTION_Y     120
-#define VIDEO_BUFF_LENTH              ((RENDER_RESOLUTION_X)*(RENDER_RESOLUTION_Y))
+#define VIDEO_BUFF_LENTH        ((RENDER_RESOLUTION_X)*(RENDER_RESOLUTION_Y))
 
 #define HALF_RESOLUTION_X       79.5f
 #define HALF_RESOLUTION_Y       59.5f
@@ -266,7 +282,7 @@ typedef struct B3LOBJ{
     mat4_t              *pCustMat;
     f32                 *pBoundBox;
     transform3D_t       transform;  
-    #ifdef B3L_ARM      
+    #if B3L_ARM  == 1   
     u32                 dummy[2];
     #else    
     u32                 dummy[4];

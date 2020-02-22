@@ -201,7 +201,7 @@ const B3L_texture_t B3L_boxTexture = {
 /*-----------------------------------------------------------------------------
 Math functions
 -----------------------------------------------------------------------------*/
-#ifdef B3L_ARM
+#if  B3L_ARM == 1
 __attribute__((always_inline)) static  inline f32   B3L_Sqrtf(f32 in);
 __attribute__((always_inline)) static  inline f32   B3L_Absf(f32 in);
 #else
@@ -313,7 +313,7 @@ static void RenderPolygon(B3LPolygonObj_t *pObj,render_t *pRender, mat4_t *pMat)
 /*-----------------------------------------------------------------------------
 Math function
 -----------------------------------------------------------------------------*/
-#ifdef B3L_ARM
+#if B3L_ARM  == 1
 __attribute__((always_inline)) static  inline f32 B3L_Sqrtf(f32 in){
     f32 result;
 __ASM("vsqrt.f32 %0,%1" : "=t"(result) : "t"(in));
@@ -803,7 +803,6 @@ f32 B3L_asin(f32 in){
     ret -= 0.2121144f;
     ret *= in;
     ret += 1.5707288f;
-    //#ifdef B3L_ARM
     ret = 3.14159265358979f*0.5f - B3L_Sqrtf(1.0f - in)*ret;
     ret = (ret - 2 * negate * ret)*0.15915494309f;
     return ret;
@@ -1039,7 +1038,7 @@ void B3L_MakeWorldMatrix(transform3D_t *pWorldTransform, mat4_t *pMat){
     pMat->m03 = pWorldTransform->translation.x;
     pMat->m13 = pWorldTransform->translation.y;
     pMat->m23 = pWorldTransform->translation.z;
-#ifdef B3L_DEBUG
+#if  B3L_DEBUG == 1
 printf("pWorldTransform %.3f,%.3f,%.3f,\n",pWorldTransform->rotation.x,pWorldTransform->rotation.y,pWorldTransform->rotation.z);
 printf("In make world matrix, temp matrix:\n");
 B3L_logMat4(temp);  
@@ -1478,7 +1477,6 @@ static void RenderMeshObjs(render_t *pRender){
         f32 x = mat.m03;
         f32 y = mat.m13;
         f32 z = mat.m23;
-        //#ifdef B3L_ARM
         distance = B3L_Sqrtf(x*x+y*y+z*z);
         //#else
         //distance = sqrtf(x*x+y*y+z*z);
@@ -2137,7 +2135,7 @@ static void RenderNoTexMesh(B3LMeshNoTexObj_t *pObj,render_t *pRender, mat4_t *p
         f32 y2 = pVectTarget[vect2Idx].y;
 
         bool backFaceCullingResult = TriangleFaceToViewer_f(x0, y0, x1, y1, x2, y2);
-#ifdef B3L_DEBUG
+#if B3L_DEBUG  == 1
         printf("backFaceCullingResult = %d\n",backFaceCullingResult);
 #endif
             
@@ -2218,7 +2216,7 @@ static void RenderPolygon(B3LPolygonObj_t *pObj,render_t *pRender, mat4_t *pMat)
 
 
 static void RenderTexMesh(B3LMeshObj_t *pObj,render_t *pRender, mat4_t *pMat,u32 renderLevel){
-#ifdef B3L_DEBUG
+#if  B3L_DEBUG == 1
 printf("Draw a mesh");
 #endif
     int32_t i;

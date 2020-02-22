@@ -16,9 +16,9 @@ f32 lightY = 0.0f;
 /* setup */
 B3LParticleGenObj_t  *pParticleGen;
 void init() {
-    printf("obj %d\n",sizeof(B3LObj_t));
-    printf("mesh obj %d\n",sizeof(B3LMeshObj_t));
-    printf("particle gen obj %d\n",sizeof(B3LParticleGenObj_t));
+    //printf("obj %d\n",sizeof(B3LObj_t));
+    //printf("mesh obj %d\n",sizeof(B3LMeshObj_t));
+    //printf("particle gen obj %d\n",sizeof(B3LParticleGenObj_t));
     at.x=0.0f;at.y=0.0f;at.z=0.0f;
     B3L_SetSeed(0x31415926);
     blit::set_screen_mode(ScreenMode::lores);
