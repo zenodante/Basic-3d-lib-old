@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <stdlib.h>
+#include <math.h>
 #include "b3dlib.h"
 
 #ifndef   __ASM
@@ -204,10 +205,13 @@ Math functions
 #if  B3L_ARM == 1
 __attribute__((always_inline)) static  inline f32   B3L_Sqrtf(f32 in);
 __attribute__((always_inline)) static  inline f32   B3L_Absf(f32 in);
+
 #else
 #define B3L_Sqrtf   sqrtf
 #define B3L_Absf    abs
 #endif 
+__attribute__((always_inline)) static  inline s32      B3L_RoundingToS(f32 in);
+__attribute__((always_inline)) static  inline s32      B3L_RoundingToU(f32 in);
 __attribute__((always_inline)) static  inline f32      FastInvertSqrt(f32 x);  
 __attribute__((always_inline)) static  inline s32      VcvtF32ToS32_Fix(f32 in);
 __attribute__((always_inline)) static  inline f32      VcvtS32ToF32_Fix(s32 in);
@@ -348,6 +352,18 @@ __attribute__((always_inline)) static  inline u32   SatToU16(u32 in){
     return result; 
 }
 
+__attribute__((always_inline)) static  inline s32   B3L_RoundingToS(f32 in){
+    s32 result;
+    __ASM ("vcvtr.s32.f32 %0,%1" : "=t"(result) : "t"(in));
+    return result; 
+}
+
+__attribute__((always_inline)) static  inline s32   B3L_RoundingToU(f32 in){
+    u32 result;
+    __ASM ("vcvtr.u32.f32 %0,%1" : "=t"(result) : "t"(in));
+    return result; 
+}
+
 #else
 __attribute__((always_inline)) static  inline s32   VcvtF32ToS32_Fix(f32 in){
     return ((s32)(in*((f32)(1<<B3L_FIX_BITS))));
@@ -372,7 +388,14 @@ __attribute__((always_inline)) static  inline u32   SatToU16(u32 in){
     }
 }
 
-#endif
+__attribute__((always_inline)) static  inline s32   B3L_RoundingToS(f32 in){
+    return (s32)roundf(in); 
+}
+
+__attribute__((always_inline)) static  inline s32   B3L_RoundingToU(f32 in){
+    return (u32)roundf(in); 
+}
+#endif //end of B3L_ARM
 
 __attribute__((always_inline)) static  inline f32 Clamp_f(f32 v, f32 v1, f32 v2){
     return v > v1 ? (v < v2 ? v : v2) : v1;
@@ -1027,11 +1050,11 @@ B3L_logMat4(temp);
 }
 __attribute__((always_inline)) static  inline zBuff_t CalZbuffValue(f32 z){
              #if  (Z_BUFF_LEVEL == 0) 
-            u32 tempZ = (u32)(z*255.0f);
+            u32 tempZ = B3L_RoundingToU(z*255.0f);
             u8  compZ = SatToU8(tempZ);
             #endif
             #if (Z_BUFF_LEVEL == 1)
-            u32 tempZ = (u32)(z*65535.0f);
+            u32 tempZ = B3L_RoundingToU(z*65535.0f);
             u16 compZ = SatToU16(tempZ);
             #endif
             #if (Z_BUFF_LEVEL == 2)
@@ -1097,7 +1120,7 @@ void B3L_ResetLight(light_t *pLight){
 __attribute__((always_inline)) static inline u32 CalLightFactor(f32 normalDotLight, f32 lightFactor0,f32 lightFactor1){
     s32 lightValue;
     normalDotLight += lightFactor0;
-    lightValue =(s32) (normalDotLight*lightFactor1);
+    lightValue =B3L_RoundingToS(normalDotLight*lightFactor1);
     lightValue = B3L_MAX(lightValue,0);
 #if FRAME_BUFF_COLOR_TYPE == 1
     lightValue = lightValue>>4; //only use high 4 bit
@@ -1347,7 +1370,6 @@ void     B3L_DefaultParticleUpdFunc(u32 time,B3LParticleGenObj_t *pSelf,mat4_t *
     //B3L_Particle_t *pPrevParticle;
     vect3_t  delta;
     vect3_t  force ={.x=0.0f,.y=-0.0001f,.z=0.0f};
-    //u32      newParticleNum =  (u32)(time*0.01f);
     u32 newParticleNum = 1;
     if(pSelf->lastTime == 0){//this is the first time a generator is updated, only get the time
         pSelf->lastTime = time;
@@ -2174,11 +2196,11 @@ static void RenderPolygon(B3LPolygonObj_t *pObj,render_t *pRender, mat4_t *pMat)
                 continue;
         }
 
-        s32 Ax = (s32)(pVectTarget[lineIdxA].x);
-        s32 Ay = (s32)(pVectTarget[lineIdxA].y);
+        s32 Ax = B3L_RoundingToS(pVectTarget[lineIdxA].x);
+        s32 Ay = B3L_RoundingToS(pVectTarget[lineIdxA].y);
         f32 Az = pVectTarget[lineIdxA].z;
-        s32 Bx = (s32)(pVectTarget[lineIdxB].x);
-        s32 By = (s32)(pVectTarget[lineIdxB].y);
+        s32 Bx = B3L_RoundingToS(pVectTarget[lineIdxB].x);
+        s32 By = B3L_RoundingToS(pVectTarget[lineIdxB].y);
         f32 Bz = pVectTarget[lineIdxB].z;
         if (B3L_TEST(testA,B3L_IN_SPACE )&&
             B3L_TEST(testB,B3L_IN_SPACE )){
@@ -2384,7 +2406,7 @@ __attribute__((always_inline)) static inline void DrawDepthLineClip(s32 Ax,s32 A
 
 __attribute__((always_inline)) static inline void DrawColorHLine(f32 x,s32 y,f32 b, f32 aZ, f32 bZ,
                                        fBuff_t finalColor, fBuff_t *pFrameBuff,zBuff_t *pZbuff) {
-    s32 intx = (s32)x,inty=y,intb=((s32)b);
+    s32 intx = B3L_RoundingToS(x),inty=y,intb=(B3L_RoundingToS(b));
     s32 clipL = 0;
     s32 clipR = RENDER_RESOLUTION_X ;
     f32 invlength = 1.0f/((f32)(intb-intx));
@@ -2431,7 +2453,7 @@ __attribute__((always_inline)) static inline void DrawColorHLine(f32 x,s32 y,f32
 __attribute__((always_inline)) static inline void DrawTexHLine(f32 x,s32 y,f32 b, f32 aZ, f32 bZ,
 f32 aU,f32 aV,f32 bU,f32 bV, u32 lightFactor, fBuff_t *pFrameBuff,zBuff_t *pZbuff, B3L_texture_t *pTexture) {
     //printf("auv%.2f,%.2f,buv%.2f,%.2f\n",aU,aV,bU,bV);
-    s32 intx = (s32)x,inty=y,intb=((s32)b);
+    s32 intx = B3L_RoundingToS(x),inty=y,intb=(B3L_RoundingToS(b));
     //s32 b = x + length -1;//correct
     f32 u=aU,v=aV;
     s32 clipL = 0;
@@ -2569,7 +2591,7 @@ __attribute__((always_inline)) static  inline void  DrawTriTexture(
         _swap_f32_t(z0,z1); 
         //_swap_int32_t(inty0,inty1);   
     }
-    s32 inty0 = (s32)y0,inty1 = (s32)y1,inty2 = (s32)y2;
+    s32 inty0 = B3L_RoundingToS(y0),inty1 = B3L_RoundingToS(y1),inty2 = B3L_RoundingToS(y2);
     if(inty0 == inty2) { // Handle awkward all-on-same-line case as its own thing
         return;
     }
@@ -2614,7 +2636,7 @@ __attribute__((always_inline)) static  inline void  DrawTriTexture(
             continue;
         }
         
-        if(!((y<0)||(((s32)a)==((s32)b)))){
+        if(!((y<0)||((B3L_RoundingToS(a))==(B3L_RoundingToS(b))))){
         //include a, and b how many pixel
             if(a > b){
                 DrawTexHLine(b,y,a,bZ,aZ,bU,bV,aU,aV,lightFactor,pFrameBuff,pZbuff,pTexture);
@@ -2653,7 +2675,7 @@ __attribute__((always_inline)) static  inline void  DrawTriTexture(
             continue;
         }
 
-        if(!((y<0)||(((s32)a)==((s32)b)))){
+        if(!((y<0)||((B3L_RoundingToS(a))==(B3L_RoundingToS(b))))){
         //include a, and b how many pixel
             if(a > b){
                 DrawTexHLine(b,y,a,bZ,aZ,bU,bV,aU,aV,lightFactor,pFrameBuff,pZbuff,pTexture);
@@ -2692,24 +2714,7 @@ __attribute__((always_inline)) static  inline void  DrawTriColor(
                                                                         f32 x2,f32 y2,f32 z2,
                                                                         u32 renderLevel,u32 lightFactor,fBuff_t color,
                                                                         fBuff_t *pFrameBuff,zBuff_t *pZbuff){
-//to calculate 0.5 pixel, if it works, then we will modified the project functions
-    //#ifndef _swap_f32_t
-    //#define _swap_f32_t(a, b) { f32 t = a; a = b; b = t; }
-    //#endif
-    //#ifndef _swap_int32_t
-    //#define _swap_int32_t(a, b) { int32_t t = a; a = b; b = t; }
-    //#endif
-    /*
-    #if FRAME_BUFF_COLOR_TYPE == 0               
-            fBuff_t  finalColor = (color&0x00FFFFFF)|(((u32)lightFactor)<<24);
-    #endif
-    #if FRAME_BUFF_COLOR_TYPE == 1
-            fBuff_t  finalColor  = (color&0x0FFF)|(((u16)lightFactor)<<12);
-    #endif
-    #if FRAME_BUFF_COLOR_TYPE == 2
-            fBuff_t  finalColor  = (color&0x00FF)|(((u16)lightFactor)<<8);
-    #endif
-    */
+
     fBuff_t finalColor = GetFinalColor(color,lightFactor);
     s32 y,last;
     
@@ -2731,7 +2736,7 @@ __attribute__((always_inline)) static  inline void  DrawTriColor(
         _swap_f32_t(z0,z1); 
         //_swap_int32_t(inty0,inty1);   
     }
-    s32 inty0 = (s32)y0,inty1 = (s32)y1,inty2 = (s32)y2;
+    s32 inty0 = B3L_RoundingToS(y0),inty1 = B3L_RoundingToS(y1),inty2 = B3L_RoundingToS(y2);
     if(inty0 == inty2) { // Handle awkward all-on-same-line case as its own thing
         return;
     }
@@ -2765,7 +2770,7 @@ __attribute__((always_inline)) static  inline void  DrawTriColor(
             continue;
         }
         
-        if(!((y<0)||(((s32)a)==((s32)b)))){
+        if(!((y<0)||((B3L_RoundingToS(a))==(B3L_RoundingToS(b))))){
         //include a, and b how many pixel
             if(a > b){
                 DrawColorHLine(b,y,a,bZ,aZ,finalColor,pFrameBuff,pZbuff);
@@ -2793,7 +2798,7 @@ __attribute__((always_inline)) static  inline void  DrawTriColor(
         if ((aZ>1.0f) && (bZ>1.0f)){
             continue;
         }
-        if(!((y<0)||(((s32)a)==((s32)b)))){
+        if(!((y<0)||((B3L_RoundingToS(a))==(B3L_RoundingToS(b))))){
         //include a, and b how many pixel
             if(a > b){
                 DrawColorHLine(b,y,a,bZ,aZ,finalColor,pFrameBuff,pZbuff);
