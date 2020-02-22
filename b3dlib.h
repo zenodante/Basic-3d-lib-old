@@ -1,19 +1,23 @@
 #ifndef __B3DLIB_H__
 #define __B3DLIB_H__
 /*
-Left-hand coordination was used in this lib
+This is a 3d render lib for cortex m4/7 mcu with FPU 
+(if B3L_ARM == 0, then any cpu with FPU is fine)
+
+Left-hand coordinate was used in this lib
     ^ y
     |    ^ z
     |  /
     |/
     +--------> x
-Screen coordination is [0,0] from top left corner.
+Screen coordinate is x y[0,0] from top left corner.
 0,0 ---------> x
    |
    |
    |
  y v
-row vector, so v * mat -> new v
+using row vector, so v * mat -> new v
+z buff range use [0.~1.] for near/ far plane
 
 Rotations use Euler angles in ZXY order
 Positive rotation about an axis rotates clock-wise when looking in the direction of the axis
@@ -61,14 +65,13 @@ type 2: 16bit 8:8     AL
 //level 1, calculate texture
 
 #define B3L_USING_PARTICLE   
+
 #ifdef B3L_USING_PARTICLE
 #define B3L_PARTICLE_BUFF_DEPTH    512
 #endif
 
-
+#define B3L_FIX_BITS             10
   
-
-
 //the obj buff at least has 2 slot
 #if OBJ_BUFF_SIZE<2
 #undef OBJ_BUFF_SIZE

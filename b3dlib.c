@@ -24,7 +24,7 @@ B3L_Particle_t  particleBuff[B3L_PARTICLE_BUFF_DEPTH];
 
 #define B3L_MATH_TABLE_SIZE      256
 //not used fix math 
-#define B3L_FIX_BITS             10
+
 
 
 #if Z_BUFF_LEVEL == 2
