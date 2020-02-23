@@ -228,7 +228,7 @@ __attribute__((always_inline)) static  inline void     Vect3_Scale(vect3_t *pV,f
 __attribute__((always_inline)) static  inline void     Vect3_Add(vect3_t *pV1,vect3_t *pV2,vect3_t *pResult);
 __attribute__((always_inline)) static  inline void     MakeClipMatrix(f32 focalLength, f32 aspectRatio,mat4_t *mat);
 __attribute__((always_inline)) static  inline void     Vect3Xmat4(vect3_t *pV, mat4_t *pMat, vect4_t *pResult);
-__attribute__((always_inline)) static  inline void     Vect3Xmat4WithTest(vect3_t *pV, mat4_t *pMat, screen3_t *pResult);
+__attribute__((always_inline)) static  inline void     Vect3Xmat4WithTestToScreen4(vect3_t *pV, mat4_t *pMat, screen4_t *pResult);
 __attribute__((always_inline)) static  inline void     Vect3Xmat4WithTest_f(vect3_t *pV, mat4_t *pMat, screen3f_t *pResult);
 __attribute__((always_inline)) static  inline void     Norm3Xmat4(vect3_t *pV, mat4_t *pMat, vect3_t *pResult);
 __attribute__((always_inline)) static  inline void     Norm3Xmat4Normalize(vect3_t *pV, mat4_t *pMat, vect3_t *pResult);
@@ -525,10 +525,7 @@ __attribute__((always_inline)) static  inline void  Vect3Xmat4WithTest_f(vect3_t
 
 }
 
-
-
-
-__attribute__((always_inline)) static  inline void  Vect3Xmat4WithTest(vect3_t *pV, mat4_t *pMat, screen3_t *pResult){
+__attribute__((always_inline)) static  inline void  Vect3Xmat4WithTestToScreen4(vect3_t *pV, mat4_t *pMat, screen4_t *pResult){
     f32 x,y,z,rx,ry,rz,rw;
     x = pV->x;
     y = pV->y;
@@ -564,6 +561,7 @@ __attribute__((always_inline)) static  inline void  Vect3Xmat4WithTest(vect3_t *
     pResult->x = intX;
     pResult->y = intY;
     pResult->z = rz;
+    pResult->w = rw;
     #undef dotCol
 
 }
@@ -1287,7 +1285,7 @@ static void RenderParticleObjs(render_t *pRender) {
     B3LObj_t  *pCurrentObj =(pRender->scene.pActiveParticleGenObjs);
     u32 state;
     mat4_t *pCamMat = &(pRender->camera.camMat);
-    screen3_t screenVect;
+    screen4_t screenVect;
     u32 i;
     B3L_Particle_t *pParticle;
     fBuff_t *pFBuff = pRender->pFrameBuff;
@@ -1306,7 +1304,7 @@ static void RenderParticleObjs(render_t *pRender) {
         pParticle = ((B3LParticleGenObj_t *)pCurrentObj)->pParticleActive;     
         //project the particle from world space to screen space
         while(i--){
-            Vect3Xmat4WithTest(&(pParticle->position), pCamMat, &screenVect);
+            Vect3Xmat4WithTestToScreen4(&(pParticle->position), pCamMat, &screenVect);
             //get the screen position
             u32 test = screenVect.test;
             if (B3L_TEST(test,B3L_IN_SPACE)){
@@ -1319,7 +1317,7 @@ static void RenderParticleObjs(render_t *pRender) {
         pCurrentObj = pCurrentObj->next;    
     }
 }
-void B3L_DefaultParticleDrawFunc(B3L_Particle_t *pParticle, screen3_t *pScreenVect,fBuff_t *pFBuff,zBuff_t *pZBuff){
+void B3L_DefaultParticleDrawFunc(B3L_Particle_t *pParticle, screen4_t *pScreenVect,fBuff_t *pFBuff,zBuff_t *pZBuff){
 
     zBuff_t compZ = CalZbuffValue(pScreenVect->z);
     s32     intX = pScreenVect->x;

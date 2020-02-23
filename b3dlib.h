@@ -137,12 +137,14 @@ typedef struct{
 //screen3_t is for 2d screen drawing step, it has same length as vect4_t
 #define B3L_IN_SPACE             (0u)
 #define B3L_NEAR_PLANE_CLIP      (1u)
+
 typedef struct{
     int32_t             x;
     int32_t             y; 
     f32                 z;
+    f32                 w;
     u32                 test;
-}screen3_t;
+}screen4_t;
 
 typedef struct{
     f32                 x;
@@ -226,6 +228,7 @@ typedef struct B3L_PARTICLE{
 
 
 
+
 #define LUT4         0
 #define LUT16        1
 #define LUT256       2
@@ -260,7 +263,7 @@ B3LObj_t state
 #define MESH_OBJ                            (0)
 #define POLYGON_OBJ                         (1)
 #define NOTEX_MESH_OBJ                      (2)
-#define PARTICLE_GEN_OBJ                        (3)
+#define PARTICLE_GEN_OBJ                    (3)
 #define BITMAP_OBJ                          (4)
 //obj visualizable control
 #define OBJ_VISUALIZABLE                    (8)
@@ -327,16 +330,6 @@ typedef struct{
 }B3LPolygonObj_t;//16 not common on ARM32,23 not common on WIN64
 
 typedef struct{
-    B3LObj_t            *privous;
-    B3LObj_t            *next;
-    u32                 state;
-}B3LBitmapObj_t;
-
-//typedef void (*B3L_PtlUpdFunc_t)(u32, mat4_t *, B3L_Particle_t *);
-//typedef void (*B3L_DrawFunc_t)(B3L_Particle_t *, screen3_t *,fBuff_t *,zBuff_t *);
-
-
-typedef struct{
     B3LObj_t            objBuff[OBJ_BUFF_SIZE];
     u32                 freeObjNum; 
     B3LObj_t            *pFreeObjs;   
@@ -397,12 +390,12 @@ typedef struct PARTICLEGENOBJ{
     u32                 lastTime;
     u32                 particleNum;
     B3L_Particle_t      *pParticleActive;   
-    void      (*DrawFunc)(B3L_Particle_t *, screen3_t *,fBuff_t *,zBuff_t *);
+    void      (*DrawFunc)(B3L_Particle_t *, screen4_t *,fBuff_t *,zBuff_t *);
     void      (*PtlUpdFunc)(u32,struct PARTICLEGENOBJ *,mat4_t *,render_t *);   
     //time, self, obj->world matrix,free particle num pointer,free particle pool  
 }B3LParticleGenObj_t; //15 not common on ARM32,22 not common on WIN64
 
-typedef void (*B3L_DrawFunc_t)(B3L_Particle_t *, screen3_t *,fBuff_t *,zBuff_t *);
+typedef void (*B3L_DrawFunc_t)(B3L_Particle_t *, screen4_t *,fBuff_t *,zBuff_t *);
 /*Useful macros--------------------------------------------------------------*/
 #define B3L_SET(PIN,N)  (PIN |=  (1u<<N))
 #define B3L_CLR(PIN,N)  (PIN &= ~(1u<<N))
@@ -519,9 +512,15 @@ extern void                 B3L_UpdateAllParticlesStatesInGen(render_t *pRender,
                                                               u32 deltaTime,vect3_t *pForce);
 #define                     B3L_SET_PARTICLE_POSITION(pP,px,py,pz)   pP->position.x=px;pP->position.y=py;pP->position.z=pz                                                                                                
 #define                     B3L_SET_PARTICLE_DELTA(pP,dx,dy,dz)      pP->delta.x=dx;pP->delta.y=dy;pP->delta.z=dz                                                                                                
-extern void                 B3L_DefaultParticleDrawFunc(B3L_Particle_t *pParticle, screen3_t *pScreenVect,fBuff_t *pFBuff,zBuff_t *pZBuff);
+extern void                 B3L_DefaultParticleDrawFunc(B3L_Particle_t *pParticle, screen4_t *pScreenVect,fBuff_t *pFBuff,zBuff_t *pZBuff);
 extern void                 B3L_DefaultParticleUpdFunc(u32 time,B3LParticleGenObj_t *pSelf,mat4_t *pMat,render_t *pRender);
 #endif  //end of  B3L_USING_PARTICLE
+/*-----------------------------------------------------------------------------
+Shape functions
+-----------------------------------------------------------------------------*/
+//extern void     B3L_DrawCircleWithZ(u32 radius,f32 x, f32 y, f32 z, fBuff_t color);
+
+
 
 
 #endif//end of file
