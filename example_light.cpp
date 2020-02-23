@@ -15,6 +15,7 @@ f32 i = 0.0f;
 f32 lightY = 0.0f;
 /* setup */
 B3LParticleGenObj_t  *pParticleGen;
+fBuff_t *renderBuff;
 void init() {
     //printf("obj %d\n",sizeof(B3LObj_t));
     //printf("mesh obj %d\n",sizeof(B3LMeshObj_t));
@@ -23,7 +24,8 @@ void init() {
     B3L_SetSeed(0x31415926);
     blit::set_screen_mode(ScreenMode::lores);
     //you need a 32bit framebuff here!
-    B3L_RenderInit(&B3Lrender,(fBuff_t *)screen.data);
+    fBuff_t *renderBuff=B3L_3dRenderAreaShiftCal(((fBuff_t *)screen.data),0, 0);   
+    B3L_RenderInit(&B3Lrender,renderBuff);
     
     pParticleGen = B3L_GetFreeParticleGeneratorObj(&B3Lrender);
     B3L_InitDemoParticleGenObj(pParticleGen);
@@ -117,27 +119,20 @@ void update(uint32_t time){
     db = (b + ((db * ia) >> 8)); \
 
 void render(uint32_t time) {
-    B3L_NewRenderStart( &B3Lrender);
-
+    B3L_NewRenderStart( &B3Lrender,0xFF003423);
     B3L_RenderScence(&B3Lrender);
-    //printf("finished render scence\n");
-/*
-DrawTriColor(
-                                                                        0.0f,0.0f,0.1f,
-                                                                        12.0f,12.0f,0.1f,
-                                                                        0.0f,24.0f,0.1f,
-                                                                        1,0xff,0XFF7E2553,
-                                                                        (fBuff_t *)fb.data,B3Lrender.pZBuff);
+    B3L_AppliedLightFromAlpha(&B3Lrender);
 
-*/
-    //printf("result is %d\n",result);
-    uint8_t *buff = (uint8_t *)screen.data;
-    uint32_t *u4buff = (uint32_t *)screen.data;
+
+/*
+    uint8_t *buff = (uint8_t *)(((fBuff_t *)screen.data)+160*15);
+    //uint32_t *u4buff = (uint32_t *)screen.data;
+    uint32_t *u4buff =(((fBuff_t *)screen.data)+160*15);
     uint32_t backColor = B3Lrender.light.color;
     uint8_t r,g,b;
     uint32_t i;
     uint32_t color;
-/*    
+    
     for (i=0;i<VIDEO_BUFF_LENTH;i++){
     color = u4buff[i];
     color = color>>24;
@@ -148,14 +143,7 @@ DrawTriColor(
     }
   
 */ 
-//on h750 you could use DMA2D mode DMA2D_CR/mode = 0b101 to do this transform
-    for (i=0;i<VIDEO_BUFF_LENTH;i++){
-        r =  (backColor&(0x00FF0000))>>16;
-        g =  (backColor &(0x0000FF00))>>8;
-        b = (backColor &(0x000000FF));
-        RGB_BLEND(buff[i*4+2],buff[i*4+1],buff[i*4],r,g,b,buff[i*4+3])
-        u4buff[i]=(0xFF000000)|(r<<16)|(g<<8)|(b<<0);
-    }
+
     
     screen.watermark();
      

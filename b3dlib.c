@@ -17,7 +17,7 @@
 //config the ram position if necessary
 u32            B3L_seed = 0x31415926;
 screen3f_t     vectBuff[VECT_BUFF_SIZE]; //8KB
-zBuff_t        zBuff[VIDEO_BUFF_LENTH];        //75KB
+zBuff_t        zBuff[Z_BUFF_LENTH];        //75KB
 
 #ifdef B3L_USING_PARTICLE
 B3L_Particle_t  particleBuff[B3L_PARTICLE_BUFF_DEPTH];
@@ -242,6 +242,7 @@ __attribute__((always_inline)) static  inline zBuff_t  CalZbuffValue(f32 z);
 /*-----------------------------------------------------------------------------
 Light functions
 -----------------------------------------------------------------------------*/
+__attribute__((always_inline)) static  inline fBuff_t  LightBlend(u32 inputPixel, u8 r, u8 g, u8 b);
 __attribute__((always_inline)) static  inline void     UpdateLightVect(render_t *pRender);
 __attribute__((always_inline)) static  inline u32      CalLightFactor(f32 normalDotLight, f32 lightFactor0,f32 lightFactor1);
  /*-----------------------------------------------------------------------------
@@ -299,7 +300,7 @@ void B3L_ReturnParticleToPool(B3L_Particle_t *pParticle,scene_t *pScene);
  /*-----------------------------------------------------------------------------
 Buffer functions
 -----------------------------------------------------------------------------*/
-static void ClearFrameBuff(fBuff_t *pFramebuff,fBuff_t value,u32 length);
+static void ClearFrameBuff(fBuff_t *pFramebuff,fBuff_t value,u32 lineNum,u32 lineLength,u32 lineSkip);
 static void ClearZbuff(zBuff_t *pZbuff,u32 length);
  /*-----------------------------------------------------------------------------
 Obj render functions
@@ -1324,6 +1325,7 @@ void B3L_DefaultParticleDrawFunc(B3L_Particle_t *pParticle, screen4_t *pScreenVe
     s32     intY = pScreenVect->y;
     u32     shift = RENDER_RESOLUTION_X*intY + intX;
     pZBuff = (pZBuff+shift);
+    shift = RENDER_X_SHIFT *intY + intX;
     pFBuff = (pFBuff+shift);
     if (compZ<= *pZBuff){
         *pZBuff = compZ;
@@ -1536,9 +1538,12 @@ void B3L_Update(render_t *pRender,u32 time){
 #endif
 }
 
-void B3L_NewRenderStart(render_t *pRender){
-    ClearFrameBuff(pRender->pFrameBuff,0xFF003423,VIDEO_BUFF_LENTH);
-    ClearZbuff(pRender->pZBuff,VIDEO_BUFF_LENTH);
+void B3L_NewRenderStart(render_t *pRender,fBuff_t color){
+    #if B3L_DMA2D == 0
+    ClearFrameBuff(pRender->pFrameBuff,color,RENDER_RESOLUTION_Y,RENDER_RESOLUTION_X,RENDER_LINE_SKIP);
+    //ClearFrameBuff(pRender->pFrameBuff,0xFF003423,Z_BUFF_LENTH);//need to add shift
+    ClearZbuff(pRender->pZBuff,Z_BUFF_LENTH);//need to add shift
+    #endif   //if DMA2D == 1, the clean work would be done by DMA2D
 }    
 
 void B3L_ResetScene(scene_t *pScene){
@@ -1913,7 +1918,7 @@ __attribute__((always_inline)) static  inline fBuff_t     GetColorValue(texLUT_t
 __attribute__((always_inline)) static  inline void     DrawPixel(fBuff_t color,s32 x,s32 y,f32 z,
                                                                         fBuff_t *pFrameBuff,zBuff_t *pZbuff){
         zBuff_t *pCurrentPixelZ = pZbuff + (y*RENDER_RESOLUTION_X) + x;
-        fBuff_t *pixel= pFrameBuff + (y*RENDER_RESOLUTION_X) + x; 
+        fBuff_t *pixel= pFrameBuff + (y*RENDER_X_SHIFT) + x; 
         zBuff_t compZ = CalZbuffValue(z);
         if (compZ< *pCurrentPixelZ){          
             *pCurrentPixelZ = compZ;
@@ -1928,7 +1933,7 @@ __attribute__((always_inline)) static  inline void     DrawPixelWithTest(fBuff_t
             return;
         }
         zBuff_t *pCurrentPixelZ = pZbuff + (y*RENDER_RESOLUTION_X) + x;
-        fBuff_t *pixel= pFrameBuff + (y*RENDER_RESOLUTION_X) + x; 
+        fBuff_t *pixel= pFrameBuff + (y*RENDER_X_SHIFT) + x; 
         zBuff_t compZ = CalZbuffValue(z);
         if (compZ< *pCurrentPixelZ){          
             *pCurrentPixelZ = compZ;
@@ -1937,122 +1942,129 @@ __attribute__((always_inline)) static  inline void     DrawPixelWithTest(fBuff_t
 
 }
 
-static void ClearFrameBuff(fBuff_t *pFramebuff,fBuff_t value,u32 length){
+static void ClearFrameBuff(fBuff_t *pFramebuff,fBuff_t value,u32 lineNum,u32 lineLength,u32 lineSkip){
 //in stm32, we could use DMA to do this job   
     int32_t i;   
+    u32  lineNumDiv16Left = lineLength&0x0000000F;
     #define Addr pFramebuff
     //fBuff_t value = 0;
-    for (i=(length>>4) - 1;i>=0;i--){
-        
-        *Addr = value;*Addr++;
-        *Addr = value;*Addr++;
-        *Addr = value;*Addr++;
-        *Addr = value;*Addr++;
-        *Addr = value;*Addr++;
-        *Addr = value;*Addr++;
-        *Addr = value;*Addr++;
-        *Addr = value;*Addr++;
-        *Addr = value;*Addr++;
-        *Addr = value;*Addr++;
-        *Addr = value;*Addr++;
-        *Addr = value;*Addr++;
-        *Addr = value;*Addr++;
-        *Addr = value;*Addr++;
-        *Addr = value;*Addr++;
-        *Addr = value;*Addr++;
-    }
-
-    switch(length&0x0000000F){
+    while(lineNum--){
+        i=(lineLength>>4);
+        while(i--){
+            *Addr = value;Addr++;
+            *Addr = value;Addr++;
+            *Addr = value;Addr++;
+            *Addr = value;Addr++;
+            *Addr = value;Addr++;
+            *Addr = value;Addr++;
+            *Addr = value;Addr++;
+            *Addr = value;Addr++;
+            *Addr = value;Addr++;
+            *Addr = value;Addr++;
+            *Addr = value;Addr++;
+            *Addr = value;Addr++;
+            *Addr = value;Addr++;
+            *Addr = value;Addr++;
+            *Addr = value;Addr++;
+            *Addr = value;Addr++;
+        }
+        switch(lineNumDiv16Left){
         case 15:
-            *Addr = value;*Addr++;
+            *Addr = value;Addr++;
         case 14:
-            *Addr = value;*Addr++;
+            *Addr = value;Addr++;
         case 13:
-            *Addr = value;*Addr++;
+            *Addr = value;Addr++;
         case 12:
-            *Addr = value;*Addr++;
+            *Addr = value;Addr++;
         case 11:
-            *Addr = value;*Addr++;
+            *Addr = value;Addr++;
         case 10:
-            *Addr = value;*Addr++;
+            *Addr = value;Addr++;
         case 9:
-            *Addr = value;*Addr++;
+            *Addr = value;Addr++;
         case 8:
-            *Addr = value;*Addr++;
+            *Addr = value;Addr++;
         case 7:
-            *Addr = value;*Addr++;
+            *Addr = value;Addr++;
         case 6:
-            *Addr = value;*Addr++;
+            *Addr = value;Addr++;
         case 5:
-            *Addr = value;*Addr++;
+            *Addr = value;Addr++;
         case 4:
-            *Addr = value;*Addr++;    
+            *Addr = value;Addr++;    
         case 3:
-            *Addr = value;*Addr++;
+            *Addr = value;Addr++;
         case 2:
-            *Addr = value;*Addr++;
+            *Addr = value;Addr++;
         case 1:
-            *Addr = value;
+            *Addr = value;Addr++;
         case 0:
             break;
+        }
+        Addr +=lineSkip;
     }
+    
+
+    
     #undef Addr
 }
 
 static void ClearZbuff(zBuff_t *pZbuff,u32 length){
 //in stm32, we could use DMA to do this job   
-    int32_t i;   
+    int32_t i=length&0x0000000F; 
+    length = length>>4;  
     #define Addr pZbuff
     zBuff_t value = Z_LIMIT_NUM;
-    for (i=(length>>4) - 1;i>=0;i--){
+    while(length--){
         
-        *Addr = value;*Addr++;
-        *Addr = value;*Addr++;
-        *Addr = value;*Addr++;
-        *Addr = value;*Addr++;
-        *Addr = value;*Addr++;
-        *Addr = value;*Addr++;
-        *Addr = value;*Addr++;
-        *Addr = value;*Addr++;
-        *Addr = value;*Addr++;
-        *Addr = value;*Addr++;
-        *Addr = value;*Addr++;
-        *Addr = value;*Addr++;
-        *Addr = value;*Addr++;
-        *Addr = value;*Addr++;
-        *Addr = value;*Addr++;
-        *Addr = value;*Addr++;
+        *Addr = value;Addr++;
+        *Addr = value;Addr++;
+        *Addr = value;Addr++;
+        *Addr = value;Addr++;
+        *Addr = value;Addr++;
+        *Addr = value;Addr++;
+        *Addr = value;Addr++;
+        *Addr = value;Addr++;
+        *Addr = value;Addr++;
+        *Addr = value;Addr++;
+        *Addr = value;Addr++;
+        *Addr = value;Addr++;
+        *Addr = value;Addr++;
+        *Addr = value;Addr++;
+        *Addr = value;Addr++;
+        *Addr = value;Addr++;
     }
 
-    switch(length&0x0000000F){
+    switch(i){
         case 15:
-            *Addr = value;*Addr++;
+            *Addr = value;Addr++;
         case 14:
-            *Addr = value;*Addr++;
+            *Addr = value;Addr++;
         case 13:
-            *Addr = value;*Addr++;
+            *Addr = value;Addr++;
         case 12:
-            *Addr = value;*Addr++;
+            *Addr = value;Addr++;
         case 11:
-            *Addr = value;*Addr++;
+            *Addr = value;Addr++;
         case 10:
-            *Addr = value;*Addr++;
+            *Addr = value;Addr++;
         case 9:
-            *Addr = value;*Addr++;
+            *Addr = value;Addr++;
         case 8:
-            *Addr = value;*Addr++;
+            *Addr = value;Addr++;
         case 7:
-            *Addr = value;*Addr++;
+            *Addr = value;Addr++;
         case 6:
-            *Addr = value;*Addr++;
+            *Addr = value;Addr++;
         case 5:
-            *Addr = value;*Addr++;
+            *Addr = value;Addr++;
         case 4:
-            *Addr = value;*Addr++;    
+            *Addr = value;Addr++;    
         case 3:
-            *Addr = value;*Addr++;
+            *Addr = value;Addr++;
         case 2:
-            *Addr = value;*Addr++;
+            *Addr = value;Addr++;
         case 1:
             *Addr = value;
         case 0:
@@ -2430,8 +2442,11 @@ __attribute__((always_inline)) static inline void DrawColorHLine(f32 x,s32 y,f32
     s32 i = intb-intx;
 
     u32 shift = inty*RENDER_RESOLUTION_X  + intx;
-    fBuff_t *pixel = pFrameBuff +shift;
     zBuff_t  *pCurrentPixelZ = pZbuff + shift;  
+    shift = inty*RENDER_X_SHIFT  + intx;
+    fBuff_t *pixel = pFrameBuff +shift;
+    
+    
 
     zBuff_t compZ;
     for (;i>=0;i--){ //don't draw the most right pixel, so the b has already -1
@@ -2489,8 +2504,10 @@ f32 aU,f32 aV,f32 bU,f32 bV, u32 lightFactor, fBuff_t *pFrameBuff,zBuff_t *pZbuf
     s32 i = intb-intx;
 
     u32 shift = inty*RENDER_RESOLUTION_X  + intx;
-    fBuff_t *pixel = pFrameBuff +shift;
     zBuff_t  *pCurrentPixelZ = pZbuff + shift;  
+    shift = inty*RENDER_X_SHIFT  + intx;
+    fBuff_t *pixel = pFrameBuff +shift;
+    
     u32 uvSize = pTexture->uvSize;
     u8  *uvData = pTexture->pData;
     texLUT_t *lut = pTexture->pLUT;
@@ -2668,7 +2685,7 @@ __attribute__((always_inline)) static  inline void  DrawTriTexture(
         inty2= RENDER_RESOLUTION_Y -1;
     }
     
-    for(; y<inty2; y++) {
+    for(; y<=inty2; y++) {
         if ((aZ>1.0f) && (bZ>1.0f)){
             continue;
         }
@@ -2792,7 +2809,7 @@ __attribute__((always_inline)) static  inline void  DrawTriColor(
         inty2= RENDER_RESOLUTION_Y -1;
     }
     //printf("aU,%.3f aV,%.3f bU,%.3f bV%.3f \n",aU,aV,bU,bV);    
-    for(; y<inty2; y++) {
+    for(; y<=inty2; y++) {
         if ((aZ>1.0f) && (bZ>1.0f)){
             continue;
         }
@@ -2810,3 +2827,107 @@ __attribute__((always_inline)) static  inline void  DrawTriColor(
         bZ += dz02; 
     }
 }
+
+fBuff_t *B3L_3dRenderAreaShiftCal(fBuff_t *startOfWholeFrameBuff,u32 x, u32 y){
+    startOfWholeFrameBuff += y*WHOLE_FRAME_BUFF_WIDTH+x;
+    return startOfWholeFrameBuff;
+}
+
+#define RGB_BLEND(sr, sg, sb, dr, dg, db, a) \
+    uint8_t mr = (sr * a) >> 8; \
+    uint8_t mg = (sg * a) >> 8; \
+    uint8_t mb = (sb * a) >> 8; \
+    uint16_t ia = 256 - a; \
+    dr = (mr + ((dr * ia) >> 8)); \
+    dg = (mg + ((dg * ia) >> 8)); \
+    db = (mb + ((db * ia) >> 8)); \
+
+__attribute__((always_inline)) static  inline fBuff_t  LightBlend(u32 inputPixel, u8 r, u8 g, u8 b){
+    u8 s_r = (inputPixel>>16)&0xFF;
+    u8 s_g = (inputPixel>>8)&0xFF;
+    u8 s_b = (inputPixel)&0xFF;
+    u8 s_a = (inputPixel>>24)&0xFF;
+    RGB_BLEND(s_r,s_g,s_b,r,g,b,s_a)
+    return (0xFF000000)|(r<<16)|(g<<8)|(b<<0);
+}
+
+void  B3L_AppliedLightFromAlpha(render_t *pRender){
+    u32 j = RENDER_RESOLUTION_Y;
+    u32 lineDiv16Left = (RENDER_RESOLUTION_X)&0x0000000F;
+    fBuff_t *pFBuff = pRender->pFrameBuff;
+    
+    uint32_t backColor = pRender->light.color;
+    u8 r =  (backColor&(0x00FF0000))>>16;
+    u8 g =  (backColor &(0x0000FF00))>>8;
+    u8 b =  (backColor &(0x000000FF));
+    while(j--){
+        u32 i=(RENDER_RESOLUTION_X>>4);
+        while(i--){
+            *pFBuff = LightBlend(*pFBuff, r, g, b);pFBuff++;
+            *pFBuff = LightBlend(*pFBuff, r, g, b);pFBuff++;
+            *pFBuff = LightBlend(*pFBuff, r, g, b);pFBuff++;
+            *pFBuff = LightBlend(*pFBuff, r, g, b);pFBuff++;
+            *pFBuff = LightBlend(*pFBuff, r, g, b);pFBuff++;
+            *pFBuff = LightBlend(*pFBuff, r, g, b);pFBuff++;
+            *pFBuff = LightBlend(*pFBuff, r, g, b);pFBuff++;
+            *pFBuff = LightBlend(*pFBuff, r, g, b);pFBuff++;
+            *pFBuff = LightBlend(*pFBuff, r, g, b);pFBuff++;
+            *pFBuff = LightBlend(*pFBuff, r, g, b);pFBuff++;
+            *pFBuff = LightBlend(*pFBuff, r, g, b);pFBuff++;
+            *pFBuff = LightBlend(*pFBuff, r, g, b);pFBuff++;
+            *pFBuff = LightBlend(*pFBuff, r, g, b);pFBuff++;
+            *pFBuff = LightBlend(*pFBuff, r, g, b);pFBuff++;
+            *pFBuff = LightBlend(*pFBuff, r, g, b);pFBuff++;
+            *pFBuff = LightBlend(*pFBuff, r, g, b);pFBuff++;
+        }
+        switch(lineDiv16Left){
+            case 15:
+                *pFBuff = LightBlend(*pFBuff, r, g, b);pFBuff++;
+            case 14:
+                *pFBuff = LightBlend(*pFBuff, r, g, b);pFBuff++;
+            case 13:
+                *pFBuff = LightBlend(*pFBuff, r, g, b);pFBuff++;
+            case 12:
+                *pFBuff = LightBlend(*pFBuff, r, g, b);pFBuff++;
+            case 11:
+                *pFBuff = LightBlend(*pFBuff, r, g, b);pFBuff++;
+            case 10:
+                *pFBuff = LightBlend(*pFBuff, r, g, b);pFBuff++;
+            case 9:
+                *pFBuff = LightBlend(*pFBuff, r, g, b);pFBuff++;
+            case 8:
+                *pFBuff = LightBlend(*pFBuff, r, g, b);pFBuff++;
+            case 7:
+                *pFBuff = LightBlend(*pFBuff, r, g, b);pFBuff++;
+            case 6:
+                *pFBuff = LightBlend(*pFBuff, r, g, b);pFBuff++;
+            case 5:
+                *pFBuff = LightBlend(*pFBuff, r, g, b);pFBuff++;
+            case 4:
+                *pFBuff = LightBlend(*pFBuff, r, g, b);pFBuff++;
+            case 3:
+                *pFBuff = LightBlend(*pFBuff, r, g, b);pFBuff++;
+            case 2:
+                *pFBuff = LightBlend(*pFBuff, r, g, b);pFBuff++;    
+            case 1:
+                *pFBuff = LightBlend(*pFBuff, r, g, b);pFBuff++; 
+            case 0:
+                break;
+        }
+        pFBuff+= RENDER_LINE_SKIP;
+    }
+
+}
+
+#if  B3L_DMA2D  == 1
+void  B3L_DMA2DAppliedLightAndUpScale(render_t *pRender){
+
+}
+void  B3L_DMA2DAppliedLight(render_t *pRender){
+
+}
+bool  B3L_DMA2DWorkDone(void){
+
+}
+
+#endif

@@ -30,6 +30,8 @@ Positive rotation about an axis rotates clock-wise when looking in the direction
 
 #define  B3L_ARM                0
 
+#define  B3L_DMA2D              0
+
 #define  B3L_DEBUG              0
 
 //vect buff is limited the max vectors in single obj
@@ -45,9 +47,12 @@ type 2: 16bit 8:8     AL
 //current only type 0 tested
 #define FRAME_BUFF_COLOR_TYPE   0
 
+#define WHOLE_FRAME_BUFF_WIDTH  160
+#define WHOLE_FRAME_BUFF_HEIGHT 120
+
 #define RENDER_RESOLUTION_X     160
 #define RENDER_RESOLUTION_Y     120
-#define VIDEO_BUFF_LENTH        ((RENDER_RESOLUTION_X)*(RENDER_RESOLUTION_Y))
+#define RENDER_X_SHIFT          WHOLE_FRAME_BUFF_WIDTH
 
 #define HALF_RESOLUTION_X       79.5f
 #define HALF_RESOLUTION_Y       59.5f
@@ -78,6 +83,9 @@ type 2: 16bit 8:8     AL
 #define OBJ_BUFF_SIZE            2
 #endif
 
+#define RENDER_LINE_SKIP        (RENDER_X_SHIFT - RENDER_RESOLUTION_X)
+#define VIDEO_BUFF_LENTH        ((RENDER_X_SHIFT)*(RENDER_RESOLUTION_Y))
+#define Z_BUFF_LENTH            ((RENDER_RESOLUTION_X)*(RENDER_RESOLUTION_Y))
 
 /*Type defines---------------------------------------------------------------*/
 
@@ -416,6 +424,11 @@ typedef void (*B3L_DrawFunc_t)(B3L_Particle_t *, screen4_t *,fBuff_t *,zBuff_t *
 
 /*Function declear-----------------------------------------------------------*/
 /*-----------------------------------------------------------------------------
+Resolution helper functions
+-----------------------------------------------------------------------------*/
+extern fBuff_t *B3L_3dRenderAreaShiftCal(fBuff_t *startOfWholeFrameBuff, u32 x, u32 y);
+
+/*-----------------------------------------------------------------------------
 Math functions
 -----------------------------------------------------------------------------*/
 extern f32      B3L_sin(f32 in);
@@ -472,7 +485,7 @@ Render functions
 -----------------------------------------------------------------------------*/
 extern void     B3L_RenderInit(render_t *pRender,fBuff_t *pFrameBuff);
 extern void     B3L_ResetScene(scene_t *pScene); //reset all the scene resource
-extern void     B3L_NewRenderStart(render_t *pRender); //clear buffs
+extern void     B3L_NewRenderStart(render_t *pRender,fBuff_t color); //clear buffs
 extern void     B3L_Update(render_t *pRender,u32 time); //update particles etc
 extern void     B3L_RenderScence(render_t *pRender); //draw work 
 /*-----------------------------------------------------------------------------
@@ -516,10 +529,24 @@ extern void                 B3L_DefaultParticleDrawFunc(B3L_Particle_t *pParticl
 extern void                 B3L_DefaultParticleUpdFunc(u32 time,B3LParticleGenObj_t *pSelf,mat4_t *pMat,render_t *pRender);
 #endif  //end of  B3L_USING_PARTICLE
 /*-----------------------------------------------------------------------------
-Shape functions
+After effect functions
 -----------------------------------------------------------------------------*/
-//extern void     B3L_DrawCircleWithZ(u32 radius,f32 x, f32 y, f32 z, fBuff_t color);
-
+extern void                 B3L_AppliedLightFromAlpha(render_t *pRender);
+#if  B3L_DMA2D  == 1
+//Call by flip function
+extern void                 B3L_DMA2DAppliedLightAndUpScale(render_t *pRender);
+extern void                 B3L_DMA2DAppliedLight(render_t *pRender);
+extern bool                 B3L_DMA2DWorkDone(void);
+#endif
+/*-----------------------------------------------------------------------------
+2d overlay draw functions
+-----------------------------------------------------------------------------*/
+//extern void     B3L_SetFont();
+//extern void     B3L_SetFrontColor();
+//extern void     B3L_SetBackColor();
+//extern void     B3L_PrintStr();
+//extern void     B3L_DrawLine();
+//extern void     B3L_Draw
 
 
 
