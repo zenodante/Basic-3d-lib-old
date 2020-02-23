@@ -4,6 +4,17 @@
 #include <math.h>
 #include "b3dlib.h"
 
+#if  B3L_DMA2D  == 1
+#include "stm32h7xx_ll_bus.h"
+#include "core_cm7.h"
+#ifndef STM32H745xx
+#define STM32H745xx
+#endif
+//#ifndef STM32H750xx
+//#define STM32H750xx
+//#endif
+#endif
+
 #ifndef   __ASM
 #define   __ASM        __asm
 #endif
@@ -1543,6 +1554,8 @@ void B3L_NewRenderStart(render_t *pRender,fBuff_t color){
     ClearFrameBuff(pRender->pFrameBuff,color,RENDER_RESOLUTION_Y,RENDER_RESOLUTION_X,RENDER_LINE_SKIP);
     //ClearFrameBuff(pRender->pFrameBuff,0xFF003423,Z_BUFF_LENTH);//need to add shift
     ClearZbuff(pRender->pZBuff,Z_BUFF_LENTH);//need to add shift
+    #else
+    B3L_CLEAN_FRAME_COLOR = color;
     #endif   //if DMA2D == 1, the clean work would be done by DMA2D
 }    
 
@@ -2920,14 +2933,157 @@ void  B3L_AppliedLightFromAlpha(render_t *pRender){
 }
 
 #if  B3L_DMA2D  == 1
-void  B3L_DMA2DAppliedLightAndUpScale(render_t *pRender){
+#define DMA2D_START_WORKING     (DMA2DOccupied = true);  
+#define DMA2D_STOP_WORKING      (DMA2DOccupied = false); 
 
+static volatile bool DMA2DOccupied; 
+static volatile uint32_t DMACallbackCounter;
+static fBuff_t B3L_CLEAN_FRAME_COLOR;
+
+void (*pDMA2DIRQCallback)(void);
+
+void B3L_DMA2D_Init(void){
+    DMA2DOccupied = false;
+    DMACallbackCounter = 0;
+    LL_AHB3_GRP1_EnableClock(LL_AHB3_GRP1_PERIPH_DMA2D);
+    NVIC_SetPriority(DMA2D_IRQn, NVIC_EncodePriority(NVIC_GetPriorityGrouping(),B3L_DMA2D_IRQ_PRIORITY , B3L_DMA2D_IRQ_SUB_PRIORITY ));
+    NVIC_EnableIRQ(DMA2D_IRQn);
+    //irq init
+    SET_BIT(DMA2D->CR, DMA2D_CR_TCIE|DMA2D_CR_TEIE|DMA2D_CR_CEIE);
+    pDMA2DIRQCallback = DMA2DDefaultCallback;
+}
+
+
+void DMA2D_IRQHandler(void){
+//clear the flag
+    DMA2D->IFCR = (uint32_t)(0x1F);
+ //call current callback
+    (*pDMA2DIRQCallback)();
+}
+
+void DMA2DDefaultCallback(void){
+    DMACallbackCounter = 0;    
+    DMA2D_STOP_WORKING
+}
+
+static void Apply_Zoom_ColorTrans_Callback(void){
+    switch (DMACallbackCounter){
+  case 0://copy 16bit color to its side pixel
+    //set the transform type
+    MODIFY_REG(DMA2D->CR, DMA2D_CR_MODE, LL_DMA2D_MODE_M2M);
+    //set the input address, type
+    MODIFY_REG(DMA2D->FGPFCCR, DMA2D_FGPFCCR_CM, LL_DMA2D_INPUT_MODE_RGB565);
+    DMA2D->FGMAR = B3L_LCD_BUFF_ADDR+WHOLE_FRAME_BUFF_WIDTH*WHOLE_FRAME_BUFF_HEIGHT*4; 
+    //set the target address, type
+    MODIFY_REG(DMA2D->OPFCCR, DMA2D_OPFCCR_CM, LL_DMA2D_OUTPUT_MODE_RGB565);
+    DMA2D->OMAR = B3L_LCD_BUFF_ADDR+WHOLE_FRAME_BUFF_WIDTH*WHOLE_FRAME_BUFF_HEIGHT*4+2; 
+    
+    //set the shape, 
+    MODIFY_REG(DMA2D->NLR, DMA2D_NLR_PL, (1 << DMA2D_NLR_PL_Pos)); 
+    MODIFY_REG(DMA2D->NLR, DMA2D_NLR_NL, (WHOLE_FRAME_BUFF_WIDTH*WHOLE_FRAME_BUFF_HEIGHT)); 
+    
+    //set the input 1 pixel skip
+    MODIFY_REG(DMA2D->FGOR, DMA2D_FGOR_LO, 1);
+    //set the output 1 pixel skip
+    MODIFY_REG(DMA2D->OOR, DMA2D_OOR_LO, 1);
+   
+    break;
+  case 1://copy line to ltdc buffer
+    //set the transform type
+    MODIFY_REG(DMA2D->CR, DMA2D_CR_MODE, LL_DMA2D_MODE_M2M);
+    //set the input address, type
+    MODIFY_REG(DMA2D->FGPFCCR, DMA2D_FGPFCCR_CM, LL_DMA2D_INPUT_MODE_RGB565);
+    DMA2D->FGMAR = B3L_LCD_BUFF_ADDR+WHOLE_FRAME_BUFF_WIDTH*WHOLE_FRAME_BUFF_HEIGHT*4; 
+    //set the shape, 
+    MODIFY_REG(DMA2D->NLR, DMA2D_NLR_PL, ((WHOLE_FRAME_BUFF_WIDTH*2) << DMA2D_NLR_PL_Pos)); 
+    MODIFY_REG(DMA2D->NLR, DMA2D_NLR_NL, (WHOLE_FRAME_BUFF_HEIGHT)); 
+    //set the target address, type
+    MODIFY_REG(DMA2D->OPFCCR, DMA2D_OPFCCR_CM, LL_DMA2D_OUTPUT_MODE_RGB565);
+    DMA2D->OMAR = B3L_LCD_BUFF_ADDR; 
+    //set the input 0 pixel skip
+    MODIFY_REG(DMA2D->FGOR, DMA2D_FGOR_LO, 0);
+    //set the output 320 pixel skip
+    MODIFY_REG(DMA2D->OOR, DMA2D_OOR_LO, WHOLE_FRAME_BUFF_WIDTH*2);
+ 
+    break;
+  case 2://copy line again to next
+    //set the transform type
+    MODIFY_REG(DMA2D->CR, DMA2D_CR_MODE, LL_DMA2D_MODE_M2M);
+    //set the input address, type
+    MODIFY_REG(DMA2D->FGPFCCR, DMA2D_FGPFCCR_CM, LL_DMA2D_INPUT_MODE_RGB565);
+    DMA2D->FGMAR = B3L_LCD_BUFF_ADDR; 
+    //set the shape, 
+    MODIFY_REG(DMA2D->NLR, DMA2D_NLR_PL, ((WHOLE_FRAME_BUFF_WIDTH*2) << DMA2D_NLR_PL_Pos)); 
+    MODIFY_REG(DMA2D->NLR, DMA2D_NLR_NL, (WHOLE_FRAME_BUFF_HEIGHT)); 
+    //set the target address, type
+    MODIFY_REG(DMA2D->OPFCCR, DMA2D_OPFCCR_CM, LL_DMA2D_OUTPUT_MODE_RGB565);
+    DMA2D->OMAR = B3L_LCD_BUFF_ADDR + WHOLE_FRAME_BUFF_WIDTH*4; //double pixel and 2 byte per pixel 
+    //set the input 0 pixel skip
+    MODIFY_REG(DMA2D->FGOR, DMA2D_FGOR_LO,WHOLE_FRAME_BUFF_WIDTH*2);
+    //set the output 320 pixel skip
+    MODIFY_REG(DMA2D->OOR, DMA2D_OOR_LO,WHOLE_FRAME_BUFF_WIDTH*2);
+    break;
+  case 3://clear the framebuff
+    MODIFY_REG(DMA2D->CR, DMA2D_CR_MODE, LL_DMA2D_MODE_R2M);
+    //set the reg color
+    DMA2D->FGCOLR = B3L_CLEAN_FRAME_COLOR;
+    //set the shape, 
+    MODIFY_REG(DMA2D->NLR, DMA2D_NLR_PL, (WHOLE_FRAME_BUFF_WIDTH << DMA2D_NLR_PL_Pos)); 
+    MODIFY_REG(DMA2D->NLR, DMA2D_NLR_NL, (WHOLE_FRAME_BUFF_HEIGHT)); 
+    
+    //set the target address, type
+    MODIFY_REG(DMA2D->OPFCCR, DMA2D_OPFCCR_CM, LL_DMA2D_OUTPUT_MODE_ARGB8888);
+    DMA2D->OMAR = B3L_FRAMEBUFF_ADDR ; 
+
+    //set the output 0 pixel skip
+    MODIFY_REG(DMA2D->OOR, DMA2D_OOR_LO,0);
+    
+    break;
+  case 4:
+    //clear z buff
+    MODIFY_REG(DMA2D->CR, DMA2D_CR_MODE, LL_DMA2D_MODE_R2M);
+    #if Z_BUFF_LEVEL == 2
+    //set the reg color
+    DMA2D->FGCOLR = 0x3f800000; //1.0f
+    //set the shape, 
+    MODIFY_REG(DMA2D->OPFCCR, DMA2D_OPFCCR_CM, LL_DMA2D_OUTPUT_MODE_ARGB8888);
+    #elif Z_BUFF_LEVEL == 1
+    DMA2D->FGCOLR = 0xFFFF;
+    //set the shape, 
+    MODIFY_REG(DMA2D->OPFCCR, DMA2D_OPFCCR_CM, LL_DMA2D_OUTPUT_MODE_RGB565); 
+    #elif Z_BUFF_LEVEL == 0
+    DMA2D->FGCOLR = 0xFF;
+    //set the shape, 
+    MODIFY_REG(DMA2D->OPFCCR, DMA2D_OPFCCR_CM, LL_DMA2D_OUTPUT_MODE_L8);     
+    #endif
+    MODIFY_REG(DMA2D->NLR, DMA2D_NLR_PL, ((WHOLE_FRAME_BUFF_WIDTH) << DMA2D_NLR_PL_Pos)); 
+    MODIFY_REG(DMA2D->NLR, DMA2D_NLR_NL, (WHOLE_FRAME_BUFF_HEIGHT));
+    //set the target address, type
+    MODIFY_REG(DMA2D->OPFCCR, DMA2D_OPFCCR_CM, LL_DMA2D_OUTPUT_MODE_ARGB8888);
+    DMA2D->OMAR = (u32)zBuff; 
+    //set the output 0 pixel skip
+    MODIFY_REG(DMA2D->OOR, DMA2D_OOR_LO,0); 
+    pDMA2DIRQCallback = DMA2DDefaultCallback; 
+    break;
+    
+  }
+  DMACallbackCounter++;
+  //start the next dma2d process
+  DMA2D->CR |= DMA2D_CR_START;
+}
+
+void  B3L_DMA2DAppliedLightAndUpScale(render_t *pRender){
+#if  defined(STM32H745xx)
+//no reg back layer mode, so clear z buff to given color first then mix
+#elif defined(STM32H750xx)
+//mix with reg color back layer directly
+#endif
 }
 void  B3L_DMA2DAppliedLight(render_t *pRender){
 
 }
-bool  B3L_DMA2DWorkDone(void){
-
+bool  B3L_DMA2DOcupied(void){
+    return DMA2DOccupied;
 }
 
 #endif
