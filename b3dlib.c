@@ -4,16 +4,7 @@
 #include <math.h>
 #include "b3dlib.h"
 
-#if  B3L_DMA2D  == 1
-#include "stm32h7xx_ll_bus.h"
-#include "core_cm7.h"
-#ifndef STM32H745xx
-#define STM32H745xx
-#endif
-//#ifndef STM32H750xx
-//#define STM32H750xx
-//#endif
-#endif
+
 
 #ifndef   __ASM
 #define   __ASM        __asm
@@ -2933,12 +2924,25 @@ void  B3L_AppliedLightFromAlpha(render_t *pRender){
 }
 
 #if  B3L_DMA2D  == 1
+
+
+#include "stm32h7xx_ll_bus.h"
+#include "core_cm7.h"
+#include "stm32h7xx_ll_dma2d.h"
+#ifndef STM32H750xx
+#define STM32H750xx
+#endif
+
 #define DMA2D_START_WORKING     (DMA2DOccupied = true);  
 #define DMA2D_STOP_WORKING      (DMA2DOccupied = false); 
 
 static volatile bool DMA2DOccupied; 
 static volatile uint32_t DMACallbackCounter;
 static fBuff_t B3L_CLEAN_FRAME_COLOR;
+
+static void DMA2DDefaultCallback(void);
+static void Apply_Zoom_ColorTrans_Callback(void);
+
 
 void (*pDMA2DIRQCallback)(void);
 
@@ -2961,8 +2965,9 @@ void DMA2D_IRQHandler(void){
     (*pDMA2DIRQCallback)();
 }
 
-void DMA2DDefaultCallback(void){
-    DMACallbackCounter = 0;    
+static void DMA2DDefaultCallback(void){
+    DMACallbackCounter = 0;   
+     
     DMA2D_STOP_WORKING
 }
 
@@ -3072,16 +3077,73 @@ static void Apply_Zoom_ColorTrans_Callback(void){
   DMA2D->CR |= DMA2D_CR_START;
 }
 
-void  B3L_DMA2DAppliedLightAndUpScale(render_t *pRender){
-#if  defined(STM32H745xx)
-//no reg back layer mode, so clear z buff to given color first then mix
-#elif defined(STM32H750xx)
-//mix with reg color back layer directly
-#endif
+void  B3L_DMA2DAppliedLightAndUpScale(u32 *addr,u32 wholeWidth,u32 wholeheight,u32 invLightColor){
+    SCB_CleanInvalidateDCache_by_Addr(addr, wholeWidth * wholeheight * 4);
+    //check the resource lock
+    while(B3L_DMA2DIsOccupied()){};
+    //change the callback
+    pDMA2DIRQCallback = Apply_Zoom_ColorTrans_Callback;
+    //reset the counter
+    DMACallbackCounter = 0;
+    //start the first DMA2D process
+    //set the transform type
+    MODIFY_REG(DMA2D->CR, DMA2D_CR_MODE, LL_DMA2D_MODE_M2M_BLEND_FIXED_COLOR_BG);
+    //set the input address, type
+    MODIFY_REG(DMA2D->FGPFCCR, DMA2D_FGPFCCR_CM, LL_DMA2D_INPUT_MODE_ARGB8888);
+    DMA2D->FGMAR = B3L_FRAMEBUFF_ADDR; 
+    DMA2D->BGCOLR = invLightColor;
+    //set the target address, type
+    MODIFY_REG(DMA2D->OPFCCR, DMA2D_OPFCCR_CM, LL_DMA2D_OUTPUT_MODE_RGB565);
+    DMA2D->OMAR = B3L_LCD_BUFF_ADDR+WHOLE_FRAME_BUFF_WIDTH*WHOLE_FRAME_BUFF_HEIGHT*4;   
+    //set the shape, 
+    MODIFY_REG(DMA2D->NLR, DMA2D_NLR_PL, (1 << DMA2D_NLR_PL_Pos)); 
+    MODIFY_REG(DMA2D->NLR, DMA2D_NLR_NL, (WHOLE_FRAME_BUFF_WIDTH*WHOLE_FRAME_BUFF_HEIGHT));         
+    //set the line skip
+    MODIFY_REG(DMA2D->FGOR, DMA2D_FGOR_LO,0);
+    MODIFY_REG(DMA2D->OOR, DMA2D_OOR_LO, 1);
+    DMA2D_START_WORKING
+    DMA2D->CR |= DMA2D_CR_START;
 }
-void  B3L_DMA2DAppliedLight(render_t *pRender){
 
+void B3L_DMA2DAppliedLightTo565(u32 *addr,u32 wholeWidth,u32 wholeheight,u32 invLightColor){
+    #if (FRAME_BUFF_COLOR_TYPE  == 1) 
+    SCB_CleanInvalidateDCache_by_Addr(addr, wholeWidth * wholeheight * 2);
+    MODIFY_REG(DMA2D->FGPFCCR, DMA2D_FGPFCCR_CM, LL_DMA2D_INPUT_MODE_ARGB4444);
+    #endif
+    #if (FRAME_BUFF_COLOR_TYPE  == 2)
+    SCB_CleanInvalidateDCache_by_Addr(addr, wholeWidth * wholeheight * 2);
+    MODIFY_REG(DMA2D->FGPFCCR, DMA2D_FGPFCCR_CM, LL_DMA2D_INPUT_MODE_AL88);
+    #endif
+    #if (FRAME_BUFF_COLOR_TYPE  == 0)
+    SCB_CleanInvalidateDCache_by_Addr(addr, wholeWidth * wholeheight * 4);
+    MODIFY_REG(DMA2D->FGPFCCR, DMA2D_FGPFCCR_CM, LL_DMA2D_INPUT_MODE_ARGB8888);
+    #endif
+    //check the resource lock
+    while(B3L_DMA2DIsOccupied()){};
+    //change the callback
+    pDMA2DIRQCallback = DMA2DDefaultCallback;
+    //reset the counter
+    DMACallbackCounter = 0;
+    //start the first DMA2D process
+    //set the transform type
+    MODIFY_REG(DMA2D->CR, DMA2D_CR_MODE, LL_DMA2D_MODE_M2M_BLEND_FIXED_COLOR_BG);
+    //set the input address, type
+
+    DMA2D->FGMAR = B3L_FRAMEBUFF_ADDR; 
+    DMA2D->BGCOLR = invLightColor;
+    //set the target address, type
+    MODIFY_REG(DMA2D->OPFCCR, DMA2D_OPFCCR_CM, LL_DMA2D_OUTPUT_MODE_RGB565);
+    DMA2D->OMAR = B3L_LCD_BUFF_ADDR;   
+    //set the shape, 
+    MODIFY_REG(DMA2D->NLR, DMA2D_NLR_PL, (WHOLE_FRAME_BUFF_WIDTH << DMA2D_NLR_PL_Pos)); 
+    MODIFY_REG(DMA2D->NLR, DMA2D_NLR_NL, (WHOLE_FRAME_BUFF_HEIGHT));         
+    //set the line skip
+    MODIFY_REG(DMA2D->FGOR, DMA2D_FGOR_LO,0);
+    MODIFY_REG(DMA2D->OOR, DMA2D_OOR_LO, 0);
+    DMA2D_START_WORKING
+    DMA2D->CR |= DMA2D_CR_START;
 }
+
 bool  B3L_DMA2DOcupied(void){
     return DMA2DOccupied;
 }

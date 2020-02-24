@@ -66,7 +66,7 @@ void init() {
 }
 
 void update(uint32_t time){
-    B3L_Update(&B3Lrender,time);
+    
     //box.transform.rotation.x += 0.001f;
     //box.transform.rotation.y += 0.001f;
     //pBox->transform.rotation.x -= 0.001f;
@@ -104,21 +104,14 @@ void update(uint32_t time){
     B3Lrender.camera.transform.translation.x =  B3L_cos(i)*200.0f;
 
     B3L_CameraLookAt(&(B3Lrender.camera), &at);
-    vect3_t up ={2.0f,3.0f,0.0f};
-    B3L_SetCameraUpDirection(&(B3Lrender.camera),&up);
+    //vect3_t up ={2.0f,3.0f,0.0f};
+    //B3L_SetCameraUpDirection(&(B3Lrender.camera),&up);
 
 }
 
-#define RGB_BLEND(sr, sg, sb, dr, dg, db, a) \
-    uint8_t r = (sr * a) >> 8; \
-    uint8_t g = (sg * a) >> 8; \
-    uint8_t b = (sb * a) >> 8; \
-    uint16_t ia = 256 - a; \
-    dr = (r + ((dr * ia) >> 8)); \
-    dg = (g + ((dg * ia) >> 8)); \
-    db = (b + ((db * ia) >> 8)); \
 
 void render(uint32_t time) {
+    B3L_Update(&B3Lrender,time);
     B3L_NewRenderStart( &B3Lrender,0xFF003423);
     B3L_RenderScence(&B3Lrender);
     B3L_AppliedLightFromAlpha(&B3Lrender);

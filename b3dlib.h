@@ -35,8 +35,8 @@ Positive rotation about an axis rotates clock-wise when looking in the direction
 #if B3L_DMA2D ==  1
 #define B3L_LCD_BUFF_ADDR     0xXXXXXXXX
 #define B3L_FRAMEBUFF_ADDR    0xXXXXXXXX
-
 #endif
+
 #define  B3L_DEBUG              0
 
 //vect buff is limited the max vectors in single obj
@@ -537,15 +537,21 @@ extern void                 B3L_DefaultParticleUpdFunc(u32 time,B3LParticleGenOb
 After effect functions
 -----------------------------------------------------------------------------*/
 extern void                 B3L_AppliedLightFromAlpha(render_t *pRender);
+
 #if  B3L_DMA2D  == 1
 //Call by flip function
 //irq config
 #define B3L_DMA2D_IRQ_PRIORITY        2U
 #define B3L_DMA2D_IRQ_SUB_PRIORITY    0U
+//call init during the init phase
 extern void                 B3L_DMA2D_Init(void);
-extern void                 B3L_DMA2DAppliedLightAndUpScale(render_t *pRender);
-extern void                 B3L_DMA2DAppliedLight(render_t *pRender);
+//call replace the flip()
+extern void                 B3L_DMA2DAppliedLightAndUpScale(u32 *addr,u32 wholeWidth,u32 wholeheight,u32 invLightColor);
+extern void                 B3L_DMA2DAppliedLightTo565(u32 *addr,u32 wholeWidth,u32 wholeheight,u32 invLightColor);
+//test before every render
 extern bool                 B3L_DMA2DOcupied(void);
+//irq handler 
+extern void                 DMA2D_IRQHandler(void);
 #endif
 /*-----------------------------------------------------------------------------
 2d overlay draw functions
