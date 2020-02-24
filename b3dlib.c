@@ -1,3 +1,10 @@
+//camera function is modified from small3dlib 
+//tri draw function is modified from adafruit gfx lib
+//math function sin is from cmsis dsp lib
+//arcsin function is copy from nvidia cg fast math lib
+//invert sqrtf is copy from id soft quake
+
+
 #include <stdio.h>
 #include <stdbool.h>
 #include <stdlib.h>
