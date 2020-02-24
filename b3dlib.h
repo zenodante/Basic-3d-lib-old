@@ -10,7 +10,10 @@ Left-hand coordinate was used in this lib
     |  /
     |/
     +--------> x
-Screen coordinate is x y[0,0] from top left corner.
+Screen coordinate is x y[0,0] from top left corner. The real render area is 
+defined by the RENDER_RESOLUTION_X/Y, the whole frameBuff is defined by 
+WHOLE_FRAME_BUFF_WIDTH/HEIGHT, the position shift of the render window is 
+controlled by the address given to the init function.
 0,0 ---------> x
    |
    |
@@ -20,7 +23,13 @@ using row vector, so v * mat -> new v
 z buff range use [0.~1.] for near/ far plane
 
 Rotations use Euler angles in ZXY order
-Positive rotation about an axis rotates clock-wise when looking in the direction of the axis
+Positive rotation about an axis rotates clock-wise when looking in the direction
+of the axis
+
+light effect is done by setting the pixel alpha channel value and alpha blending
+with a given color background, so after the render(),we need to call DMA2D in 
+hardware or by software to apply the alpha blending.
+
 */
 
 #include <stdint.h>
@@ -39,8 +48,12 @@ Positive rotation about an axis rotates clock-wise when looking in the direction
 
 #define  B3L_DEBUG              0
 
-//vect buff is limited the max vectors in single obj
+//smallest update cycles in ms
+#define B3L_UPDATE_CYCLE       25
+
+//vect buff size limited the max vectors in single obj
 #define VECT_BUFF_SIZE          512
+//obj buff size limited the max objs in a scene 
 #define OBJ_BUFF_SIZE           64
 //Zbuffer level 2: f32, 1:u16, 0: u8  //may a half float 16bit would be better?
 #define Z_BUFF_LEVEL            2
@@ -51,16 +64,17 @@ type 2: 16bit 8:8     AL
 */
 //current only type 0 tested
 #define FRAME_BUFF_COLOR_TYPE   0
-
+//the whole frame buff size
 #define WHOLE_FRAME_BUFF_WIDTH  160
 #define WHOLE_FRAME_BUFF_HEIGHT 120
-
+//the render window size
 #define RENDER_RESOLUTION_X     160
 #define RENDER_RESOLUTION_Y     120
 #define RENDER_X_SHIFT          WHOLE_FRAME_BUFF_WIDTH
-
+//half resolution in floating point value
 #define HALF_RESOLUTION_X       79.5f
 #define HALF_RESOLUTION_Y       59.5f
+//The default aspect ratio value, you could change it at camera parm
 #define DEFAULT_ASPECT_RATIO    ((4.0f)/(3.0f))
 //1.0f == 90 degree fov,smaller is larger fov
 #define DEFAULT_FOCUS_LENGTH    (1.0f)
@@ -73,13 +87,17 @@ type 2: 16bit 8:8     AL
 #define LEVEL_1_DEFAULT_LIGHT        0xA0
 //level 0, calculate light, texture
 //level 1, calculate texture
+//level 2,??
 
+//if you want to use any particle effects
 #define B3L_USING_PARTICLE   
-
+//max particle numbers in a scene, different particle generator share the same buff pool for the particle
+//36 byte per particle for ARM32 system, it is ~18KB for 512 particle
 #ifdef B3L_USING_PARTICLE
 #define B3L_PARTICLE_BUFF_DEPTH    512
 #endif
-
+/*---------------------------------------------------------------------------*/
+//not used for current state
 #define B3L_FIX_BITS             10
   
 //the obj buff at least has 2 slot
@@ -87,7 +105,7 @@ type 2: 16bit 8:8     AL
 #undef OBJ_BUFF_SIZE
 #define OBJ_BUFF_SIZE            2
 #endif
-
+//some per defined value
 #define RENDER_LINE_SKIP        (RENDER_X_SHIFT - RENDER_RESOLUTION_X)
 #define VIDEO_BUFF_LENTH        ((RENDER_X_SHIFT)*(RENDER_RESOLUTION_Y))
 #define Z_BUFF_LENTH            ((RENDER_RESOLUTION_X)*(RENDER_RESOLUTION_Y))

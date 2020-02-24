@@ -19,10 +19,10 @@
 //config the ram position if necessary
 u32            B3L_seed = 0x31415926;
 screen3f_t     vectBuff[VECT_BUFF_SIZE]; //8KB
-zBuff_t        zBuff[Z_BUFF_LENTH];        //75KB
+__attribute__((section(".zbuff")))  zBuff_t  zBuff[Z_BUFF_LENTH];        //75KB we need a zbuff section after the framebuff
 
 #ifdef B3L_USING_PARTICLE
-B3L_Particle_t  particleBuff[B3L_PARTICLE_BUFF_DEPTH];
+B3L_Particle_t  particleBuff[B3L_PARTICLE_BUFF_DEPTH];//18KB
 #endif
 
 #define B3L_MATH_TABLE_SIZE      256
@@ -1533,11 +1533,22 @@ void B3L_RenderScence(render_t *pRender){
 }
 
 void B3L_Update(render_t *pRender,u32 time){
-    //TODO: Add particle update and other hook here
+    static u32 oldTime = 0;
+    if (oldTime == 0) {//first time run
+      oldTime = time;
+    }
+    printf("%d\n",oldTime);
+    u32 deltaTime = time - oldTime;
+    
+    if (deltaTime >= B3L_UPDATE_CYCLE){//if the time is longer than the limit for update
 #ifdef B3L_USING_PARTICLE
-    UpdateParticleObjs(pRender, time);
-
+        UpdateParticleObjs(pRender, time);
 #endif
+
+        oldTime = time;//update oldTime only it is run the update codes
+    }
+    //TODO: Add particle update and other hook here
+
 }
 
 void B3L_NewRenderStart(render_t *pRender,fBuff_t color){

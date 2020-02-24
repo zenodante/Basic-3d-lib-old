@@ -66,7 +66,7 @@ void init() {
 }
 
 void update(uint32_t time){
-    
+    B3L_Update(&B3Lrender,time);
     //box.transform.rotation.x += 0.001f;
     //box.transform.rotation.y += 0.001f;
     //pBox->transform.rotation.x -= 0.001f;
@@ -111,7 +111,7 @@ void update(uint32_t time){
 
 
 void render(uint32_t time) {
-    B3L_Update(&B3Lrender,time);
+    
     B3L_NewRenderStart( &B3Lrender,0xFF003423);
     B3L_RenderScence(&B3Lrender);
     B3L_AppliedLightFromAlpha(&B3Lrender);
