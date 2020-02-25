@@ -1544,7 +1544,6 @@ void B3L_Update(render_t *pRender,u32 time){
     if (oldTime == 0) {//first time run
       oldTime = time;
     }
-    printf("%d\n",oldTime);
     u32 deltaTime = time - oldTime;
     
     if (deltaTime >= B3L_UPDATE_CYCLE){//if the time is longer than the limit for update
@@ -3081,8 +3080,7 @@ static void Apply_Zoom_ColorTrans_Callback(void){
     #endif
     MODIFY_REG(DMA2D->NLR, DMA2D_NLR_PL, ((WHOLE_FRAME_BUFF_WIDTH) << DMA2D_NLR_PL_Pos)); 
     MODIFY_REG(DMA2D->NLR, DMA2D_NLR_NL, (WHOLE_FRAME_BUFF_HEIGHT));
-    //set the target address, type
-    MODIFY_REG(DMA2D->OPFCCR, DMA2D_OPFCCR_CM, LL_DMA2D_OUTPUT_MODE_ARGB8888);
+    
     DMA2D->OMAR = (u32)zBuff; 
     //set the output 0 pixel skip
     MODIFY_REG(DMA2D->OOR, DMA2D_OOR_LO,0); 

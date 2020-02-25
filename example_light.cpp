@@ -2,6 +2,7 @@
 
 extern "C" {
 #include "b3dlib.h"
+#include "B3L_support.h"
 #include "cat.h"
 }
 using namespace blit;
@@ -16,10 +17,11 @@ f32 lightY = 0.0f;
 /* setup */
 B3LParticleGenObj_t  *pParticleGen;
 fBuff_t *renderBuff;
+B3L_timeTweenCtl_t ttCtl;
+B3L_tween_t tCatZ;
 void init() {
-    //printf("obj %d\n",sizeof(B3LObj_t));
-    //printf("mesh obj %d\n",sizeof(B3LMeshObj_t));
-    //printf("particle gen obj %d\n",sizeof(B3LParticleGenObj_t));
+    B3L_TimerTweenCtlInit(&ttCtl);
+    B3L_TweenInit(&ttCtl,&tCatZ,B3L_tween_ease_in_out_quad,0.0f, -100.0f, 2000, -1);
     at.x=0.0f;at.y=0.0f;at.z=0.0f;
     B3L_SetSeed(0x31415926);
     blit::set_screen_mode(ScreenMode::lores);
@@ -61,12 +63,16 @@ void init() {
     //B3Lrender.camera.transform.rotation.z = 0.0f;
     B3L_CameraLookAt(&(B3Lrender.camera), &at);
     //printf("init done\n");
-
+    B3L_TweenStart(&tCatZ,0);
 
 }
 
 void update(uint32_t time){
+    
+    
     B3L_Update(&B3Lrender,time);
+    B3L_TimerTweenUpdate(&ttCtl,time);
+    pBox->transform.translation.z = tCatZ.value;
     //box.transform.rotation.x += 0.001f;
     //box.transform.rotation.y += 0.001f;
     //pBox->transform.rotation.x -= 0.001f;
