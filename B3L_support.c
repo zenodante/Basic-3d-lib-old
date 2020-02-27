@@ -154,6 +154,18 @@ f32 B3L_tween_ease_out_quad(uint32_t t, float b, float c, uint32_t d){
 f32 B3L_tween_ease_in_out_quad(uint32_t t, float b, float c, uint32_t d){
     f32 ft = (((f32)t) / ((f32)d)) *2.0f;
     if (ft < 1.0f) return (c-b)* (2.0f - ft) * ft + b;
-    ft-=1.0f;
+    ft -=1.0f;
     return (c-b)*(1.0f-ft) *(1.0f-ft) + b;
+}
+
+extern f32 B3L_tween_linear_return(uint32_t t, float b, float c, uint32_t d){
+    f32 ft = (((f32)t) / ((f32)d)) *2.0f;
+    if (ft<1.0f) return (c-b)*ft+b;
+    ft -= 1.0f;
+    return (c-b)*(1.0f-ft)+b;
+}
+
+extern f32 B3L_tween_sine_return(uint32_t t, float b, float c, uint32_t d){
+    f32 ft = ((f32)t) / ((f32)d);
+    return b + (B3L_sin(ft - 0.25f) + 1.0f) *0.5f * (c - b);  
 }

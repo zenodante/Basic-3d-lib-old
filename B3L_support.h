@@ -67,11 +67,11 @@ extern bool B3L_TweenIsRunning(B3L_tween_t *pTween);
 extern bool B3L_TweenIsPaused(B3L_tween_t *pTween);   
 extern bool B3L_TweenIsStopped(B3L_tween_t *pTween);   
 extern bool B3L_TweenIsFinished(B3L_tween_t *pTween); 
-extern f32 B3L_tween_sine(uint32_t t, float b, float c, uint32_t d);
-extern f32 B3L_tween_linear(uint32_t t, float b, float c, uint32_t d);
-extern f32 B3L_tween_ease_in_quad(uint32_t t, float b, float c, uint32_t d);
-extern f32 B3L_tween_ease_out_quad(uint32_t t, float b, float c, uint32_t d);
-extern f32 B3L_tween_ease_in_out_quad(uint32_t t, float b, float c, uint32_t d);
-
-
+extern f32 B3L_tween_sine(uint32_t t, float b, float c, uint32_t d);//->
+extern f32 B3L_tween_linear(uint32_t t, float b, float c, uint32_t d);//->
+extern f32 B3L_tween_ease_in_quad(uint32_t t, float b, float c, uint32_t d);//->
+extern f32 B3L_tween_ease_out_quad(uint32_t t, float b, float c, uint32_t d);//->
+extern f32 B3L_tween_ease_in_out_quad(uint32_t t, float b, float c, uint32_t d);//<->
+extern f32 B3L_tween_linear_return(uint32_t t, float b, float c, uint32_t d);//<->
+extern f32 B3L_tween_sine_return(uint32_t t, float b, float c, uint32_t d);//<->
 #endif
