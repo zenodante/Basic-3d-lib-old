@@ -2,82 +2,97 @@
 
 extern "C" {
 #include "b3dlib.h"
+#include "B3L_support.h"
 #include "cat.h"
 }
 using namespace blit;
 
-B3LPolygonObj_t *pBox2;
-B3LMeshObj_t *pBox;
+
 render_t B3Lrender;
-B3LMeshObj_t box;
-vect3_t at ;
-f32 i = 0.0f;
-f32 lightY = 0.0f;
-/* setup */
 B3LParticleGenObj_t  *pParticleGen;
+fBuff_t *renderBuff;
+B3L_timeTweenCtl_t ttCtl;
+B3L_tween_t tCatZ;
+B3LMeshObj_t *pBox[60];
+vect3_t at={0.0f,0.0f,0.0f};
 void init() {
-    printf("obj %d\n",sizeof(B3LObj_t));
-    printf("mesh obj %d\n",sizeof(B3LMeshObj_t));
-    printf("particle gen obj %d\n",sizeof(B3LParticleGenObj_t));
-    at.x=0.0f;at.y=0.0f;at.z=0.0f;
-    B3L_SetSeed(0x31415926);
     blit::set_screen_mode(ScreenMode::lores);
-    //you need a 32bit framebuff here!
-    B3L_RenderInit(&B3Lrender,(fBuff_t *)screen.data);
-    
+    //init rendom seed
+    B3L_SetSeed(0x31415926);
+    //init time and tween system
+    B3L_TimerTweenCtlInit(&ttCtl);
+    B3L_TweenInit(&ttCtl,&tCatZ,B3L_tween_linear,0.0f, 1.0f, 4000, -1);
+    //init the main render
+    fBuff_t *renderBuff=B3L_3dRenderAreaShiftCal(((fBuff_t *)screen.data),0, 0);   
+    B3L_RenderInit(&B3Lrender,renderBuff);
+    //init particle generator
     pParticleGen = B3L_GetFreeParticleGeneratorObj(&B3Lrender);
     B3L_InitDemoParticleGenObj(pParticleGen);
-    pParticleGen->translation.x = 100.0f;
-    pParticleGen->translation.y = 50.0f;
+    pParticleGen->translation.x = 0.0f;
+    pParticleGen->translation.y = 0.0f;
     B3L_AddObjToRenderList((B3LObj_t *)pParticleGen, &B3Lrender);
-
-    pBox2 = (B3LPolygonObj_t *)B3L_GetFreeObj(&B3Lrender);
-    pBox = (B3LMeshObj_t *)B3L_GetFreeObj(&B3Lrender);
-    B3L_InitBoxObj(&box,50.0f);
-    //B3L_InitBoxObjNoTexture(pBox2,50.0f); //create a size 10 box   
-    B3L_InitBoxObjPolygon(pBox2,50.0f);
-    InitCatObj(pBox,2.0f); //create a size 10 box  
-    B3L_AddObjToRenderList((B3LObj_t *)&box, &B3Lrender);
-    B3L_AddObjToRenderList((B3LObj_t *)pBox, &B3Lrender);
-    B3L_AddObjToRenderList((B3LObj_t *)pBox2, &B3Lrender);
+    //init light
     B3L_SetLightType(&B3Lrender,dotLight);
-    B3Lrender.light.factor_0=0.2f;
-    box.transform.translation.y = 0.0f;
-    box.transform.translation.x = 50.0f;
-    box.transform.translation.z = 0.0f;
-    pBox2->transform.translation.y = 0.0f;
-    pBox2->transform.translation.x = -50.0f;
-    pBox2->transform.translation.z = 0.0f;
-    pBox->transform.translation.y = 0.0f;
-    pBox->transform.translation.x = 100.0f;
-    pBox->transform.translation.z = -50.0f;
-    B3Lrender.camera.transform.translation.x = 0.0f;
-    B3Lrender.camera.transform.translation.y =  70.0f;
-    B3Lrender.camera.transform.translation.z =  -200.0f;
-    //B3Lrender.camera.transform.rotation.x = -0.125f;
-    //B3Lrender.camera.transform.rotation.y = 0.25f;
-    //B3Lrender.camera.transform.rotation.z = 0.0f;
-    B3L_CameraLookAt(&(B3Lrender.camera), &at);
-    //printf("init done\n");
+    //B3Lrender.light.factor_0=0.2f;
+    //
+    int i = 20;
+    for(i=0;i<20;i++){
+        f32 degree = ((f32)i)/20.0f;
+        f32 x = 120.0f*B3L_sin(degree);
+        f32 z = 120.0f*B3L_cos(degree);
+        pBox[i] = (B3LMeshObj_t *)(B3L_GetFreeMeshObj(&B3Lrender));
+        B3L_InitBoxObj(pBox[i],20.0f);
+        B3L_AddObjToRenderList((B3LObj_t *)(pBox[i]), &B3Lrender);
+        //add to middle of the ball
+        pBox[i]->transform.translation={x,0.0,z};
 
+    }
+    for(i=0;i<10;i++){
+        f32 degree = ((f32)i)/10.0f;
+        f32 x = 60.0f*B3L_sin(degree);
+        f32 z = 60.0f*B3L_cos(degree);
+        pBox[20+2*i] = (B3LMeshObj_t *)(B3L_GetFreeMeshObj(&B3Lrender));
+        B3L_InitBoxObj(pBox[20+2*i],20.0f);
+        B3L_AddObjToRenderList((B3LObj_t *)(pBox[20+2*i]), &B3Lrender);
+        pBox[20+2*i]->transform.translation={x,60.0f,z};
+
+        pBox[20+2*i+1] = (B3LMeshObj_t *)(B3L_GetFreeMeshObj(&B3Lrender));
+        B3L_InitBoxObj(pBox[20+2*i+1],20.0f);
+        B3L_AddObjToRenderList((B3LObj_t *)(pBox[20+2*i+1]), &B3Lrender);
+        pBox[20+2*i+1]->transform.translation={x,-60.0f,z};
+
+
+    }
+    //init the camera
+    
+    B3Lrender.camera.transform.translation = {0.0f,0.0f,-220.0f};
+    B3L_CameraLookAt(&(B3Lrender.camera), &at);
+
+    
+    B3L_TweenStart(&tCatZ,0);
 
 }
 
 void update(uint32_t time){
+    
+    
     B3L_Update(&B3Lrender,time);
-    //box.transform.rotation.x += 0.001f;
-    //box.transform.rotation.y += 0.001f;
-    //pBox->transform.rotation.x -= 0.001f;
-    //pBox->transform.rotation.z -= 0.001f;
-    //pBox2->transform.rotation.z -= 0.001f;
-    //pBox2->transform.rotation.y -= 0.001f;
+    B3L_TimerTweenUpdate(&ttCtl,time);
+    u32 i;
+    for (i=0;i<20;i++){
+        pBox[2*i]->transform.rotation.x = tCatZ.value;
+        pBox[2*i]->transform.rotation.y = tCatZ.value;
+        pBox[2*i+1]->transform.rotation.x = -tCatZ.value;
+        pBox[2*i+1]->transform.rotation.y = -tCatZ.value;
+    }
+
     if (pressed(DPAD_UP)){
-        //B3Lrender.camera.transform.translation.z +=1.01f;
-        lightY += 1.0f;
+        B3Lrender.camera.transform.translation.y +=1.01f;
+
     }
     if (pressed(DPAD_DOWN)){
-        //B3Lrender.camera.transform.translation.z -=1.01f; 
-         lightY -= 1.0f; 
+        B3Lrender.camera.transform.translation.y -=1.01f; 
+         
     }
     if (pressed(DPAD_LEFT)){
         B3Lrender.camera.transform.translation.x += 1.0f;    
@@ -86,56 +101,39 @@ void update(uint32_t time){
         B3Lrender.camera.transform.translation.x -= 1.0f;    
     }
     if (pressed(A)){
-        pBox->transform.rotation.y +=0.01f;
+
     }
     if (pressed(B)){
-        pBox->transform.rotation.y -=0.01f;
-    }
-    if (i>1.0f){
-        i=0.0f;
-    }
-    i +=0.002f;
 
-    B3L_SetLightVect(&B3Lrender, 0.0f,lightY,0.0f);    
-    B3Lrender.camera.transform.translation.z =  B3L_sin(i)*200.0f;
-    
-    B3Lrender.camera.transform.translation.x =  B3L_cos(i)*200.0f;
+    }
+
+
+    //B3L_SetLightVect(&B3Lrender,200.0f*tCatZ.value,200.0f*tCatZ.value,200.0f*tCatZ.value);    
+
 
     B3L_CameraLookAt(&(B3Lrender.camera), &at);
+    //vect3_t up ={2.0f,3.0f,0.0f};
+    //B3L_SetCameraUpDirection(&(B3Lrender.camera),&up);
 
 }
 
-#define RGB_BLEND(sr, sg, sb, dr, dg, db, a) \
-    uint8_t r = (sr * a) >> 8; \
-    uint8_t g = (sg * a) >> 8; \
-    uint8_t b = (sb * a) >> 8; \
-    uint16_t ia = 256 - a; \
-    dr = (r + ((dr * ia) >> 8)); \
-    dg = (g + ((dg * ia) >> 8)); \
-    db = (b + ((db * ia) >> 8)); \
 
 void render(uint32_t time) {
-    B3L_NewRenderStart( &B3Lrender);
-
+    
+    B3L_NewRenderStart( &B3Lrender,0xFF000000);
     B3L_RenderScence(&B3Lrender);
-    //printf("finished render scence\n");
-/*
-DrawTriColor(
-                                                                        0.0f,0.0f,0.1f,
-                                                                        12.0f,12.0f,0.1f,
-                                                                        0.0f,24.0f,0.1f,
-                                                                        1,0xff,0XFF7E2553,
-                                                                        (fBuff_t *)fb.data,B3Lrender.pZBuff);
+    B3L_AppliedLightFromAlpha(&B3Lrender);
 
-*/
-    //printf("result is %d\n",result);
-    uint8_t *buff = (uint8_t *)screen.data;
-    uint32_t *u4buff = (uint32_t *)screen.data;
+
+/*
+    uint8_t *buff = (uint8_t *)(((fBuff_t *)screen.data)+160*15);
+    //uint32_t *u4buff = (uint32_t *)screen.data;
+    uint32_t *u4buff =(((fBuff_t *)screen.data)+160*15);
     uint32_t backColor = B3Lrender.light.color;
     uint8_t r,g,b;
     uint32_t i;
     uint32_t color;
-/*    
+    
     for (i=0;i<VIDEO_BUFF_LENTH;i++){
     color = u4buff[i];
     color = color>>24;
@@ -146,14 +144,7 @@ DrawTriColor(
     }
   
 */ 
-//on h750 you could use DMA2D mode DMA2D_CR/mode = 0b101 to do this transform
-    for (i=0;i<VIDEO_BUFF_LENTH;i++){
-        r =  (backColor&(0x00FF0000))>>16;
-        g =  (backColor &(0x0000FF00))>>8;
-        b = (backColor &(0x000000FF));
-        RGB_BLEND(buff[i*4+2],buff[i*4+1],buff[i*4],r,g,b,buff[i*4+3])
-        u4buff[i]=(0xFF000000)|(r<<16)|(g<<8)|(b<<0);
-    }
+
     
     screen.watermark();
      

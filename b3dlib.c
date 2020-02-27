@@ -1,7 +1,17 @@
+//camera function is modified from small3dlib 
+//tri draw function is modified from adafruit gfx lib
+//math function sin is from cmsis dsp lib
+//arcsin function is copy from nvidia cg fast math lib
+//invert sqrtf is copy from id soft quake
+
+
 #include <stdio.h>
 #include <stdbool.h>
 #include <stdlib.h>
+#include <math.h>
 #include "b3dlib.h"
+
+
 
 #ifndef   __ASM
 #define   __ASM        __asm
@@ -16,15 +26,15 @@
 //config the ram position if necessary
 u32            B3L_seed = 0x31415926;
 screen3f_t     vectBuff[VECT_BUFF_SIZE]; //8KB
-zBuff_t        zBuff[VIDEO_BUFF_LENTH];        //75KB
+__attribute__((section(".zbuff")))  zBuff_t  zBuff[Z_BUFF_LENTH];        //75KB we need a zbuff section after the framebuff
 
 #ifdef B3L_USING_PARTICLE
-B3L_Particle_t  particleBuff[B3L_PARTICLE_BUFF_DEPTH];
+B3L_Particle_t  particleBuff[B3L_PARTICLE_BUFF_DEPTH];//18KB
 #endif
 
 #define B3L_MATH_TABLE_SIZE      256
 //not used fix math 
-#define B3L_FIX_BITS             10
+
 
 
 #if Z_BUFF_LEVEL == 2
@@ -201,43 +211,47 @@ const B3L_texture_t B3L_boxTexture = {
 /*-----------------------------------------------------------------------------
 Math functions
 -----------------------------------------------------------------------------*/
-#ifdef B3L_ARM
+#if  B3L_ARM == 1
 __attribute__((always_inline)) static  inline f32   B3L_Sqrtf(f32 in);
 __attribute__((always_inline)) static  inline f32   B3L_Absf(f32 in);
+
 #else
 #define B3L_Sqrtf   sqrtf
 #define B3L_Absf    abs
-#endif   
+#endif 
+__attribute__((always_inline)) static  inline s32      B3L_RoundingToS(f32 in);
+__attribute__((always_inline)) static  inline s32      B3L_RoundingToU(f32 in);
+__attribute__((always_inline)) static  inline f32      FastInvertSqrt(f32 x);  
 __attribute__((always_inline)) static  inline s32      VcvtF32ToS32_Fix(f32 in);
 __attribute__((always_inline)) static  inline f32      VcvtS32ToF32_Fix(s32 in);
 __attribute__((always_inline)) static  inline u32      SatToU8(u32 in);
 __attribute__((always_inline)) static  inline u32      SatToU16(u32 in);
 __attribute__((always_inline)) static  inline f32      NonZero(f32 value);
 __attribute__((always_inline)) static  inline f32      Interp_f(f32 x1, f32 x2, f32 t);
-__attribute__((always_inline)) static  inline s32      IntClamp(s32 v, s32 v1, s32 v2);
-__attribute__((always_inline)) static  inline f32      B3L_Clamp_f(f32 v, f32 v1, f32 v2);
-__attribute__((always_inline)) static  inline f32      Min_f(f32 v1, f32 v2);
-__attribute__((always_inline)) static  inline s32      Min_s32(s32 v1, s32 v2);
-__attribute__((always_inline)) static  inline u32      Min_u32(u32 v1, u32 v2);
-__attribute__((always_inline)) static  inline f32      Max_f(f32 v1, f32 v2);
-__attribute__((always_inline)) static  inline s32      Max_u32(u32 v1, u32 v2);
-__attribute__((always_inline)) static  inline s32      Max_s32(s32 v1, s32 v2);
+__attribute__((always_inline)) static  inline s32      Clamp_i(s32 v, s32 v1, s32 v2);
+__attribute__((always_inline)) static  inline f32      Clamp_f(f32 v, f32 v1, f32 v2);
+/*-----------------------------------------------------------------------------
+Vector and matrix functions
+-----------------------------------------------------------------------------*/
 __attribute__((always_inline)) static  inline void     Vect3_Scale(vect3_t *pV,f32 scale,vect3_t *pResult);
 __attribute__((always_inline)) static  inline void     Vect3_Add(vect3_t *pV1,vect3_t *pV2,vect3_t *pResult);
 __attribute__((always_inline)) static  inline void     MakeClipMatrix(f32 focalLength, f32 aspectRatio,mat4_t *mat);
 __attribute__((always_inline)) static  inline void     Vect3Xmat4(vect3_t *pV, mat4_t *pMat, vect4_t *pResult);
-__attribute__((always_inline)) static  inline void     Vect3Xmat4WithTest(vect3_t *pV, mat4_t *pMat, screen3_t *pResult);
+__attribute__((always_inline)) static  inline void     Vect3Xmat4WithTestToScreen4(vect3_t *pV, mat4_t *pMat, screen4_t *pResult);
 __attribute__((always_inline)) static  inline void     Vect3Xmat4WithTest_f(vect3_t *pV, mat4_t *pMat, screen3f_t *pResult);
 __attribute__((always_inline)) static  inline void     Norm3Xmat4(vect3_t *pV, mat4_t *pMat, vect3_t *pResult);
 __attribute__((always_inline)) static  inline void     Norm3Xmat4Normalize(vect3_t *pV, mat4_t *pMat, vect3_t *pResult);
 __attribute__((always_inline)) static  inline void     Vect4Xmat4(vect4_t *pV, mat4_t *pMat, vect4_t *pResult);
 __attribute__((always_inline)) static  inline bool     Vect4BoundTest(vect4_t *pV);
-__attribute__((always_inline)) static  inline f32      FastInvertSqrt(f32 x);
-__attribute__((always_inline)) static  inline zBuff_t  CalZbuffValue(f32 z);
 __attribute__((always_inline)) static  inline void     CopyMat4(mat4_t *target, mat4_t *source);
+/*-----------------------------------------------------------------------------
+Z buff functions
+-----------------------------------------------------------------------------*/
+__attribute__((always_inline)) static  inline zBuff_t  CalZbuffValue(f32 z);
 /*-----------------------------------------------------------------------------
 Light functions
 -----------------------------------------------------------------------------*/
+__attribute__((always_inline)) static  inline fBuff_t  LightBlend(u32 inputPixel, u8 r, u8 g, u8 b);
 __attribute__((always_inline)) static  inline void     UpdateLightVect(render_t *pRender);
 __attribute__((always_inline)) static  inline u32      CalLightFactor(f32 normalDotLight, f32 lightFactor0,f32 lightFactor1);
  /*-----------------------------------------------------------------------------
@@ -281,7 +295,7 @@ __attribute__((always_inline)) static  inline void     DrawDepthLineClip(s32 Ax,
  /*-----------------------------------------------------------------------------
 Camera functions
 -----------------------------------------------------------------------------*/
-static void SetCameraMatrix(camera_t *pCam);
+
  /*-----------------------------------------------------------------------------
 Obj list functions
 -----------------------------------------------------------------------------*/
@@ -295,7 +309,7 @@ void B3L_ReturnParticleToPool(B3L_Particle_t *pParticle,scene_t *pScene);
  /*-----------------------------------------------------------------------------
 Buffer functions
 -----------------------------------------------------------------------------*/
-static void ClearFrameBuff(fBuff_t *pFramebuff,fBuff_t value,u32 length);
+static void ClearFrameBuff(fBuff_t *pFramebuff,fBuff_t value,u32 lineNum,u32 lineLength,u32 lineSkip);
 static void ClearZbuff(zBuff_t *pZbuff,u32 length);
  /*-----------------------------------------------------------------------------
 Obj render functions
@@ -313,7 +327,7 @@ static void RenderPolygon(B3LPolygonObj_t *pObj,render_t *pRender, mat4_t *pMat)
 /*-----------------------------------------------------------------------------
 Math function
 -----------------------------------------------------------------------------*/
-#ifdef B3L_ARM
+#if B3L_ARM  == 1
 __attribute__((always_inline)) static  inline f32 B3L_Sqrtf(f32 in){
     f32 result;
 __ASM("vsqrt.f32 %0,%1" : "=t"(result) : "t"(in));
@@ -348,6 +362,18 @@ __attribute__((always_inline)) static  inline u32   SatToU16(u32 in){
     return result; 
 }
 
+__attribute__((always_inline)) static  inline s32   B3L_RoundingToS(f32 in){
+    s32 result;
+    __ASM ("vcvtr.s32.f32 %0,%1" : "=t"(result) : "t"(in));
+    return result; 
+}
+
+__attribute__((always_inline)) static  inline s32   B3L_RoundingToU(f32 in){
+    u32 result;
+    __ASM ("vcvtr.u32.f32 %0,%1" : "=t"(result) : "t"(in));
+    return result; 
+}
+
 #else
 __attribute__((always_inline)) static  inline s32   VcvtF32ToS32_Fix(f32 in){
     return ((s32)(in*((f32)(1<<B3L_FIX_BITS))));
@@ -372,36 +398,22 @@ __attribute__((always_inline)) static  inline u32   SatToU16(u32 in){
     }
 }
 
-#endif
+__attribute__((always_inline)) static  inline s32   B3L_RoundingToS(f32 in){
+    return (s32)roundf(in); 
+}
 
-__attribute__((always_inline)) static  inline f32 B3L_Clamp_f(f32 v, f32 v1, f32 v2){
+__attribute__((always_inline)) static  inline s32   B3L_RoundingToU(f32 in){
+    return (u32)roundf(in); 
+}
+#endif //end of B3L_ARM
+
+__attribute__((always_inline)) static  inline f32 Clamp_f(f32 v, f32 v1, f32 v2){
     return v > v1 ? (v < v2 ? v : v2) : v1;
 }
 
-__attribute__((always_inline)) static  inline s32 IntClamp(s32 v, s32 v1, s32 v2)
+__attribute__((always_inline)) static  inline s32 Clamp_i(s32 v, s32 v1, s32 v2)
 {
     return v >= v1 ? (v <= v2 ? v : v2) : v1;
-}
-__attribute__((always_inline)) static  inline u32 Min_u32(u32 v1, u32 v2){
-    return v1 >= v2 ? v2 : v1;
-}
-__attribute__((always_inline)) static  inline s32 Min_s32(s32 v1, s32 v2){
-    return v1 >= v2 ? v2 : v1;
-}
-
-__attribute__((always_inline)) static  inline s32 Max_u32(u32 v1, u32 v2){
-    return v1 >= v2 ? v1 : v2;
-}
-
-__attribute__((always_inline)) static  inline s32 Max_s32(s32 v1, s32 v2){
-    return v1 >= v2 ? v1 : v2;
-}
-__attribute__((always_inline)) static inline f32 Min_f(f32 v1, f32 v2){
-    return v1 >= v2 ? v2 : v1;
-}
-
-__attribute__((always_inline)) static inline f32 Max_f(f32 v1, f32 v2){
-    return v1 >= v2 ? v1 : v2;
 }
 
 //inv sqrt black magic from quake 
@@ -523,10 +535,7 @@ __attribute__((always_inline)) static  inline void  Vect3Xmat4WithTest_f(vect3_t
 
 }
 
-
-
-
-__attribute__((always_inline)) static  inline void  Vect3Xmat4WithTest(vect3_t *pV, mat4_t *pMat, screen3_t *pResult){
+__attribute__((always_inline)) static  inline void  Vect3Xmat4WithTestToScreen4(vect3_t *pV, mat4_t *pMat, screen4_t *pResult){
     f32 x,y,z,rx,ry,rz,rw;
     x = pV->x;
     y = pV->y;
@@ -562,6 +571,7 @@ __attribute__((always_inline)) static  inline void  Vect3Xmat4WithTest(vect3_t *
     pResult->x = intX;
     pResult->y = intY;
     pResult->z = rz;
+    pResult->w = rw;
     #undef dotCol
 
 }
@@ -790,7 +800,7 @@ f32 B3L_cos(f32 in){
 }
 
 f32 B3L_asin(f32 in){
-    in = B3L_Clamp_f(in, -1.0f,1.0f);
+    in = Clamp_f(in, -1.0f,1.0f);
     float negate = (f32)(in < 0);
     
     if (in < 0.0f){
@@ -803,7 +813,6 @@ f32 B3L_asin(f32 in){
     ret -= 0.2121144f;
     ret *= in;
     ret += 1.5707288f;
-    //#ifdef B3L_ARM
     ret = 3.14159265358979f*0.5f - B3L_Sqrtf(1.0f - in)*ret;
     ret = (ret - 2 * negate * ret)*0.15915494309f;
     return ret;
@@ -1039,7 +1048,7 @@ void B3L_MakeWorldMatrix(transform3D_t *pWorldTransform, mat4_t *pMat){
     pMat->m03 = pWorldTransform->translation.x;
     pMat->m13 = pWorldTransform->translation.y;
     pMat->m23 = pWorldTransform->translation.z;
-#ifdef B3L_DEBUG
+#if  B3L_DEBUG == 1
 printf("pWorldTransform %.3f,%.3f,%.3f,\n",pWorldTransform->rotation.x,pWorldTransform->rotation.y,pWorldTransform->rotation.z);
 printf("In make world matrix, temp matrix:\n");
 B3L_logMat4(temp);  
@@ -1049,11 +1058,11 @@ B3L_logMat4(temp);
 }
 __attribute__((always_inline)) static  inline zBuff_t CalZbuffValue(f32 z){
              #if  (Z_BUFF_LEVEL == 0) 
-            u32 tempZ = (u32)(z*255.0f);
+            u32 tempZ = B3L_RoundingToU(z*255.0f);
             u8  compZ = SatToU8(tempZ);
             #endif
             #if (Z_BUFF_LEVEL == 1)
-            u32 tempZ = (u32)(z*65535.0f);
+            u32 tempZ = B3L_RoundingToU(z*65535.0f);
             u16 compZ = SatToU16(tempZ);
             #endif
             #if (Z_BUFF_LEVEL == 2)
@@ -1119,8 +1128,8 @@ void B3L_ResetLight(light_t *pLight){
 __attribute__((always_inline)) static inline u32 CalLightFactor(f32 normalDotLight, f32 lightFactor0,f32 lightFactor1){
     s32 lightValue;
     normalDotLight += lightFactor0;
-    lightValue =(s32) (normalDotLight*lightFactor1);
-    lightValue = Max_s32(lightValue,0);
+    lightValue =B3L_RoundingToS(normalDotLight*lightFactor1);
+    lightValue = B3L_MAX(lightValue,0);
 #if FRAME_BUFF_COLOR_TYPE == 1
     lightValue = lightValue>>4; //only use high 4 bit
 #endif
@@ -1165,10 +1174,19 @@ void B3L_InitCamera(camera_t *pCam){
     pCam->transform.translation.x = 0.0f;
     pCam->transform.translation.y = 0.0f;
     pCam->transform.translation.z = 0.0f;
-    SetCameraMatrix(pCam);
+    B3L_SetCameraMatrixByTransform(pCam);
 }
 
-static void SetCameraMatrix(camera_t *pCam){
+void B3L_SetCamToManualMatUpdate(camera_t *pCam){
+    B3L_SET(pCam->state,B3L_USE_CAM_MATRIX_DIRECTLY);
+}
+
+void B3L_SetCamToAutoMatUpdate(camera_t *pCam){
+    B3L_CLR(pCam->state,B3L_USE_CAM_MATRIX_DIRECTLY);
+}
+
+//If B3L_USE_CAM_MATRIX_DIRECTLY not set, this function will be call automaticly during render
+void B3L_SetCameraMatrixByTransform(camera_t *pCam){
 
     B3L_MakeTranslationMat(-1.0f * pCam->transform.translation.x,
                             -1.0f * pCam->transform.translation.y,
@@ -1219,10 +1237,15 @@ void B3L_CameraLookAt(camera_t *pCam, vect3_t *pAt){
     dx = v.x / NonZero(l);
 
     pCam->transform.rotation.x = B3L_asin(dx);
-    //printf("rotation y %.3f,rotation x %.3f\n",pCam->transform.rotation.y,pCam->transform.rotation.x);
 }
 
-
+void   B3L_SetCameraUpDirection(camera_t *pCam, vect3_t *pUp){
+    //calculate the length of vect
+    f32 length = B3L_Vec3Length(pUp);
+    f32 cosValue = (pUp->y)/length;
+    f32 zAngle = 0.25f - B3L_asin(cosValue);
+    pCam->transform.rotation.z = zAngle;
+}
 
 
 /*-----------------------------------------------------------------------------
@@ -1272,7 +1295,7 @@ static void RenderParticleObjs(render_t *pRender) {
     B3LObj_t  *pCurrentObj =(pRender->scene.pActiveParticleGenObjs);
     u32 state;
     mat4_t *pCamMat = &(pRender->camera.camMat);
-    screen3_t screenVect;
+    screen4_t screenVect;
     u32 i;
     B3L_Particle_t *pParticle;
     fBuff_t *pFBuff = pRender->pFrameBuff;
@@ -1291,7 +1314,7 @@ static void RenderParticleObjs(render_t *pRender) {
         pParticle = ((B3LParticleGenObj_t *)pCurrentObj)->pParticleActive;     
         //project the particle from world space to screen space
         while(i--){
-            Vect3Xmat4WithTest(&(pParticle->position), pCamMat, &screenVect);
+            Vect3Xmat4WithTestToScreen4(&(pParticle->position), pCamMat, &screenVect);
             //get the screen position
             u32 test = screenVect.test;
             if (B3L_TEST(test,B3L_IN_SPACE)){
@@ -1304,13 +1327,14 @@ static void RenderParticleObjs(render_t *pRender) {
         pCurrentObj = pCurrentObj->next;    
     }
 }
-void B3L_DefaultParticleDrawFunc(B3L_Particle_t *pParticle, screen3_t *pScreenVect,fBuff_t *pFBuff,zBuff_t *pZBuff){
+void B3L_DefaultParticleDrawFunc(B3L_Particle_t *pParticle, screen4_t *pScreenVect,fBuff_t *pFBuff,zBuff_t *pZBuff){
 
     zBuff_t compZ = CalZbuffValue(pScreenVect->z);
     s32     intX = pScreenVect->x;
     s32     intY = pScreenVect->y;
     u32     shift = RENDER_RESOLUTION_X*intY + intX;
     pZBuff = (pZBuff+shift);
+    shift = RENDER_X_SHIFT *intY + intX;
     pFBuff = (pFBuff+shift);
     if (compZ<= *pZBuff){
         *pZBuff = compZ;
@@ -1355,7 +1379,6 @@ void     B3L_DefaultParticleUpdFunc(u32 time,B3LParticleGenObj_t *pSelf,mat4_t *
     //B3L_Particle_t *pPrevParticle;
     vect3_t  delta;
     vect3_t  force ={.x=0.0f,.y=-0.0001f,.z=0.0f};
-    //u32      newParticleNum =  (u32)(time*0.01f);
     u32 newParticleNum = 1;
     if(pSelf->lastTime == 0){//this is the first time a generator is updated, only get the time
         pSelf->lastTime = time;
@@ -1365,7 +1388,7 @@ void     B3L_DefaultParticleUpdFunc(u32 time,B3LParticleGenObj_t *pSelf,mat4_t *
         deltaTime = time - pSelf->lastTime;
         pSelf->lastTime = time;
         //add necessary new particles into the list
-        i = Min_u32(pRender->scene.freeParticleNum,newParticleNum);
+        i = B3L_MIN(pRender->scene.freeParticleNum,newParticleNum);
         s32 randValue;
         f32 inv256 = 0.00390625f;
         while(i--){
@@ -1464,7 +1487,6 @@ static void RenderMeshObjs(render_t *pRender){
         f32 x = mat.m03;
         f32 y = mat.m13;
         f32 z = mat.m23;
-        //#ifdef B3L_ARM
         distance = B3L_Sqrtf(x*x+y*y+z*z);
         //#else
         //distance = sqrtf(x*x+y*y+z*z);
@@ -1504,15 +1526,13 @@ static void RenderMeshObjs(render_t *pRender){
 void B3L_RenderScence(render_t *pRender){
 
     //printf("start render\n");
-    //set world to clip matrix
-    SetCameraMatrix(&(pRender->camera));
-
+    if (!B3L_TEST(pRender->camera.state,B3L_USE_CAM_MATRIX_DIRECTLY)){
+        B3L_SetCameraMatrixByTransform(&(pRender->camera));
+    }
     UpdateLightVect(pRender);
 
     RenderMeshObjs(pRender);
-    //draw bitmapObj
-    //TODO
-    //draw particleObj
+
 #ifdef B3L_USING_PARTICLE
     RenderParticleObjs(pRender);
 #endif
@@ -1520,16 +1540,31 @@ void B3L_RenderScence(render_t *pRender){
 }
 
 void B3L_Update(render_t *pRender,u32 time){
-    //TODO: Add particle update and other hook here
+    static u32 oldTime = 0;
+    if (oldTime == 0) {//first time run
+      oldTime = time;
+    }
+    u32 deltaTime = time - oldTime;
+    
+    if (deltaTime >= B3L_UPDATE_CYCLE){//if the time is longer than the limit for update
 #ifdef B3L_USING_PARTICLE
-    UpdateParticleObjs(pRender, time);
-
+        UpdateParticleObjs(pRender, time);
 #endif
+
+        oldTime = time;//update oldTime only it is run the update codes
+    }
+    //TODO: Add particle update and other hook here
+
 }
 
-void B3L_NewRenderStart(render_t *pRender){
-    ClearFrameBuff(pRender->pFrameBuff,0xFF003423,VIDEO_BUFF_LENTH);
-    ClearZbuff(pRender->pZBuff,VIDEO_BUFF_LENTH);
+void B3L_NewRenderStart(render_t *pRender,fBuff_t color){
+    #if B3L_DMA2D == 0
+    ClearFrameBuff(pRender->pFrameBuff,color,RENDER_RESOLUTION_Y,RENDER_RESOLUTION_X,RENDER_LINE_SKIP);
+    //ClearFrameBuff(pRender->pFrameBuff,0xFF003423,Z_BUFF_LENTH);//need to add shift
+    ClearZbuff(pRender->pZBuff,Z_BUFF_LENTH);//need to add shift
+    #else
+    B3L_CLEAN_FRAME_COLOR = color;
+    #endif   //if DMA2D == 1, the clean work would be done by DMA2D
 }    
 
 void B3L_ResetScene(scene_t *pScene){
@@ -1904,7 +1939,7 @@ __attribute__((always_inline)) static  inline fBuff_t     GetColorValue(texLUT_t
 __attribute__((always_inline)) static  inline void     DrawPixel(fBuff_t color,s32 x,s32 y,f32 z,
                                                                         fBuff_t *pFrameBuff,zBuff_t *pZbuff){
         zBuff_t *pCurrentPixelZ = pZbuff + (y*RENDER_RESOLUTION_X) + x;
-        fBuff_t *pixel= pFrameBuff + (y*RENDER_RESOLUTION_X) + x; 
+        fBuff_t *pixel= pFrameBuff + (y*RENDER_X_SHIFT) + x; 
         zBuff_t compZ = CalZbuffValue(z);
         if (compZ< *pCurrentPixelZ){          
             *pCurrentPixelZ = compZ;
@@ -1919,7 +1954,7 @@ __attribute__((always_inline)) static  inline void     DrawPixelWithTest(fBuff_t
             return;
         }
         zBuff_t *pCurrentPixelZ = pZbuff + (y*RENDER_RESOLUTION_X) + x;
-        fBuff_t *pixel= pFrameBuff + (y*RENDER_RESOLUTION_X) + x; 
+        fBuff_t *pixel= pFrameBuff + (y*RENDER_X_SHIFT) + x; 
         zBuff_t compZ = CalZbuffValue(z);
         if (compZ< *pCurrentPixelZ){          
             *pCurrentPixelZ = compZ;
@@ -1928,122 +1963,129 @@ __attribute__((always_inline)) static  inline void     DrawPixelWithTest(fBuff_t
 
 }
 
-static void ClearFrameBuff(fBuff_t *pFramebuff,fBuff_t value,u32 length){
+static void ClearFrameBuff(fBuff_t *pFramebuff,fBuff_t value,u32 lineNum,u32 lineLength,u32 lineSkip){
 //in stm32, we could use DMA to do this job   
     int32_t i;   
+    u32  lineNumDiv16Left = lineLength&0x0000000F;
     #define Addr pFramebuff
     //fBuff_t value = 0;
-    for (i=(length>>4) - 1;i>=0;i--){
-        
-        *Addr = value;*Addr++;
-        *Addr = value;*Addr++;
-        *Addr = value;*Addr++;
-        *Addr = value;*Addr++;
-        *Addr = value;*Addr++;
-        *Addr = value;*Addr++;
-        *Addr = value;*Addr++;
-        *Addr = value;*Addr++;
-        *Addr = value;*Addr++;
-        *Addr = value;*Addr++;
-        *Addr = value;*Addr++;
-        *Addr = value;*Addr++;
-        *Addr = value;*Addr++;
-        *Addr = value;*Addr++;
-        *Addr = value;*Addr++;
-        *Addr = value;*Addr++;
-    }
-
-    switch(length&0x0000000F){
+    while(lineNum--){
+        i=(lineLength>>4);
+        while(i--){
+            *Addr = value;Addr++;
+            *Addr = value;Addr++;
+            *Addr = value;Addr++;
+            *Addr = value;Addr++;
+            *Addr = value;Addr++;
+            *Addr = value;Addr++;
+            *Addr = value;Addr++;
+            *Addr = value;Addr++;
+            *Addr = value;Addr++;
+            *Addr = value;Addr++;
+            *Addr = value;Addr++;
+            *Addr = value;Addr++;
+            *Addr = value;Addr++;
+            *Addr = value;Addr++;
+            *Addr = value;Addr++;
+            *Addr = value;Addr++;
+        }
+        switch(lineNumDiv16Left){
         case 15:
-            *Addr = value;*Addr++;
+            *Addr = value;Addr++;
         case 14:
-            *Addr = value;*Addr++;
+            *Addr = value;Addr++;
         case 13:
-            *Addr = value;*Addr++;
+            *Addr = value;Addr++;
         case 12:
-            *Addr = value;*Addr++;
+            *Addr = value;Addr++;
         case 11:
-            *Addr = value;*Addr++;
+            *Addr = value;Addr++;
         case 10:
-            *Addr = value;*Addr++;
+            *Addr = value;Addr++;
         case 9:
-            *Addr = value;*Addr++;
+            *Addr = value;Addr++;
         case 8:
-            *Addr = value;*Addr++;
+            *Addr = value;Addr++;
         case 7:
-            *Addr = value;*Addr++;
+            *Addr = value;Addr++;
         case 6:
-            *Addr = value;*Addr++;
+            *Addr = value;Addr++;
         case 5:
-            *Addr = value;*Addr++;
+            *Addr = value;Addr++;
         case 4:
-            *Addr = value;*Addr++;    
+            *Addr = value;Addr++;    
         case 3:
-            *Addr = value;*Addr++;
+            *Addr = value;Addr++;
         case 2:
-            *Addr = value;*Addr++;
+            *Addr = value;Addr++;
         case 1:
-            *Addr = value;
+            *Addr = value;Addr++;
         case 0:
             break;
+        }
+        Addr +=lineSkip;
     }
+    
+
+    
     #undef Addr
 }
 
 static void ClearZbuff(zBuff_t *pZbuff,u32 length){
 //in stm32, we could use DMA to do this job   
-    int32_t i;   
+    int32_t i=length&0x0000000F; 
+    length = length>>4;  
     #define Addr pZbuff
     zBuff_t value = Z_LIMIT_NUM;
-    for (i=(length>>4) - 1;i>=0;i--){
+    while(length--){
         
-        *Addr = value;*Addr++;
-        *Addr = value;*Addr++;
-        *Addr = value;*Addr++;
-        *Addr = value;*Addr++;
-        *Addr = value;*Addr++;
-        *Addr = value;*Addr++;
-        *Addr = value;*Addr++;
-        *Addr = value;*Addr++;
-        *Addr = value;*Addr++;
-        *Addr = value;*Addr++;
-        *Addr = value;*Addr++;
-        *Addr = value;*Addr++;
-        *Addr = value;*Addr++;
-        *Addr = value;*Addr++;
-        *Addr = value;*Addr++;
-        *Addr = value;*Addr++;
+        *Addr = value;Addr++;
+        *Addr = value;Addr++;
+        *Addr = value;Addr++;
+        *Addr = value;Addr++;
+        *Addr = value;Addr++;
+        *Addr = value;Addr++;
+        *Addr = value;Addr++;
+        *Addr = value;Addr++;
+        *Addr = value;Addr++;
+        *Addr = value;Addr++;
+        *Addr = value;Addr++;
+        *Addr = value;Addr++;
+        *Addr = value;Addr++;
+        *Addr = value;Addr++;
+        *Addr = value;Addr++;
+        *Addr = value;Addr++;
     }
 
-    switch(length&0x0000000F){
+    switch(i){
         case 15:
-            *Addr = value;*Addr++;
+            *Addr = value;Addr++;
         case 14:
-            *Addr = value;*Addr++;
+            *Addr = value;Addr++;
         case 13:
-            *Addr = value;*Addr++;
+            *Addr = value;Addr++;
         case 12:
-            *Addr = value;*Addr++;
+            *Addr = value;Addr++;
         case 11:
-            *Addr = value;*Addr++;
+            *Addr = value;Addr++;
         case 10:
-            *Addr = value;*Addr++;
+            *Addr = value;Addr++;
         case 9:
-            *Addr = value;*Addr++;
+            *Addr = value;Addr++;
         case 8:
-            *Addr = value;*Addr++;
+            *Addr = value;Addr++;
         case 7:
-            *Addr = value;*Addr++;
+            *Addr = value;Addr++;
         case 6:
-            *Addr = value;*Addr++;
+            *Addr = value;Addr++;
         case 5:
-            *Addr = value;*Addr++;
+            *Addr = value;Addr++;
         case 4:
-            *Addr = value;*Addr++;    
+            *Addr = value;Addr++;    
         case 3:
-            *Addr = value;*Addr++;
+            *Addr = value;Addr++;
         case 2:
-            *Addr = value;*Addr++;
+            *Addr = value;Addr++;
         case 1:
             *Addr = value;
         case 0:
@@ -2125,7 +2167,7 @@ static void RenderNoTexMesh(B3LMeshNoTexObj_t *pObj,render_t *pRender, mat4_t *p
         f32 y2 = pVectTarget[vect2Idx].y;
 
         bool backFaceCullingResult = TriangleFaceToViewer_f(x0, y0, x1, y1, x2, y2);
-#ifdef B3L_DEBUG
+#if B3L_DEBUG  == 1
         printf("backFaceCullingResult = %d\n",backFaceCullingResult);
 #endif
             
@@ -2185,11 +2227,11 @@ static void RenderPolygon(B3LPolygonObj_t *pObj,render_t *pRender, mat4_t *pMat)
                 continue;
         }
 
-        s32 Ax = (s32)(pVectTarget[lineIdxA].x);
-        s32 Ay = (s32)(pVectTarget[lineIdxA].y);
+        s32 Ax = B3L_RoundingToS(pVectTarget[lineIdxA].x);
+        s32 Ay = B3L_RoundingToS(pVectTarget[lineIdxA].y);
         f32 Az = pVectTarget[lineIdxA].z;
-        s32 Bx = (s32)(pVectTarget[lineIdxB].x);
-        s32 By = (s32)(pVectTarget[lineIdxB].y);
+        s32 Bx = B3L_RoundingToS(pVectTarget[lineIdxB].x);
+        s32 By = B3L_RoundingToS(pVectTarget[lineIdxB].y);
         f32 Bz = pVectTarget[lineIdxB].z;
         if (B3L_TEST(testA,B3L_IN_SPACE )&&
             B3L_TEST(testB,B3L_IN_SPACE )){
@@ -2206,7 +2248,7 @@ static void RenderPolygon(B3LPolygonObj_t *pObj,render_t *pRender, mat4_t *pMat)
 
 
 static void RenderTexMesh(B3LMeshObj_t *pObj,render_t *pRender, mat4_t *pMat,u32 renderLevel){
-#ifdef B3L_DEBUG
+#if  B3L_DEBUG == 1
 printf("Draw a mesh");
 #endif
     int32_t i;
@@ -2395,7 +2437,7 @@ __attribute__((always_inline)) static inline void DrawDepthLineClip(s32 Ax,s32 A
 
 __attribute__((always_inline)) static inline void DrawColorHLine(f32 x,s32 y,f32 b, f32 aZ, f32 bZ,
                                        fBuff_t finalColor, fBuff_t *pFrameBuff,zBuff_t *pZbuff) {
-    s32 intx = (s32)x,inty=y,intb=((s32)b);
+    s32 intx = B3L_RoundingToS(x),inty=y,intb=(B3L_RoundingToS(b));
     s32 clipL = 0;
     s32 clipR = RENDER_RESOLUTION_X ;
     f32 invlength = 1.0f/((f32)(intb-intx));
@@ -2421,8 +2463,11 @@ __attribute__((always_inline)) static inline void DrawColorHLine(f32 x,s32 y,f32
     s32 i = intb-intx;
 
     u32 shift = inty*RENDER_RESOLUTION_X  + intx;
-    fBuff_t *pixel = pFrameBuff +shift;
     zBuff_t  *pCurrentPixelZ = pZbuff + shift;  
+    shift = inty*RENDER_X_SHIFT  + intx;
+    fBuff_t *pixel = pFrameBuff +shift;
+    
+    
 
     zBuff_t compZ;
     for (;i>=0;i--){ //don't draw the most right pixel, so the b has already -1
@@ -2442,7 +2487,7 @@ __attribute__((always_inline)) static inline void DrawColorHLine(f32 x,s32 y,f32
 __attribute__((always_inline)) static inline void DrawTexHLine(f32 x,s32 y,f32 b, f32 aZ, f32 bZ,
 f32 aU,f32 aV,f32 bU,f32 bV, u32 lightFactor, fBuff_t *pFrameBuff,zBuff_t *pZbuff, B3L_texture_t *pTexture) {
     //printf("auv%.2f,%.2f,buv%.2f,%.2f\n",aU,aV,bU,bV);
-    s32 intx = (s32)x,inty=y,intb=((s32)b);
+    s32 intx = B3L_RoundingToS(x),inty=y,intb=(B3L_RoundingToS(b));
     //s32 b = x + length -1;//correct
     f32 u=aU,v=aV;
     s32 clipL = 0;
@@ -2450,7 +2495,6 @@ f32 aU,f32 aV,f32 bU,f32 bV, u32 lightFactor, fBuff_t *pFrameBuff,zBuff_t *pZbuf
     f32 invlength = 1.0f/((f32)(intb-intx));
     intb = intb - 1;
     //printf("invlength %.3f\n",invlength);
-    //length = Max_s32(length , 1) ;
 
     if ((intx>=clipR)||(b<clipL)){
         return;
@@ -2481,8 +2525,10 @@ f32 aU,f32 aV,f32 bU,f32 bV, u32 lightFactor, fBuff_t *pFrameBuff,zBuff_t *pZbuf
     s32 i = intb-intx;
 
     u32 shift = inty*RENDER_RESOLUTION_X  + intx;
-    fBuff_t *pixel = pFrameBuff +shift;
     zBuff_t  *pCurrentPixelZ = pZbuff + shift;  
+    shift = inty*RENDER_X_SHIFT  + intx;
+    fBuff_t *pixel = pFrameBuff +shift;
+    
     u32 uvSize = pTexture->uvSize;
     u8  *uvData = pTexture->pData;
     texLUT_t *lut = pTexture->pLUT;
@@ -2581,7 +2627,7 @@ __attribute__((always_inline)) static  inline void  DrawTriTexture(
         _swap_f32_t(z0,z1); 
         //_swap_int32_t(inty0,inty1);   
     }
-    s32 inty0 = (s32)y0,inty1 = (s32)y1,inty2 = (s32)y2;
+    s32 inty0 = B3L_RoundingToS(y0),inty1 = B3L_RoundingToS(y1),inty2 = B3L_RoundingToS(y2);
     if(inty0 == inty2) { // Handle awkward all-on-same-line case as its own thing
         return;
     }
@@ -2626,7 +2672,7 @@ __attribute__((always_inline)) static  inline void  DrawTriTexture(
             continue;
         }
         
-        if(!((y<0)||(((s32)a)==((s32)b)))){
+        if(!((y<0)||((B3L_RoundingToS(a))==(B3L_RoundingToS(b))))){
         //include a, and b how many pixel
             if(a > b){
                 DrawTexHLine(b,y,a,bZ,aZ,bU,bV,aU,aV,lightFactor,pFrameBuff,pZbuff,pTexture);
@@ -2660,12 +2706,12 @@ __attribute__((always_inline)) static  inline void  DrawTriTexture(
         inty2= RENDER_RESOLUTION_Y -1;
     }
     
-    for(; y<inty2; y++) {
+    for(; y<=inty2; y++) {
         if ((aZ>1.0f) && (bZ>1.0f)){
             continue;
         }
 
-        if(!((y<0)||(((s32)a)==((s32)b)))){
+        if(!((y<0)||((B3L_RoundingToS(a))==(B3L_RoundingToS(b))))){
         //include a, and b how many pixel
             if(a > b){
                 DrawTexHLine(b,y,a,bZ,aZ,bU,bV,aU,aV,lightFactor,pFrameBuff,pZbuff,pTexture);
@@ -2704,24 +2750,7 @@ __attribute__((always_inline)) static  inline void  DrawTriColor(
                                                                         f32 x2,f32 y2,f32 z2,
                                                                         u32 renderLevel,u32 lightFactor,fBuff_t color,
                                                                         fBuff_t *pFrameBuff,zBuff_t *pZbuff){
-//to calculate 0.5 pixel, if it works, then we will modified the project functions
-    //#ifndef _swap_f32_t
-    //#define _swap_f32_t(a, b) { f32 t = a; a = b; b = t; }
-    //#endif
-    //#ifndef _swap_int32_t
-    //#define _swap_int32_t(a, b) { int32_t t = a; a = b; b = t; }
-    //#endif
-    /*
-    #if FRAME_BUFF_COLOR_TYPE == 0               
-            fBuff_t  finalColor = (color&0x00FFFFFF)|(((u32)lightFactor)<<24);
-    #endif
-    #if FRAME_BUFF_COLOR_TYPE == 1
-            fBuff_t  finalColor  = (color&0x0FFF)|(((u16)lightFactor)<<12);
-    #endif
-    #if FRAME_BUFF_COLOR_TYPE == 2
-            fBuff_t  finalColor  = (color&0x00FF)|(((u16)lightFactor)<<8);
-    #endif
-    */
+
     fBuff_t finalColor = GetFinalColor(color,lightFactor);
     s32 y,last;
     
@@ -2743,7 +2772,7 @@ __attribute__((always_inline)) static  inline void  DrawTriColor(
         _swap_f32_t(z0,z1); 
         //_swap_int32_t(inty0,inty1);   
     }
-    s32 inty0 = (s32)y0,inty1 = (s32)y1,inty2 = (s32)y2;
+    s32 inty0 = B3L_RoundingToS(y0),inty1 = B3L_RoundingToS(y1),inty2 = B3L_RoundingToS(y2);
     if(inty0 == inty2) { // Handle awkward all-on-same-line case as its own thing
         return;
     }
@@ -2777,7 +2806,7 @@ __attribute__((always_inline)) static  inline void  DrawTriColor(
             continue;
         }
         
-        if(!((y<0)||(((s32)a)==((s32)b)))){
+        if(!((y<0)||((B3L_RoundingToS(a))==(B3L_RoundingToS(b))))){
         //include a, and b how many pixel
             if(a > b){
                 DrawColorHLine(b,y,a,bZ,aZ,finalColor,pFrameBuff,pZbuff);
@@ -2801,11 +2830,11 @@ __attribute__((always_inline)) static  inline void  DrawTriColor(
         inty2= RENDER_RESOLUTION_Y -1;
     }
     //printf("aU,%.3f aV,%.3f bU,%.3f bV%.3f \n",aU,aV,bU,bV);    
-    for(; y<inty2; y++) {
+    for(; y<=inty2; y++) {
         if ((aZ>1.0f) && (bZ>1.0f)){
             continue;
         }
-        if(!((y<0)||(((s32)a)==((s32)b)))){
+        if(!((y<0)||((B3L_RoundingToS(a))==(B3L_RoundingToS(b))))){
         //include a, and b how many pixel
             if(a > b){
                 DrawColorHLine(b,y,a,bZ,aZ,finalColor,pFrameBuff,pZbuff);
@@ -2819,3 +2848,320 @@ __attribute__((always_inline)) static  inline void  DrawTriColor(
         bZ += dz02; 
     }
 }
+
+fBuff_t *B3L_3dRenderAreaShiftCal(fBuff_t *startOfWholeFrameBuff,u32 x, u32 y){
+    startOfWholeFrameBuff += y*WHOLE_FRAME_BUFF_WIDTH+x;
+    return startOfWholeFrameBuff;
+}
+
+#define RGB_BLEND(sr, sg, sb, dr, dg, db, a) \
+    uint8_t mr = (sr * a) >> 8; \
+    uint8_t mg = (sg * a) >> 8; \
+    uint8_t mb = (sb * a) >> 8; \
+    uint16_t ia = 256 - a; \
+    dr = (mr + ((dr * ia) >> 8)); \
+    dg = (mg + ((dg * ia) >> 8)); \
+    db = (mb + ((db * ia) >> 8)); \
+
+__attribute__((always_inline)) static  inline fBuff_t  LightBlend(u32 inputPixel, u8 r, u8 g, u8 b){
+    u8 s_r = (inputPixel>>16)&0xFF;
+    u8 s_g = (inputPixel>>8)&0xFF;
+    u8 s_b = (inputPixel)&0xFF;
+    u8 s_a = (inputPixel>>24)&0xFF;
+    RGB_BLEND(s_r,s_g,s_b,r,g,b,s_a)
+    return (0xFF000000)|(r<<16)|(g<<8)|(b<<0);
+}
+
+void  B3L_AppliedLightFromAlpha(render_t *pRender){
+    u32 j = RENDER_RESOLUTION_Y;
+    u32 lineDiv16Left = (RENDER_RESOLUTION_X)&0x0000000F;
+    fBuff_t *pFBuff = pRender->pFrameBuff;
+    
+    uint32_t backColor = pRender->light.color;
+    u8 r =  (backColor&(0x00FF0000))>>16;
+    u8 g =  (backColor &(0x0000FF00))>>8;
+    u8 b =  (backColor &(0x000000FF));
+    while(j--){
+        u32 i=(RENDER_RESOLUTION_X>>4);
+        while(i--){
+            *pFBuff = LightBlend(*pFBuff, r, g, b);pFBuff++;
+            *pFBuff = LightBlend(*pFBuff, r, g, b);pFBuff++;
+            *pFBuff = LightBlend(*pFBuff, r, g, b);pFBuff++;
+            *pFBuff = LightBlend(*pFBuff, r, g, b);pFBuff++;
+            *pFBuff = LightBlend(*pFBuff, r, g, b);pFBuff++;
+            *pFBuff = LightBlend(*pFBuff, r, g, b);pFBuff++;
+            *pFBuff = LightBlend(*pFBuff, r, g, b);pFBuff++;
+            *pFBuff = LightBlend(*pFBuff, r, g, b);pFBuff++;
+            *pFBuff = LightBlend(*pFBuff, r, g, b);pFBuff++;
+            *pFBuff = LightBlend(*pFBuff, r, g, b);pFBuff++;
+            *pFBuff = LightBlend(*pFBuff, r, g, b);pFBuff++;
+            *pFBuff = LightBlend(*pFBuff, r, g, b);pFBuff++;
+            *pFBuff = LightBlend(*pFBuff, r, g, b);pFBuff++;
+            *pFBuff = LightBlend(*pFBuff, r, g, b);pFBuff++;
+            *pFBuff = LightBlend(*pFBuff, r, g, b);pFBuff++;
+            *pFBuff = LightBlend(*pFBuff, r, g, b);pFBuff++;
+        }
+        switch(lineDiv16Left){
+            case 15:
+                *pFBuff = LightBlend(*pFBuff, r, g, b);pFBuff++;
+            case 14:
+                *pFBuff = LightBlend(*pFBuff, r, g, b);pFBuff++;
+            case 13:
+                *pFBuff = LightBlend(*pFBuff, r, g, b);pFBuff++;
+            case 12:
+                *pFBuff = LightBlend(*pFBuff, r, g, b);pFBuff++;
+            case 11:
+                *pFBuff = LightBlend(*pFBuff, r, g, b);pFBuff++;
+            case 10:
+                *pFBuff = LightBlend(*pFBuff, r, g, b);pFBuff++;
+            case 9:
+                *pFBuff = LightBlend(*pFBuff, r, g, b);pFBuff++;
+            case 8:
+                *pFBuff = LightBlend(*pFBuff, r, g, b);pFBuff++;
+            case 7:
+                *pFBuff = LightBlend(*pFBuff, r, g, b);pFBuff++;
+            case 6:
+                *pFBuff = LightBlend(*pFBuff, r, g, b);pFBuff++;
+            case 5:
+                *pFBuff = LightBlend(*pFBuff, r, g, b);pFBuff++;
+            case 4:
+                *pFBuff = LightBlend(*pFBuff, r, g, b);pFBuff++;
+            case 3:
+                *pFBuff = LightBlend(*pFBuff, r, g, b);pFBuff++;
+            case 2:
+                *pFBuff = LightBlend(*pFBuff, r, g, b);pFBuff++;    
+            case 1:
+                *pFBuff = LightBlend(*pFBuff, r, g, b);pFBuff++; 
+            case 0:
+                break;
+        }
+        pFBuff+= RENDER_LINE_SKIP;
+    }
+
+}
+
+#if  B3L_DMA2D  == 1
+
+
+#include "stm32h7xx_ll_bus.h"
+#include "core_cm7.h"
+#include "stm32h7xx_ll_dma2d.h"
+#ifndef STM32H750xx
+#define STM32H750xx
+#endif
+
+#define DMA2D_START_WORKING     (DMA2DOccupied = true);  
+#define DMA2D_STOP_WORKING      (DMA2DOccupied = false); 
+
+static volatile bool DMA2DOccupied; 
+static volatile uint32_t DMACallbackCounter;
+static fBuff_t B3L_CLEAN_FRAME_COLOR;
+
+static void DMA2DDefaultCallback(void);
+static void Apply_Zoom_ColorTrans_Callback(void);
+
+
+void (*pDMA2DIRQCallback)(void);
+
+void B3L_DMA2D_Init(void){
+    DMA2DOccupied = false;
+    DMACallbackCounter = 0;
+    LL_AHB3_GRP1_EnableClock(LL_AHB3_GRP1_PERIPH_DMA2D);
+    NVIC_SetPriority(DMA2D_IRQn, NVIC_EncodePriority(NVIC_GetPriorityGrouping(),B3L_DMA2D_IRQ_PRIORITY , B3L_DMA2D_IRQ_SUB_PRIORITY ));
+    NVIC_EnableIRQ(DMA2D_IRQn);
+    //irq init
+    SET_BIT(DMA2D->CR, DMA2D_CR_TCIE|DMA2D_CR_TEIE|DMA2D_CR_CEIE);
+    pDMA2DIRQCallback = DMA2DDefaultCallback;
+}
+
+
+void DMA2D_IRQHandler(void){
+//clear the flag
+    DMA2D->IFCR = (uint32_t)(0x1F);
+ //call current callback
+    (*pDMA2DIRQCallback)();
+}
+
+static void DMA2DDefaultCallback(void){
+    DMACallbackCounter = 0;   
+     
+    DMA2D_STOP_WORKING
+}
+
+static void Apply_Zoom_ColorTrans_Callback(void){
+    switch (DMACallbackCounter){
+  case 0://copy 16bit color to its side pixel
+    //set the transform type
+    MODIFY_REG(DMA2D->CR, DMA2D_CR_MODE, LL_DMA2D_MODE_M2M);
+    //set the input address, type
+    MODIFY_REG(DMA2D->FGPFCCR, DMA2D_FGPFCCR_CM, LL_DMA2D_INPUT_MODE_RGB565);
+    DMA2D->FGMAR = B3L_LCD_BUFF_ADDR+WHOLE_FRAME_BUFF_WIDTH*WHOLE_FRAME_BUFF_HEIGHT*4; 
+    //set the target address, type
+    MODIFY_REG(DMA2D->OPFCCR, DMA2D_OPFCCR_CM, LL_DMA2D_OUTPUT_MODE_RGB565);
+    DMA2D->OMAR = B3L_LCD_BUFF_ADDR+WHOLE_FRAME_BUFF_WIDTH*WHOLE_FRAME_BUFF_HEIGHT*4+2; 
+    
+    //set the shape, 
+    MODIFY_REG(DMA2D->NLR, DMA2D_NLR_PL, (1 << DMA2D_NLR_PL_Pos)); 
+    MODIFY_REG(DMA2D->NLR, DMA2D_NLR_NL, (WHOLE_FRAME_BUFF_WIDTH*WHOLE_FRAME_BUFF_HEIGHT)); 
+    
+    //set the input 1 pixel skip
+    MODIFY_REG(DMA2D->FGOR, DMA2D_FGOR_LO, 1);
+    //set the output 1 pixel skip
+    MODIFY_REG(DMA2D->OOR, DMA2D_OOR_LO, 1);
+   
+    break;
+  case 1://copy line to ltdc buffer
+    //set the transform type
+    MODIFY_REG(DMA2D->CR, DMA2D_CR_MODE, LL_DMA2D_MODE_M2M);
+    //set the input address, type
+    MODIFY_REG(DMA2D->FGPFCCR, DMA2D_FGPFCCR_CM, LL_DMA2D_INPUT_MODE_RGB565);
+    DMA2D->FGMAR = B3L_LCD_BUFF_ADDR+WHOLE_FRAME_BUFF_WIDTH*WHOLE_FRAME_BUFF_HEIGHT*4; 
+    //set the shape, 
+    MODIFY_REG(DMA2D->NLR, DMA2D_NLR_PL, ((WHOLE_FRAME_BUFF_WIDTH*2) << DMA2D_NLR_PL_Pos)); 
+    MODIFY_REG(DMA2D->NLR, DMA2D_NLR_NL, (WHOLE_FRAME_BUFF_HEIGHT)); 
+    //set the target address, type
+    MODIFY_REG(DMA2D->OPFCCR, DMA2D_OPFCCR_CM, LL_DMA2D_OUTPUT_MODE_RGB565);
+    DMA2D->OMAR = B3L_LCD_BUFF_ADDR; 
+    //set the input 0 pixel skip
+    MODIFY_REG(DMA2D->FGOR, DMA2D_FGOR_LO, 0);
+    //set the output 320 pixel skip
+    MODIFY_REG(DMA2D->OOR, DMA2D_OOR_LO, WHOLE_FRAME_BUFF_WIDTH*2);
+ 
+    break;
+  case 2://copy line again to next
+    //set the transform type
+    MODIFY_REG(DMA2D->CR, DMA2D_CR_MODE, LL_DMA2D_MODE_M2M);
+    //set the input address, type
+    MODIFY_REG(DMA2D->FGPFCCR, DMA2D_FGPFCCR_CM, LL_DMA2D_INPUT_MODE_RGB565);
+    DMA2D->FGMAR = B3L_LCD_BUFF_ADDR; 
+    //set the shape, 
+    MODIFY_REG(DMA2D->NLR, DMA2D_NLR_PL, ((WHOLE_FRAME_BUFF_WIDTH*2) << DMA2D_NLR_PL_Pos)); 
+    MODIFY_REG(DMA2D->NLR, DMA2D_NLR_NL, (WHOLE_FRAME_BUFF_HEIGHT)); 
+    //set the target address, type
+    MODIFY_REG(DMA2D->OPFCCR, DMA2D_OPFCCR_CM, LL_DMA2D_OUTPUT_MODE_RGB565);
+    DMA2D->OMAR = B3L_LCD_BUFF_ADDR + WHOLE_FRAME_BUFF_WIDTH*4; //double pixel and 2 byte per pixel 
+    //set the input 0 pixel skip
+    MODIFY_REG(DMA2D->FGOR, DMA2D_FGOR_LO,WHOLE_FRAME_BUFF_WIDTH*2);
+    //set the output 320 pixel skip
+    MODIFY_REG(DMA2D->OOR, DMA2D_OOR_LO,WHOLE_FRAME_BUFF_WIDTH*2);
+    break;
+  case 3://clear the framebuff
+    MODIFY_REG(DMA2D->CR, DMA2D_CR_MODE, LL_DMA2D_MODE_R2M);
+    //set the reg color
+    DMA2D->FGCOLR = B3L_CLEAN_FRAME_COLOR;
+    //set the shape, 
+    MODIFY_REG(DMA2D->NLR, DMA2D_NLR_PL, (WHOLE_FRAME_BUFF_WIDTH << DMA2D_NLR_PL_Pos)); 
+    MODIFY_REG(DMA2D->NLR, DMA2D_NLR_NL, (WHOLE_FRAME_BUFF_HEIGHT)); 
+    
+    //set the target address, type
+    MODIFY_REG(DMA2D->OPFCCR, DMA2D_OPFCCR_CM, LL_DMA2D_OUTPUT_MODE_ARGB8888);
+    DMA2D->OMAR = B3L_FRAMEBUFF_ADDR ; 
+
+    //set the output 0 pixel skip
+    MODIFY_REG(DMA2D->OOR, DMA2D_OOR_LO,0);
+    
+    break;
+  case 4:
+    //clear z buff
+    MODIFY_REG(DMA2D->CR, DMA2D_CR_MODE, LL_DMA2D_MODE_R2M);
+    #if Z_BUFF_LEVEL == 2
+    //set the reg color
+    DMA2D->FGCOLR = 0x3f800000; //1.0f
+    //set the shape, 
+    MODIFY_REG(DMA2D->OPFCCR, DMA2D_OPFCCR_CM, LL_DMA2D_OUTPUT_MODE_ARGB8888);
+    #elif Z_BUFF_LEVEL == 1
+    DMA2D->FGCOLR = 0xFFFF;
+    //set the shape, 
+    MODIFY_REG(DMA2D->OPFCCR, DMA2D_OPFCCR_CM, LL_DMA2D_OUTPUT_MODE_RGB565); 
+    #elif Z_BUFF_LEVEL == 0
+    DMA2D->FGCOLR = 0xFF;
+    //set the shape, 
+    MODIFY_REG(DMA2D->OPFCCR, DMA2D_OPFCCR_CM, LL_DMA2D_OUTPUT_MODE_L8);     
+    #endif
+    MODIFY_REG(DMA2D->NLR, DMA2D_NLR_PL, ((WHOLE_FRAME_BUFF_WIDTH) << DMA2D_NLR_PL_Pos)); 
+    MODIFY_REG(DMA2D->NLR, DMA2D_NLR_NL, (WHOLE_FRAME_BUFF_HEIGHT));
+    
+    DMA2D->OMAR = (u32)zBuff; 
+    //set the output 0 pixel skip
+    MODIFY_REG(DMA2D->OOR, DMA2D_OOR_LO,0); 
+    pDMA2DIRQCallback = DMA2DDefaultCallback; 
+    break;
+    
+  }
+  DMACallbackCounter++;
+  //start the next dma2d process
+  DMA2D->CR |= DMA2D_CR_START;
+}
+
+void  B3L_DMA2DAppliedLightAndUpScale(u32 *addr,u32 wholeWidth,u32 wholeheight,u32 invLightColor){
+    SCB_CleanInvalidateDCache_by_Addr(addr, wholeWidth * wholeheight * 4);
+    //check the resource lock
+    while(B3L_DMA2DIsOccupied()){};
+    //change the callback
+    pDMA2DIRQCallback = Apply_Zoom_ColorTrans_Callback;
+    //reset the counter
+    DMACallbackCounter = 0;
+    //start the first DMA2D process
+    //set the transform type
+    MODIFY_REG(DMA2D->CR, DMA2D_CR_MODE, LL_DMA2D_MODE_M2M_BLEND_FIXED_COLOR_BG);
+    //set the input address, type
+    MODIFY_REG(DMA2D->FGPFCCR, DMA2D_FGPFCCR_CM, LL_DMA2D_INPUT_MODE_ARGB8888);
+    DMA2D->FGMAR = B3L_FRAMEBUFF_ADDR; 
+    DMA2D->BGCOLR = invLightColor;
+    //set the target address, type
+    MODIFY_REG(DMA2D->OPFCCR, DMA2D_OPFCCR_CM, LL_DMA2D_OUTPUT_MODE_RGB565);
+    DMA2D->OMAR = B3L_LCD_BUFF_ADDR+WHOLE_FRAME_BUFF_WIDTH*WHOLE_FRAME_BUFF_HEIGHT*4;   
+    //set the shape, 
+    MODIFY_REG(DMA2D->NLR, DMA2D_NLR_PL, (1 << DMA2D_NLR_PL_Pos)); 
+    MODIFY_REG(DMA2D->NLR, DMA2D_NLR_NL, (WHOLE_FRAME_BUFF_WIDTH*WHOLE_FRAME_BUFF_HEIGHT));         
+    //set the line skip
+    MODIFY_REG(DMA2D->FGOR, DMA2D_FGOR_LO,0);
+    MODIFY_REG(DMA2D->OOR, DMA2D_OOR_LO, 1);
+    DMA2D_START_WORKING
+    DMA2D->CR |= DMA2D_CR_START;
+}
+
+void B3L_DMA2DAppliedLightTo565(u32 *addr,u32 wholeWidth,u32 wholeheight,u32 invLightColor){
+    #if (FRAME_BUFF_COLOR_TYPE  == 1) 
+    SCB_CleanInvalidateDCache_by_Addr(addr, wholeWidth * wholeheight * 2);
+    MODIFY_REG(DMA2D->FGPFCCR, DMA2D_FGPFCCR_CM, LL_DMA2D_INPUT_MODE_ARGB4444);
+    #endif
+    #if (FRAME_BUFF_COLOR_TYPE  == 2)
+    SCB_CleanInvalidateDCache_by_Addr(addr, wholeWidth * wholeheight * 2);
+    MODIFY_REG(DMA2D->FGPFCCR, DMA2D_FGPFCCR_CM, LL_DMA2D_INPUT_MODE_AL88);
+    #endif
+    #if (FRAME_BUFF_COLOR_TYPE  == 0)
+    SCB_CleanInvalidateDCache_by_Addr(addr, wholeWidth * wholeheight * 4);
+    MODIFY_REG(DMA2D->FGPFCCR, DMA2D_FGPFCCR_CM, LL_DMA2D_INPUT_MODE_ARGB8888);
+    #endif
+    //check the resource lock
+    while(B3L_DMA2DIsOccupied()){};
+    //change the callback
+    pDMA2DIRQCallback = DMA2DDefaultCallback;
+    //reset the counter
+    DMACallbackCounter = 0;
+    //start the first DMA2D process
+    //set the transform type
+    MODIFY_REG(DMA2D->CR, DMA2D_CR_MODE, LL_DMA2D_MODE_M2M_BLEND_FIXED_COLOR_BG);
+    //set the input address, type
+
+    DMA2D->FGMAR = B3L_FRAMEBUFF_ADDR; 
+    DMA2D->BGCOLR = invLightColor;
+    //set the target address, type
+    MODIFY_REG(DMA2D->OPFCCR, DMA2D_OPFCCR_CM, LL_DMA2D_OUTPUT_MODE_RGB565);
+    DMA2D->OMAR = B3L_LCD_BUFF_ADDR;   
+    //set the shape, 
+    MODIFY_REG(DMA2D->NLR, DMA2D_NLR_PL, (WHOLE_FRAME_BUFF_WIDTH << DMA2D_NLR_PL_Pos)); 
+    MODIFY_REG(DMA2D->NLR, DMA2D_NLR_NL, (WHOLE_FRAME_BUFF_HEIGHT));         
+    //set the line skip
+    MODIFY_REG(DMA2D->FGOR, DMA2D_FGOR_LO,0);
+    MODIFY_REG(DMA2D->OOR, DMA2D_OOR_LO, 0);
+    DMA2D_START_WORKING
+    DMA2D->CR |= DMA2D_CR_START;
+}
+
+bool  B3L_DMA2DOcupied(void){
+    return DMA2DOccupied;
+}
+
+#endif
