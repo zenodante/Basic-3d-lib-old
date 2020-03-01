@@ -65,15 +65,15 @@ type 2: 16bit 8:8     AL
 //current only type 0 tested
 #define FRAME_BUFF_COLOR_TYPE   0
 //the whole frame buff size
-#define WHOLE_FRAME_BUFF_WIDTH  160
-#define WHOLE_FRAME_BUFF_HEIGHT 120
+#define WHOLE_FRAME_BUFF_WIDTH  320
+#define WHOLE_FRAME_BUFF_HEIGHT 240
 //the render window size
-#define RENDER_RESOLUTION_X     160
-#define RENDER_RESOLUTION_Y     120
+#define RENDER_RESOLUTION_X     320
+#define RENDER_RESOLUTION_Y     240
 #define RENDER_X_SHIFT          WHOLE_FRAME_BUFF_WIDTH
 //half resolution in floating point value
-#define HALF_RESOLUTION_X       79.5f
-#define HALF_RESOLUTION_Y       59.5f
+#define HALF_RESOLUTION_X       159.5f
+#define HALF_RESOLUTION_Y       119.5f
 //The default aspect ratio value, you could change it at camera parm
 #define DEFAULT_ASPECT_RATIO    ((4.0f)/(3.0f))
 //1.0f == 90 degree fov,smaller is larger fov
@@ -111,7 +111,6 @@ type 2: 16bit 8:8     AL
 #define Z_BUFF_LENTH            ((RENDER_RESOLUTION_X)*(RENDER_RESOLUTION_Y))
 
 /*Type defines---------------------------------------------------------------*/
-
 typedef float    f32;
 typedef int32_t  s32;
 typedef uint32_t u32;
@@ -134,7 +133,7 @@ typedef u16 zBuff_t;
 #endif
 
 #if Z_BUFF_LEVEL == 2
-typedef f32 zBuff_t;
+typedef float zBuff_t;
 #endif
 
 #if (FRAME_BUFF_COLOR_TYPE  == 0)
@@ -502,7 +501,7 @@ extern void     B3L_CameraMoveTo(vect3_t position,camera_t *pCam);
 extern void     B3L_CameraLookAt(camera_t *pCam, vect3_t *pAt);
 extern void     B3L_SetCameraMatrixByTransform(camera_t *pCam);
 extern void     B3L_SetCameraUpDirection(camera_t *pCam, vect3_t *pUp);
-
+extern void     B3L_CameraTrackPoint(camera_t *pCam, vect3_t *pAt, vect3_t *pAngle, f32 distance);
 /*-----------------------------------------------------------------------------
 Render functions
 -----------------------------------------------------------------------------*/

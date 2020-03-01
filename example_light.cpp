@@ -4,6 +4,7 @@ extern "C" {
 #include "b3dlib.h"
 #include "B3L_support.h"
 #include "cat.h"
+#include "ship2_72tri.h"
 }
 using namespace blit;
 

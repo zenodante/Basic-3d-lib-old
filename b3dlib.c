@@ -1247,7 +1247,25 @@ void   B3L_SetCameraUpDirection(camera_t *pCam, vect3_t *pUp){
     pCam->transform.rotation.z = zAngle;
 }
 
+void   B3L_CameraTrackPoint(camera_t *pCam, vect3_t *pAt, vect3_t *pAngle, f32 distance){
+    pCam->transform.translation.y = B3L_cos(pAngle->y)*distance;
+    f32 distanceOnXZ = B3L_sin(pAngle->y)*distance;
+    pCam->transform.translation.x = B3L_cos(pAngle->x)*distanceOnXZ;
+    pCam->transform.translation.z = B3L_sin(pAngle->x)*distanceOnXZ;
+    B3L_CameraLookAt(pCam, pAt);
 
+    vect3_t up;
+    up.x= 0.0f;
+    up.z= 0.0f;
+    f32 cosY=B3L_cos(pAngle->y);
+    if (cosY != 0.0f){
+        up.y= distance/B3L_cos(pAngle->y) - pCam->transform.translation.y;
+    }else{
+        up.y = 1.0f;
+    }
+    
+    B3L_SetCameraUpDirection(pCam, &up);
+}
 /*-----------------------------------------------------------------------------
 obj functions
 -----------------------------------------------------------------------------*/
