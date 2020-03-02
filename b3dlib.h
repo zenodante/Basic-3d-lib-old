@@ -63,7 +63,7 @@ type 1: 16bit 4:4:4:4 ARGB
 type 2: 16bit 8:8     AL
 */
 //current only type 0 tested
-#define FRAME_BUFF_COLOR_TYPE   0
+#define FRAME_BUFF_COLOR_TYPE   1
 //the whole frame buff size
 #define WHOLE_FRAME_BUFF_WIDTH  320
 #define WHOLE_FRAME_BUFF_HEIGHT 240
@@ -499,9 +499,9 @@ extern void     B3L_SetCamToManualMatUpdate(camera_t *pCam);
 extern void     B3L_SetCamToAutoMatUpdate(camera_t *pCam);
 extern void     B3L_CameraMoveTo(vect3_t position,camera_t *pCam);
 extern void     B3L_CameraLookAt(camera_t *pCam, vect3_t *pAt);
-extern void     B3L_SetCameraMatrixByTransform(camera_t *pCam);
+extern void     B3L_SetCameraMatrixByTransform(camera_t *pCam, mat4_t *pMat);
 extern void     B3L_SetCameraUpDirection(camera_t *pCam, vect3_t *pUp);
-extern void     B3L_CameraTrackPoint(camera_t *pCam, vect3_t *pAt, vect3_t *pAngle, f32 distance);
+extern void     B3L_CameraTrackPoint(camera_t *pCam, vect3_t *pAt, vect3_t *paxisAngle, f32 distance);
 /*-----------------------------------------------------------------------------
 Render functions
 -----------------------------------------------------------------------------*/
@@ -554,7 +554,7 @@ extern void                 B3L_DefaultParticleUpdFunc(u32 time,B3LParticleGenOb
 After effect functions
 -----------------------------------------------------------------------------*/
 extern void                 B3L_AppliedLightFromAlpha(render_t *pRender);
-
+extern void                 B3L_AppliedLightFromAlpha4444To8888(render_t *pRender,u32 *pTgetBuff);
 #if  B3L_DMA2D  == 1
 //Call by flip function
 //irq config

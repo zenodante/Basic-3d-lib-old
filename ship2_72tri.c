@@ -190,7 +190,24 @@ const uint32_t ship2_lut[16]={
 0XFF00AAF6,
 0XFFAC0808
 };
-
+const uint16_t ship2_lut4444[16]={
+0XF000,
+0XF9AB,
+0XF329,
+0XFF76,
+0XFD8C,
+0XFFE3,
+0XFB11,
+0XFE55,
+0XF710,
+0XF0AE,
+0XF29E,
+0XFFFF,
+0XFE22,
+0XFE77,
+0XF0BF,
+0XFB11
+};
 //image size 128 ,128
 const uint8_t ship2_uvmap[8192]={
 	0X44, 0X44, 0X44, 0X44, 0X44, 0X44, 0X44, 0X44, 0X44, 0X44, 0X44, 0X44, 0X44, 0X44, 0X44, 0X44, 
@@ -710,7 +727,12 @@ const uint8_t ship2_uvmap[8192]={
 const B3L_texture_t ship_texture = { 
                                  .type    = LUT16,
                                  .uvSize  = 128,
+								 #if FRAME_BUFF_COLOR_TYPE == 0
                                  .pLUT    = (texLUT_t *)ship2_lut,
+								 #endif
+								 #if FRAME_BUFF_COLOR_TYPE == 1
+                                 .pLUT    = (texLUT_t *)ship2_lut4444,
+								 #endif
                                  .pData   = (u8 *)ship2_uvmap,
                                  .transColorIdx = 4
 };

@@ -1116,13 +1116,8 @@ void B3L_ResetLight(light_t *pLight){
     pLight->lightVect.z = 0.0f;
     pLight->color = 0xFF000000;
     pLight->factor_0 = 1.01f; //make sure it is larger than 0, now the range is 0.01~2.01
-
-#if LIGHT_BIT == 8
     pLight->factor_1 =126.7f;
-#endif
-#if LIGHT_BIT == 4
-    pLight->factor_1 =7.91f;
-#endif
+
 }
 
 __attribute__((always_inline)) static inline u32 CalLightFactor(f32 normalDotLight, f32 lightFactor0,f32 lightFactor1){
@@ -1174,9 +1169,10 @@ void B3L_InitCamera(camera_t *pCam){
     pCam->transform.translation.x = 0.0f;
     pCam->transform.translation.y = 0.0f;
     pCam->transform.translation.z = 0.0f;
-    B3L_SetCameraMatrixByTransform(pCam);
+    B3L_SetCameraMatrixByTransform(pCam,&(pCam->camMat));
 }
 
+//this function could be used to track some moving obj, generate matrix and mul with obj->world matrix
 void B3L_SetCamToManualMatUpdate(camera_t *pCam){
     B3L_SET(pCam->state,B3L_USE_CAM_MATRIX_DIRECTLY);
 }
@@ -1186,21 +1182,21 @@ void B3L_SetCamToAutoMatUpdate(camera_t *pCam){
 }
 
 //If B3L_USE_CAM_MATRIX_DIRECTLY not set, this function will be call automaticly during render
-void B3L_SetCameraMatrixByTransform(camera_t *pCam){
+void B3L_SetCameraMatrixByTransform(camera_t *pCam,mat4_t *pMat){
 
     B3L_MakeTranslationMat(-1.0f * pCam->transform.translation.x,
                             -1.0f * pCam->transform.translation.y,
                             -1.0f * pCam->transform.translation.z,
-                           &(pCam->camMat));
+                           pMat);
     mat4_t temp;
     B3L_MakeRotationMatrixZXY(pCam->transform.rotation.x,
                               pCam->transform.rotation.y,
                               pCam->transform.rotation.z,&(temp)); 
     B3L_TransposeMat4(&(temp));   
-    B3L_Mat4XMat4(&(pCam->camMat),&temp,&(pCam->camMat));  
+    B3L_Mat4XMat4(pMat,&temp,pMat);  
     //B3L_Mat4XMat4(&(pCam->camMat),&temp); 
     MakeClipMatrix(pCam->focalLength,pCam->aspectRate,&temp);
-    B3L_Mat4XMat4(&(pCam->camMat),&temp,&(pCam->camMat));  
+    B3L_Mat4XMat4(pMat,&temp,pMat);  
     //B3L_Mat4XMat4(&(pCam->camMat),&temp);   
             
 }
@@ -1247,24 +1243,31 @@ void   B3L_SetCameraUpDirection(camera_t *pCam, vect3_t *pUp){
     pCam->transform.rotation.z = zAngle;
 }
 
-void   B3L_CameraTrackPoint(camera_t *pCam, vect3_t *pAt, vect3_t *pAngle, f32 distance){
-    pCam->transform.translation.y = B3L_cos(pAngle->y)*distance;
-    f32 distanceOnXZ = B3L_sin(pAngle->y)*distance;
-    pCam->transform.translation.x = B3L_cos(pAngle->x)*distanceOnXZ;
-    pCam->transform.translation.z = B3L_sin(pAngle->x)*distanceOnXZ;
-    B3L_CameraLookAt(pCam, pAt);
-
-    vect3_t up;
-    up.x= 0.0f;
-    up.z= 0.0f;
-    f32 cosY=B3L_cos(pAngle->y);
-    if (cosY != 0.0f){
-        up.y= distance/B3L_cos(pAngle->y) - pCam->transform.translation.y;
-    }else{
-        up.y = 1.0f;
+//the axisAngle is the angle between the camera postion and x/y positive direction, clock-wise is positive increse
+void   B3L_CameraTrackPoint(camera_t *pCam, vect3_t *pAt, vect3_t *paxisAngle, f32 distance){
+    paxisAngle->y -= (f32)((s32)(paxisAngle->y));
+    if (paxisAngle->y==-0.0f){
+        paxisAngle->y = -0.001f;
     }
-    
-    B3L_SetCameraUpDirection(pCam, &up);
+    if (paxisAngle->y==0.0f){
+        paxisAngle->y = 0.001f;
+    }
+    if (paxisAngle->y>0.5f){
+        paxisAngle->y = paxisAngle->y-1.0f;
+    }
+    if (paxisAngle->y<-0.5f){
+        paxisAngle->y = 1.0f+paxisAngle->y;
+    }
+    pCam->transform.translation.y = B3L_cos(paxisAngle->y)*distance;
+    f32 distanceOnXZ = -B3L_sin(paxisAngle->y)*distance;
+    pCam->transform.translation.x = B3L_cos(paxisAngle->x)*distanceOnXZ;
+    pCam->transform.translation.z = -B3L_sin(paxisAngle->x)*distanceOnXZ;
+    B3L_CameraLookAt(pCam, pAt);
+    if (paxisAngle->y>0.0f){
+        pCam->transform.rotation.z = 0.5f+paxisAngle->z;
+    }else{
+        pCam->transform.rotation.z = paxisAngle->z;
+    }
 }
 /*-----------------------------------------------------------------------------
 obj functions
@@ -1545,7 +1548,7 @@ void B3L_RenderScence(render_t *pRender){
 
     //printf("start render\n");
     if (!B3L_TEST(pRender->camera.state,B3L_USE_CAM_MATRIX_DIRECTLY)){
-        B3L_SetCameraMatrixByTransform(&(pRender->camera));
+        B3L_SetCameraMatrixByTransform(&(pRender->camera),&(pRender->camera.camMat));
     }
     UpdateLightVect(pRender);
 
@@ -2954,6 +2957,83 @@ void  B3L_AppliedLightFromAlpha(render_t *pRender){
                 break;
         }
         pFBuff+= RENDER_LINE_SKIP;
+    }
+
+}
+__attribute__((always_inline)) static  inline u32  LightBlend4(u16 inputPixel, u8 r, u8 g, u8 b){
+    u8 s_r = ((inputPixel>>8)&0x0F)<<4;
+    u8 s_g = ((inputPixel>>4)&0x0F)<<4;
+    u8 s_b = ((inputPixel)&0x0F)<<4;
+    u8 s_a = ((inputPixel>>12)&0x0F)<<4;
+    RGB_BLEND(s_r,s_g,s_b,r,g,b,s_a)
+    return (0xFF000000)|(r<<16)|(g<<8)|(b<<0);
+    //return (0xFF000000)|(s_r<<16)|(s_g<<8)|(s_b<<0);
+}
+void  B3L_AppliedLightFromAlpha4444To8888(render_t *pRender,u32 *pTgetBuff){
+u32 j = RENDER_RESOLUTION_Y;
+    u32 lineDiv16Left = (RENDER_RESOLUTION_X)&0x0000000F;
+    fBuff_t *pFBuff = pRender->pFrameBuff;
+    
+    uint32_t backColor = pRender->light.color;
+    u8 r =  (backColor&(0x00FF0000))>>16;
+    u8 g =  (backColor &(0x0000FF00))>>8;
+    u8 b =  (backColor &(0x000000FF));
+    while(j--){
+        u32 i=(RENDER_RESOLUTION_X>>4);
+        while(i--){
+            *pTgetBuff = LightBlend4(*pFBuff, r, g, b);pTgetBuff++;pFBuff++;
+            *pTgetBuff = LightBlend4(*pFBuff, r, g, b);pTgetBuff++;pFBuff++;
+            *pTgetBuff = LightBlend4(*pFBuff, r, g, b);pTgetBuff++;pFBuff++;
+            *pTgetBuff = LightBlend4(*pFBuff, r, g, b);pTgetBuff++;pFBuff++;
+            *pTgetBuff = LightBlend4(*pFBuff, r, g, b);pTgetBuff++;pFBuff++;
+            *pTgetBuff = LightBlend4(*pFBuff, r, g, b);pTgetBuff++;pFBuff++;
+            *pTgetBuff = LightBlend4(*pFBuff, r, g, b);pTgetBuff++;pFBuff++;
+            *pTgetBuff = LightBlend4(*pFBuff, r, g, b);pTgetBuff++;pFBuff++;
+            *pTgetBuff = LightBlend4(*pFBuff, r, g, b);pTgetBuff++;pFBuff++;
+            *pTgetBuff = LightBlend4(*pFBuff, r, g, b);pTgetBuff++;pFBuff++;
+            *pTgetBuff = LightBlend4(*pFBuff, r, g, b);pTgetBuff++;pFBuff++;
+            *pTgetBuff = LightBlend4(*pFBuff, r, g, b);pTgetBuff++;pFBuff++;
+            *pTgetBuff = LightBlend4(*pFBuff, r, g, b);pTgetBuff++;pFBuff++;
+            *pTgetBuff = LightBlend4(*pFBuff, r, g, b);pTgetBuff++;pFBuff++;
+            *pTgetBuff = LightBlend4(*pFBuff, r, g, b);pTgetBuff++;pFBuff++;
+            *pTgetBuff = LightBlend4(*pFBuff, r, g, b);pTgetBuff++;pFBuff++;
+        }
+        switch(lineDiv16Left){
+            case 15:
+                *pTgetBuff = LightBlend4(*pFBuff, r, g, b);pTgetBuff++;pFBuff++;
+            case 14:
+                *pTgetBuff = LightBlend4(*pFBuff, r, g, b);pTgetBuff++;pFBuff++;
+            case 13:
+                *pTgetBuff = LightBlend4(*pFBuff, r, g, b);pTgetBuff++;pFBuff++;
+            case 12:
+                *pTgetBuff = LightBlend4(*pFBuff, r, g, b);pTgetBuff++;pFBuff++;
+            case 11:
+                *pTgetBuff = LightBlend4(*pFBuff, r, g, b);pTgetBuff++;pFBuff++;
+            case 10:
+                *pTgetBuff = LightBlend4(*pFBuff, r, g, b);pTgetBuff++;pFBuff++;
+            case 9:
+                *pTgetBuff = LightBlend4(*pFBuff, r, g, b);pTgetBuff++;pFBuff++;
+            case 8:
+                *pTgetBuff = LightBlend4(*pFBuff, r, g, b);pTgetBuff++;pFBuff++;
+            case 7:
+                *pTgetBuff = LightBlend4(*pFBuff, r, g, b);pTgetBuff++;pFBuff++;
+            case 6:
+                *pTgetBuff = LightBlend4(*pFBuff, r, g, b);pTgetBuff++;pFBuff++;
+            case 5:
+                *pTgetBuff = LightBlend4(*pFBuff, r, g, b);pTgetBuff++;pFBuff++;
+            case 4:
+                *pTgetBuff = LightBlend4(*pFBuff, r, g, b);pTgetBuff++;pFBuff++;
+            case 3:
+                *pTgetBuff = LightBlend4(*pFBuff, r, g, b);pTgetBuff++;pFBuff++;
+            case 2:
+                *pTgetBuff = LightBlend4(*pFBuff, r, g, b);pTgetBuff++;pFBuff++;    
+            case 1:
+                *pTgetBuff = LightBlend4(*pFBuff, r, g, b);pTgetBuff++;pFBuff++; 
+            case 0:
+                break;
+        }
+        pFBuff+= RENDER_LINE_SKIP;
+        pTgetBuff+= RENDER_LINE_SKIP;
     }
 
 }
