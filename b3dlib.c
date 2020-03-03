@@ -295,7 +295,10 @@ __attribute__((always_inline)) static  inline void     DrawDepthLineClip(s32 Ax,
  /*-----------------------------------------------------------------------------
 Camera functions
 -----------------------------------------------------------------------------*/
-
+static void     UpdateCam(render_t *pRender);
+static void     CameraTweenPositionAngle(vect3_t  *pPrevPAngle,f32 tweenSpeed, vect3_t *pModifiTarget);
+static void     CameraTrackPoint(camera_t *pCam, vect3_t *pAt, vect3_t *paxisAngle, f32 distance);
+static void     CalTargetPositonAngle(vect3_t *pTgtRotate, vect3_t *pTgtPositionAngle,vect3_t *pResult);
  /*-----------------------------------------------------------------------------
 Obj list functions
 -----------------------------------------------------------------------------*/
@@ -1243,8 +1246,47 @@ void   B3L_SetCameraUpDirection(camera_t *pCam, vect3_t *pUp){
     pCam->transform.rotation.z = zAngle;
 }
 
+void B3L_CamStopTrack(camera_t *pCam){
+    B3L_CLR(pCam->state,B3L_CAMERA_TRACK_OBJ_MODEL);
+}
 
-void   B3L_CameraTrackPoint(camera_t *pCam, vect3_t *pAt, vect3_t *paxisAngle, f32 distance){
+void B3L_CamStartTrack(camera_t *pCam){
+    B3L_SET(pCam->state,B3L_CAMERA_TRACK_OBJ_MODEL);
+}
+
+void B3L_CamSetTrack(camera_t *pCam, B3LObj_t  *pTrackObj,f32 trackDistance, f32 trackAngleSpeed, f32 targetAX, f32 targetAY, f32 targetAZ){
+    pCam->pTrackObj = pTrackObj;
+    pCam->trackDistance = trackDistance;
+    pCam->trackTweenSpeed = trackAngleSpeed;
+    pCam->PositionAngle.x = targetAX;
+    pCam->PositionAngle.y = targetAY;
+    pCam->PositionAngle.z = targetAZ;
+    CalTargetPositonAngle(&(pCam->pTrackObj->transform.rotation), &(pCam->PositionAngle),&(pCam->PrevPositionAngle));
+
+}
+
+static void   CameraTweenPositionAngle(vect3_t  *pPrevPAngle,f32 tweenSpeed, vect3_t *pModifiTarget){
+    f32 dx = pModifiTarget->x - pPrevPAngle->x;
+    f32 dy = pModifiTarget->y - pPrevPAngle->y;
+    f32 dz = pModifiTarget->z - pPrevPAngle->z;
+    if (dx<-tweenSpeed){
+        pModifiTarget->x = pPrevPAngle->x - tweenSpeed;
+    }else if(dx > tweenSpeed){
+        pModifiTarget->x = pPrevPAngle->x + tweenSpeed;
+    }
+    if (dy<-tweenSpeed){
+        pModifiTarget->y = pPrevPAngle->y - tweenSpeed;
+    }else if(dy > tweenSpeed){
+        pModifiTarget->y = pPrevPAngle->y + tweenSpeed;
+    }
+    if (dz<-tweenSpeed){
+        pModifiTarget->z = pPrevPAngle->z - tweenSpeed;
+    }else if(dz > tweenSpeed){
+        pModifiTarget->z = pPrevPAngle->z + tweenSpeed;
+    }
+}
+
+static void   CameraTrackPoint(camera_t *pCam, vect3_t *pAt, vect3_t *paxisAngle, f32 distance){
     paxisAngle->x -= (f32)((s32)(paxisAngle->x));
     paxisAngle->y -= (f32)((s32)(paxisAngle->y));
     paxisAngle->z -= (f32)((s32)(paxisAngle->z));
@@ -1272,10 +1314,32 @@ void   B3L_CameraTrackPoint(camera_t *pCam, vect3_t *pAt, vect3_t *paxisAngle, f
     }
 }
 
- void B3L_CalTargetPositonAngle(vect3_t *pTgtRotate, vect3_t *pTgtPositionAngle,vect3_t *pResult){
+static void CalTargetPositonAngle(vect3_t *pTgtRotate, vect3_t *pTgtPositionAngle,vect3_t *pResult){
      pResult->x = pTgtRotate->x + pTgtPositionAngle->x;
      pResult->y = pTgtRotate->y - pTgtPositionAngle->y;
      pResult->z = pTgtRotate->z + pTgtPositionAngle->z;
+}
+
+static void  UpdateCam(render_t *pRender){
+    //if current in track obj mode
+    if(B3L_TEST(pRender->camera.state,B3L_CAMERA_TRACK_OBJ_MODEL)){
+        //calculate the track information 
+        vect3_t tweenPositionAngle;
+        CalTargetPositonAngle(&(pRender->camera.pTrackObj->transform.rotation), &(pRender->camera.PositionAngle),&tweenPositionAngle);
+        CameraTweenPositionAngle(&(pRender->camera.PrevPositionAngle),pRender->camera.trackTweenSpeed,&tweenPositionAngle);
+        
+        pRender->camera.PrevPositionAngle.x = tweenPositionAngle.x;
+        pRender->camera.PrevPositionAngle.y = tweenPositionAngle.y;
+        pRender->camera.PrevPositionAngle.z = tweenPositionAngle.z;
+        CameraTrackPoint(&(pRender->camera),&(pRender->camera.pTrackObj->transform.translation),
+                              &tweenPositionAngle,pRender->camera.trackDistance);
+    }
+    //printf("start render\n");
+    //if not use customer matrix set, generate camera matrix from camera transform
+    if (!B3L_TEST(pRender->camera.state,B3L_USE_CAM_MATRIX_DIRECTLY)){
+        B3L_SetCameraMatrixByTransform(&(pRender->camera),&(pRender->camera.camMat));
+    }
+
 }
 /*-----------------------------------------------------------------------------
 obj functions
@@ -1553,11 +1617,8 @@ static void RenderMeshObjs(render_t *pRender){
 }
 
 void B3L_RenderScence(render_t *pRender){
+    UpdateCam(pRender);
 
-    //printf("start render\n");
-    if (!B3L_TEST(pRender->camera.state,B3L_USE_CAM_MATRIX_DIRECTLY)){
-        B3L_SetCameraMatrixByTransform(&(pRender->camera),&(pRender->camera.camMat));
-    }
     UpdateLightVect(pRender);
 
     RenderMeshObjs(pRender);

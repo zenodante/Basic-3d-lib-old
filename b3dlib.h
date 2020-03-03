@@ -204,23 +204,7 @@ typedef struct{
     vect3_t             scale;
     vect3_t             translation;
 }transform3D_t;
-/*
-camera_t state
-   31     2423     1615      87
-   ------------------------------------
-31|        |        |        |       A|0
-  ------------------------------------
-A   use the camMat directly, not call set camera matrix function during rendering
-*/
-#define  B3L_USE_CAM_MATRIX_DIRECTLY         (0)
 
-typedef struct{
-    u32                 state;
-    f32                 aspectRate;
-    f32                 focalLength;
-    transform3D_t       transform;
-    mat4_t              camMat;
-}camera_t;
 
 typedef struct {
     u16                 vectNum;
@@ -397,6 +381,30 @@ typedef struct{
     f32                 factor_1;
 }light_t;
 
+/*
+camera_t state
+   31     2423     1615      87
+   ------------------------------------
+31|        |        |        |      BA|0
+  ------------------------------------
+A   use the camMat directly, not call set camera matrix function during rendering
+B   camera track obj mode
+*/
+#define  B3L_USE_CAM_MATRIX_DIRECTLY         (0)
+#define  B3L_CAMERA_TRACK_OBJ_MODEL          (1)
+typedef struct{
+    u32                 state;
+    f32                 aspectRate;
+    f32                 focalLength;
+    transform3D_t       transform;
+    mat4_t              camMat;
+    f32                 trackDistance;
+    f32                 trackTweenSpeed;
+    vect3_t             PositionAngle;
+    vect3_t             PrevPositionAngle;
+    B3LObj_t           *pTrackObj;
+}camera_t;
+
 typedef struct{   
     fBuff_t             *pFrameBuff;
     zBuff_t             *pZBuff;
@@ -501,8 +509,10 @@ extern void     B3L_CameraMoveTo(vect3_t position,camera_t *pCam);
 extern void     B3L_CameraLookAt(camera_t *pCam, vect3_t *pAt);
 extern void     B3L_SetCameraMatrixByTransform(camera_t *pCam, mat4_t *pMat);
 extern void     B3L_SetCameraUpDirection(camera_t *pCam, vect3_t *pUp);
-extern void     B3L_CameraTrackPoint(camera_t *pCam, vect3_t *pAt, vect3_t *paxisAngle, f32 distance);
-extern void     B3L_CalTargetPositonAngle(vect3_t *pTgtRotate, vect3_t *pTgtPositionAngle,vect3_t *pResult);
+extern void     B3L_CamStopTrack(camera_t *pCam);
+extern void     B3L_CamStartTrack(camera_t *pCam);
+extern void     B3L_CamSetTrack(camera_t *pCam, B3LObj_t  *pTrackObj,f32 trackDistance, f32 trackAngleSpeed, f32 targetAX, f32 targetAY, f32 targetAZ);
+
 /*-----------------------------------------------------------------------------
 Render functions
 -----------------------------------------------------------------------------*/

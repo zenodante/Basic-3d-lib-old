@@ -52,6 +52,8 @@ void init() {
 
     
     B3L_TweenStart(&tCatZ,0);
+    B3L_CamSetTrack(&(B3Lrender.camera), (B3LObj_t  *)pShip,200.0f, 0.003f,0.20f, 0.0f, 0.0f);
+    B3L_CamStartTrack(&(B3Lrender.camera));
 
 }
 
@@ -66,40 +68,48 @@ void update(uint32_t time){
     if (pressed(DPAD_UP)){
         //angle.x -=0.002f;
         //B3Lrender.light.lightVect.z += 0.01f;
-        pShip->transform.rotation.x -=0.002f;
+        pShip->transform.rotation.x +=0.002f;
+        pShip->transform.rotation.x -= (f32)((s32)(pShip->transform.rotation.x));
     }
     if (pressed(DPAD_DOWN)){
         //angle.x +=0.002f; 
         //B3Lrender.light.lightVect.z -= 0.01f;
-        pShip->transform.rotation.x +=0.002f; 
+        pShip->transform.rotation.x -=0.002f;
+        pShip->transform.rotation.x -= (f32)((s32)(pShip->transform.rotation.x)); 
     }
     if (pressed(DPAD_LEFT)){
         //angle.y +=0.002f;
         //B3Lrender.light.lightVect.x -= 0.01f; 
-        pShip->transform.rotation.y -=0.002f;   
+        pShip->transform.rotation.y +=0.002f;
+        pShip->transform.rotation.y -= (f32)((s32)(pShip->transform.rotation.y));   
     }
     if (pressed(DPAD_RIGHT)){
          //angle.y -=0.002f;  
          //B3Lrender.light.lightVect.x += 0.01f;
-         pShip->transform.rotation.y +=0.002f;
+         pShip->transform.rotation.y -=0.002f;
+        pShip->transform.rotation.y -= (f32)((s32)(pShip->transform.rotation.y));
     }
     if (pressed(A)){
-        distance += 1.0f;
+        B3Lrender.camera.trackDistance += 1.0f;
+        //distance += 1.0f;
     }
     if (pressed(B)){
-        distance -= 1.0f;
+        B3Lrender.camera.trackDistance -= 1.0f;
+        //distance -= 1.0f;
     }
+    /*
     vect3_t result;
     
-    B3L_CalTargetPositonAngle(&(pShip->transform.rotation),
+    CalTargetPositonAngle(&(pShip->transform.rotation),
                                    &angle, &result);
      
 
-    B3L_CameraTrackPoint(&(B3Lrender.camera), &at, &result, distance);
-    //B3L_CameraTrackPoint(&(B3Lrender.camera), &at, &angle, distance);
+    CameraTrackPoint(&(B3Lrender.camera), &at, &result, distance);
+    */
+    //CameraTrackPoint(&(B3Lrender.camera), &at, &angle, distance);
 
 
-    //B3L_CameraTrackPoint(&(B3Lrender.camera), &at, &angle, distance);
+    //CameraTrackPoint(&(B3Lrender.camera), &at, &angle, distance);
     //B3L_CameraLookAt(&(B3Lrender.camera), &at);
     //vect3_t up ={2.0f,3.0f,0.0f};
     //B3L_SetCameraUpDirection(&(B3Lrender.camera),&up);
