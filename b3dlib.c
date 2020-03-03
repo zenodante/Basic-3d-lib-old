@@ -1243,7 +1243,7 @@ void   B3L_SetCameraUpDirection(camera_t *pCam, vect3_t *pUp){
     pCam->transform.rotation.z = zAngle;
 }
 
-// clock-wise is positive increse
+
 void   B3L_CameraTrackPoint(camera_t *pCam, vect3_t *pAt, vect3_t *paxisAngle, f32 distance){
     paxisAngle->x -= (f32)((s32)(paxisAngle->x));
     paxisAngle->y -= (f32)((s32)(paxisAngle->y));
@@ -1261,11 +1261,11 @@ void   B3L_CameraTrackPoint(camera_t *pCam, vect3_t *pAt, vect3_t *paxisAngle, f
         paxisAngle->x = 1.0f+paxisAngle->x;
     }
     pCam->transform.translation.y = B3L_cos(paxisAngle->x)*distance+pAt->y;
-    f32 distanceOnXZ = -B3L_sin(paxisAngle->x)*distance;
-    pCam->transform.translation.x = -B3L_sin(paxisAngle->y)*distanceOnXZ+pAt->x;
+    f32 distanceOnXZ = B3L_sin(paxisAngle->x)*distance;
+    pCam->transform.translation.x = B3L_sin(paxisAngle->y)*distanceOnXZ+pAt->x;
     pCam->transform.translation.z = -B3L_cos(paxisAngle->y)*distanceOnXZ+pAt->z;
     B3L_CameraLookAt(pCam, pAt);
-    if (paxisAngle->x>0.0f){
+    if (paxisAngle->x<0.0f){
         pCam->transform.rotation.z = 0.5f+paxisAngle->z;
     }else{
         pCam->transform.rotation.z = paxisAngle->z;
@@ -1274,7 +1274,7 @@ void   B3L_CameraTrackPoint(camera_t *pCam, vect3_t *pAt, vect3_t *paxisAngle, f
 
  void B3L_CalTargetPositonAngle(vect3_t *pTgtRotate, vect3_t *pTgtPositionAngle,vect3_t *pResult){
      pResult->x = pTgtRotate->x + pTgtPositionAngle->x;
-     pResult->y = pTgtRotate->y + pTgtPositionAngle->y;
+     pResult->y = pTgtRotate->y - pTgtPositionAngle->y;
      pResult->z = pTgtRotate->z + pTgtPositionAngle->z;
 }
 /*-----------------------------------------------------------------------------
