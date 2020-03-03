@@ -502,6 +502,7 @@ extern void     B3L_CameraLookAt(camera_t *pCam, vect3_t *pAt);
 extern void     B3L_SetCameraMatrixByTransform(camera_t *pCam, mat4_t *pMat);
 extern void     B3L_SetCameraUpDirection(camera_t *pCam, vect3_t *pUp);
 extern void     B3L_CameraTrackPoint(camera_t *pCam, vect3_t *pAt, vect3_t *paxisAngle, f32 distance);
+extern void     B3L_CalTargetPositonAngle(vect3_t *pTgtRotate, vect3_t *pTgtPositionAngle,vect3_t *pResult);
 /*-----------------------------------------------------------------------------
 Render functions
 -----------------------------------------------------------------------------*/
