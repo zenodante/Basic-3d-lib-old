@@ -1262,7 +1262,7 @@ void   B3L_CameraTrackPoint(camera_t *pCam, vect3_t *pAt, vect3_t *paxisAngle, f
     }
     pCam->transform.translation.y = B3L_cos(paxisAngle->x)*distance+pAt->y;
     f32 distanceOnXZ = -B3L_sin(paxisAngle->x)*distance;
-    pCam->transform.translation.x = B3L_sin(paxisAngle->y)*distanceOnXZ+pAt->x;
+    pCam->transform.translation.x = -B3L_sin(paxisAngle->y)*distanceOnXZ+pAt->x;
     pCam->transform.translation.z = -B3L_cos(paxisAngle->y)*distanceOnXZ+pAt->z;
     B3L_CameraLookAt(pCam, pAt);
     if (paxisAngle->x>0.0f){

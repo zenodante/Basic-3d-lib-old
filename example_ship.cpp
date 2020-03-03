@@ -64,24 +64,24 @@ void update(uint32_t time){
 
 
     if (pressed(DPAD_UP)){
-        //angle.x +=0.002f;
+        angle.x -=0.002f;
         //B3Lrender.light.lightVect.z += 0.01f;
-        pShip->transform.rotation.x -=0.002f;
+        //pShip->transform.rotation.x -=0.002f;
     }
     if (pressed(DPAD_DOWN)){
-        //angle.x -=0.002f; 
+        angle.x +=0.002f; 
         //B3Lrender.light.lightVect.z -= 0.01f;
-        pShip->transform.rotation.x +=0.002f; 
+        //pShip->transform.rotation.x +=0.002f; 
     }
     if (pressed(DPAD_LEFT)){
-        //angle.y -=0.002f;
+        angle.y +=0.002f;
         //B3Lrender.light.lightVect.x -= 0.01f; 
-        pShip->transform.rotation.y -=0.002f;   
+        //pShip->transform.rotation.y -=0.002f;   
     }
     if (pressed(DPAD_RIGHT)){
-         //angle.y +=0.002f;  
+         angle.y -=0.002f;  
          //B3Lrender.light.lightVect.x += 0.01f;
-         pShip->transform.rotation.y +=0.002f;
+         //pShip->transform.rotation.y +=0.002f;
     }
     if (pressed(A)){
         distance += 1.0f;
