@@ -75,8 +75,14 @@ class imgConvert:
                 temp = (0xFF<<24)|(r<<16)|(g<<8)|b    
             else:
                 r = int(round(r/16.0))
+                if r>15:
+                    r=15
                 g = int(round(g/16.0))
+                if g>15:
+                    g=15
                 b = int(round(b/16.0))
+                if b>15:
+                    b=15
                 temp= (0xF<<12)|(r<<8)|(g<<4)|b
             lut.append(temp)    
                 
