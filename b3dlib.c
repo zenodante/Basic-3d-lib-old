@@ -1172,7 +1172,18 @@ void B3L_InitCamera(camera_t *pCam){
     pCam->transform.translation.x = 0.0f;
     pCam->transform.translation.y = 0.0f;
     pCam->transform.translation.z = 0.0f;
-    B3L_SetCameraMatrixByTransform(pCam,&(pCam->camMat));
+    pCam->pTrackObj = (B3LObj_t *)NULL;
+    pCam->trackDistance = 0.0f;
+    pCam->trackTweenSpeed = 0.0f;
+    pCam->PositionAngle.x = 0.0f;
+    pCam->PositionAngle.y = 0.0f;
+    pCam->PositionAngle.z = 0.0f;
+    pCam->PrevPositionAngle.x = 0.0f;
+    pCam->PrevPositionAngle.y = 0.0f;
+    pCam->PrevPositionAngle.z = 0.0f;
+    pCam->state = 0;
+
+    //B3L_SetCameraMatrixByTransform(pCam,&(pCam->camMat));
 }
 
 //this function could be used to track some moving obj, generate matrix and mul with obj->world matrix
@@ -1266,23 +1277,38 @@ void B3L_CamSetTrack(camera_t *pCam, B3LObj_t  *pTrackObj,f32 trackDistance, f32
 }
 
 static void   CameraTweenPositionAngle(vect3_t  *pPrevPAngle,f32 tweenSpeed, vect3_t *pModifiTarget){
+    pModifiTarget->x -= (f32)((s32)(pModifiTarget->x));
+    pModifiTarget->y -= (f32)((s32)(pModifiTarget->y));
+    pModifiTarget->y -= (f32)((s32)(pModifiTarget->y));
+    pPrevPAngle->x -=(f32)((s32)(pPrevPAngle->x));
+    pPrevPAngle->y -=(f32)((s32)(pPrevPAngle->y));
+    pPrevPAngle->z -=(f32)((s32)(pPrevPAngle->z));
     f32 dx = pModifiTarget->x - pPrevPAngle->x;
+    if (dx > 0.5f){dx = dx - 1.0f;}
+    if (dx < -0.5f){dx = dx + 1.0f;}      
     f32 dy = pModifiTarget->y - pPrevPAngle->y;
+    if (dy > 0.5f){dy = dy - 1.0f;}
+    if (dy < -0.5f){dy = dy + 1.0f;}
     f32 dz = pModifiTarget->z - pPrevPAngle->z;
+    if (dz > 0.5f){dz = dz - 1.0f;}
+    if (dz < -0.5f){dz = dz + 1.0f;}
+    dx = Clamp_f(dx,-0.125f,0.125f);
+    dy = Clamp_f(dy,-0.125f,0.125f);
+    dz = Clamp_f(dz,-0.125f,0.125f);
     if (dx<-tweenSpeed){
-        pModifiTarget->x = pPrevPAngle->x - tweenSpeed;
+        pModifiTarget->x = pModifiTarget->x -dx - tweenSpeed;
     }else if(dx > tweenSpeed){
-        pModifiTarget->x = pPrevPAngle->x + tweenSpeed;
+        pModifiTarget->x = pModifiTarget->x -dx + tweenSpeed;
     }
     if (dy<-tweenSpeed){
-        pModifiTarget->y = pPrevPAngle->y - tweenSpeed;
+        pModifiTarget->y = pModifiTarget->y - dy - tweenSpeed;
     }else if(dy > tweenSpeed){
-        pModifiTarget->y = pPrevPAngle->y + tweenSpeed;
+        pModifiTarget->y = pModifiTarget->y - dy + tweenSpeed;
     }
     if (dz<-tweenSpeed){
-        pModifiTarget->z = pPrevPAngle->z - tweenSpeed;
+        pModifiTarget->z = pModifiTarget->z - dz - tweenSpeed;
     }else if(dz > tweenSpeed){
-        pModifiTarget->z = pPrevPAngle->z + tweenSpeed;
+        pModifiTarget->z = pModifiTarget->z - dz + tweenSpeed;
     }
 }
 
@@ -1756,6 +1782,7 @@ B3LObj_t * B3L_GetFreeObj(render_t *pRender){
         //isolate the returned obj 
         returnObj->next = (B3LObj_t *)NULL;
         returnObj->privous = (B3LObj_t *)NULL;
+        returnObj->state = 0;
         return returnObj;
     }else{
         return (B3LObj_t *)NULL;
