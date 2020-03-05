@@ -217,7 +217,7 @@ __attribute__((always_inline)) static  inline f32   B3L_Absf(f32 in);
 
 #else
 #define B3L_Sqrtf   sqrtf
-#define B3L_Absf    abs
+#define B3L_Absf    fabs
 #endif 
 __attribute__((always_inline)) static  inline s32      B3L_RoundingToS(f32 in);
 __attribute__((always_inline)) static  inline s32      B3L_RoundingToU(f32 in);
