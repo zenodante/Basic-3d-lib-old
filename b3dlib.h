@@ -190,6 +190,9 @@ typedef struct{
     f32                 w;  
 }vect4_t;
 
+typedef vect3_t euler3_t;
+
+typedef vect4_t quat4_t;
 //in column first order, mxy -- x is column num, y is the row number
 typedef struct{
     //row0  row1    row2    row3    
@@ -198,6 +201,14 @@ typedef struct{
     f32 m20;f32 m21;f32 m22;f32 m23;//column 2
     f32 m30;f32 m31;f32 m32;f32 m33;//column 3
 }mat4_t;
+
+typedef struct{
+    //row0  row1    row2    row3    
+    f32 m00;f32 m01;f32 m02;//column 0
+    f32 m10;f32 m11;f32 m12;//column 1
+    f32 m20;f32 m21;f32 m22;//column 2
+}mat3_t;
+
 
 typedef struct{
     vect3_t             rotation;
@@ -258,7 +269,7 @@ typedef struct{
 B3LObj_t state
    31     2423     1615      87
    ------------------------------------
-31|        |      SR|  NMLKJI|   EDCBA|0
+31|      ZY|      RQ|  NMLKJI|   EDCBA|0
   ------------------------------------
   A-- mesh obj with texture
   B-- polygon obj
@@ -271,7 +282,9 @@ B3LObj_t state
   L-- fix render level switch
   M-- use customerize matrix
   N-- Particle generator acitve state
-  SR-- fix render level number
+  QR-- fix render level number
+  Y-- need update euler angle
+  Z-- need update matrix
 */
 #define OBJ_TYPE_MASK            0x000000FF
 #define MESH_OBJ                            (0)
@@ -294,12 +307,14 @@ B3LObj_t state
 #define OBJ_RENDER_LEVEL_MASK        0x00030000
 #define OBJ_FIX_RENDER_LEVEL_SHIFT   (16)
 
+#define OBJ_NEED_EULER_UPDATE              (24)
+#define OBJ_NEED_MATRIX_UPDATE             (25)
 //all different obj types's size is <= sizeof(B3LObj_t)
 typedef struct B3LOBJ{
     struct B3LOBJ       *privous;
     struct B3LOBJ       *next;
     u32                 state;
-    mat4_t              *pCustMat;
+    mat3_t              mat;
     f32                 *pBoundBox;
     transform3D_t       transform;  
     #if B3L_ARM  == 1   
@@ -313,7 +328,7 @@ typedef struct{
     B3LObj_t            *privous;
     B3LObj_t            *next;
     u32                 state;
-    mat4_t              *pCustMat;
+    mat3_t              mat;
     f32                 *pBoundBox;
     transform3D_t       transform; 
     B3L_Mesh_t          *pMesh;
@@ -325,7 +340,7 @@ typedef struct{
     B3LObj_t            *privous;
     B3LObj_t            *next;
     u32                 state;
-    mat4_t              *pCustMat;
+    mat3_t              mat;
     f32                 *pBoundBox;
     transform3D_t       transform; 
     B3L_Mesh_NoTex_t    *pMesh; 
@@ -336,7 +351,7 @@ typedef struct{
     B3LObj_t            *privous;
     B3LObj_t            *next;
     u32                 state;
-    mat4_t              *pCustMat;
+    mat3_t              mat;
     f32                 *pBoundBox;
     transform3D_t       transform; 
     B3L_Polygon_t       *pPolygon; 
@@ -385,19 +400,24 @@ typedef struct{
 camera_t state
    31     2423     1615      87
    ------------------------------------
-31|        |        |        |      BA|0
+31|      ZY|        |        |     BA|0
   ------------------------------------
-A   use the camMat directly, not call set camera matrix function during rendering
+A   ueed update the world to camera matrix
 B   camera track obj mode
+  Y-- need update euler angle
 */
-#define  B3L_USE_CAM_MATRIX_DIRECTLY         (0)
+
+#define  B3L_W2CMATRIX_NEED_UPDATE           (0)
 #define  B3L_CAMERA_TRACK_OBJ_MODEL          (1)
+#define OBJ_NEED_EULER_UPDATE                (24)
+#define OBJ_NEED_MATRIX_UPDATE               (25)
 typedef struct{
     u32                 state;
     f32                 aspectRate;
     f32                 focalLength;
     transform3D_t       transform;
-    mat4_t              camMat;
+    mat3_t              mat;
+    mat4_t              camW2CMat;
     f32                 trackDistance;
     f32                 trackTweenSpeed;
     vect3_t             PositionAngle;
@@ -422,14 +442,14 @@ typedef struct PARTICLEGENOBJ{
     B3LObj_t            *privous;
     B3LObj_t            *next;
     u32                 state;
-    mat4_t              *pCustMat;
+    mat3_t              mat;
     vect3_t             translation;//for particle generate 
     vect3_t             rotation;//for particle generate 
     u32                 lastTime;
     u32                 particleNum;
     B3L_Particle_t      *pParticleActive;   
     void      (*DrawFunc)(B3L_Particle_t *, screen4_t *,fBuff_t *,zBuff_t *);
-    void      (*PtlUpdFunc)(u32,struct PARTICLEGENOBJ *,mat4_t *,render_t *);   
+    void      (*PtlUpdFunc)(u32,struct PARTICLEGENOBJ *,mat3_t *,vect3_t *,render_t *);   
     //time, self, obj->world matrix,free particle num pointer,free particle pool  
 }B3LParticleGenObj_t; //15 not common on ARM32,22 not common on WIN64
 
@@ -464,6 +484,7 @@ Math functions
 extern f32      B3L_sin(f32 in);
 extern f32      B3L_cos(f32 in);
 extern f32      B3L_asin(f32 in);
+extern f32      B3L_atan2(f32 y,f32 x);
 extern void     B3L_SetSeed(u32 seed);
 extern u32      B3L_Random(void); 
 #define         B3L_MIN(a,b)      ((a) >= (b) ? (b) : (a))
@@ -485,26 +506,56 @@ extern void     B3L_Vec3Add(vect3_t *pVa,vect3_t *pVb,vect3_t *pVc);
 extern void     B3L_VecInterp(vect3_t *pVa,vect3_t *pVb,vect3_t *pVc,f32 t);
 extern void     B3L_CrossProductVect3(vect3_t *pA, vect3_t *pB, vect3_t *pResult);
 extern f32      B3L_DotProductVect3(vect3_t *pA, vect3_t *pB);
+
+/*-----------------------------------------------------------------------------
+Rotation functions
+-----------------------------------------------------------------------------*/
+extern void     B3L_EulerToMatrix(euler3_t *pEuler,mat3_t *pMat);
+extern void     B3L_MatrixToEuler(mat3_t *pMat, euler3_t *pEuler);
+extern void     B3L_QuaternionToMatrix(quat4_t *pQuat, mat3_t *pMat);
+extern void     B3L_MatrixToQuaternion(mat3_t *pMat, quat4_t *pQuat);
+extern void     B3L_EulerToQuaternion(euler3_t *pEuler,quat4_t *pQuat);
+extern void     B3L_QuaternionToEuler(quat4_t *pQuat,euler3_t *pEuler);
+extern void     B3L_QuaternionInterp(quat4_t *pQuat0,quat4_t *pQuat1,quat4_t *pResult, f32 t);
 /*-----------------------------------------------------------------------------
 Matrix functions
 -----------------------------------------------------------------------------*/
+extern void     B3L_InitUnitMat3(mat3_t *pMat);
+extern void     B3L_Mat3XRotate(mat3_t *pMat,f32 angle);
+extern void     B3L_Mat3YRotate(mat3_t *pMat,f32 angle);
+extern void     B3L_Mat3ZRotate(mat3_t *pMat,f32 angle);
+extern void     B3L_CreateO2WMat(mat3_t *pRMat, vect3_t *pTranslation, vect3_t *pScale, mat4_t *pResult);
 extern void     B3L_InitMat4One(mat4_t *pMat);
 extern void     B3L_TransposeMat4(mat4_t *pMat);
 extern void     B3L_Mat4XMat4(mat4_t *pMat1,mat4_t *pMat2, mat4_t *pMat3);
+extern void     B3L_Mat3MultMat3ABB(mat3_t *pMatA,mat3_t *pMatB);
+extern void     B3L_Mat3MultMat3ABA(mat3_t *pMatA,mat3_t *pMatB);
 extern void     B3L_MakeRotationMatrixZXY(f32 byX,f32 byY,f32 byZ,mat4_t *pMat);
 extern void     B3L_MakeScaleMatrix(f32 scaleX,f32 scaleY,f32 scaleZ,mat4_t *pMat);
 extern void     B3L_MakeTranslationMat(f32 offsetX,f32 offsetY,f32 offsetZ,mat4_t *pMat);
+//
 extern void     B3L_MakeWorldMatrix(transform3D_t *pWorldTransform, mat4_t *pMat);
+extern void     B3L_MakeO2CMatrix(mat3_t *pRMat,vect3_t *pScale,vect3_t *pTrans,mat4_t *pCamMat, mat4_t *pResult);
 //vect mul will not add translate m03, m13, m23
 //point mul will add translate m03, m13, m23
-extern void     B3L_Vect3MulMat4(vect3_t *pV, mat4_t *pMat, vect3_t *pResult);
+extern void     B3L_Vect3MulMat3(vect3_t *pV, mat3_t *pMat, vect3_t *pResult);
 extern void     B3L_Point3MulMat4(vect3_t *pV, mat4_t *pMat, vect3_t *pResult);
+
+extern void     B3L_RotateObjInOX(B3LObj_t *pObj,f32 angle);
+extern void     B3L_RotateObjInOY(B3LObj_t *pObj,f32 angle);
+extern void     B3L_RotateObjInOZ(B3LObj_t *pObj,f32 angle);
+extern void     B3L_RotateObjInWX(B3LObj_t *pObj,f32 angle);
+extern void     B3L_RotateObjInWY(B3LObj_t *pObj,f32 angle);
+extern void     B3L_RotateObjInWZ(B3LObj_t *pObj,f32 angle);
+
+extern void     B3L_RotateCamInOX(camera_t *pCam,f32 angle);
+extern void     B3L_RotateCamInOY(camera_t *pCam,f32 angle);
+extern void     B3L_RotateCamInOZ(camera_t *pCam,f32 angle);
 /*-----------------------------------------------------------------------------
 Camera functions
 -----------------------------------------------------------------------------*/
 extern void     B3L_InitCamera(camera_t *pCam);
-extern void     B3L_SetCamToManualMatUpdate(camera_t *pCam);
-extern void     B3L_SetCamToAutoMatUpdate(camera_t *pCam);
+extern void     B3L_GenerateW2CMatrix(camera_t *pCam);
 extern void     B3L_CameraMoveTo(vect3_t position,camera_t *pCam);
 extern void     B3L_CameraLookAt(camera_t *pCam, vect3_t *pAt);
 extern void     B3L_SetCameraMatrixByTransform(camera_t *pCam, mat4_t *pMat);
@@ -535,7 +586,9 @@ extern B3LObj_t             *B3L_GetFreeObj(render_t *pRender);
 extern B3LMeshObj_t         *B3L_GetFreeMeshObj(render_t *pRender);
 extern B3LMeshNoTexObj_t    *B3L_GetFreeMeshNoTexObj(render_t *pRender);
 extern B3LPolygonObj_t      *B3L_GetFreePolygonObj(render_t *pRender);
+#ifdef B3L_USING_PARTICLE
 extern B3LParticleGenObj_t  *B3L_GetFreeParticleGeneratorObj(render_t *pRender);
+#endif
 extern void                 B3L_AddObjToRenderList(B3LObj_t *pObj, render_t *pRender);
 extern void                 B3L_PopObjFromRenderList(B3LObj_t *pObj, render_t *pRender);
 extern void                 B3L_ReturnObjToInactiveList(B3LObj_t *pObj,  render_t *pRender);
@@ -559,7 +612,7 @@ extern void                 B3L_UpdateAllParticlesStatesInGen(render_t *pRender,
 #define                     B3L_SET_PARTICLE_POSITION(pP,px,py,pz)   pP->position.x=px;pP->position.y=py;pP->position.z=pz                                                                                                
 #define                     B3L_SET_PARTICLE_DELTA(pP,dx,dy,dz)      pP->delta.x=dx;pP->delta.y=dy;pP->delta.z=dz                                                                                                
 extern void                 B3L_DefaultParticleDrawFunc(B3L_Particle_t *pParticle, screen4_t *pScreenVect,fBuff_t *pFBuff,zBuff_t *pZBuff);
-extern void                 B3L_DefaultParticleUpdFunc(u32 time,B3LParticleGenObj_t *pSelf,mat4_t *pMat,render_t *pRender);
+extern void                 B3L_DefaultParticleUpdFunc(u32 time,B3LParticleGenObj_t *pSelf,mat3_t *pMat,vect3_t *pTrans,render_t *pRender);
 #endif  //end of  B3L_USING_PARTICLE
 /*-----------------------------------------------------------------------------
 After effect functions

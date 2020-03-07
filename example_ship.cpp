@@ -43,18 +43,20 @@ void init() {
     pShip = (B3LMeshObj_t *)B3L_GetFreeMeshObj(&B3Lrender);
     
     InitShipObj(pShip,15.0f);
+    //pShip->transform.translation.z = 200.0f;
     //pShip->transform.rotation.y=0.5f;
     B3L_AddObjToRenderList((B3LObj_t *)pShip, &B3Lrender);
     //init the camera
     
-    B3Lrender.camera.transform.translation = {0.0f,0.0f,-200.0f};
-    //B3L_CameraLookAt(&(B3Lrender.camera), &at);
+    B3Lrender.camera.transform.translation = {50.0f,50.0f,-200.0f};
 
+    B3L_CameraLookAt(&(B3Lrender.camera), &at);
     
     B3L_TweenStart(&tCatZ,0);
-    B3L_CamSetTrack(&(B3Lrender.camera), (B3LObj_t  *)pShip,200.0f, 0.0035f,0.20f, 0.0f, 0.0f);
+    //B3L_CamSetTrack(&(B3Lrender.camera), (B3LObj_t  *)pShip,200.0f, 0.0035f,0.20f, 0.0f, 0.0f);
     //B3L_CamStartTrack(&(B3Lrender.camera));
-
+    //printf("Atan 1 1: %.4f\n",B3L_atan2(0.70710f,0.70710f));
+    //printf("Atan 1 3sqrt: %.4f\n",B3L_atan2(0.5f,0.86602f));
 }
 
 void update(uint32_t time){
@@ -68,30 +70,44 @@ void update(uint32_t time){
     if (pressed(DPAD_UP)){
         //angle.x -=0.002f;
         //B3Lrender.light.lightVect.z += 0.01f;
-        pShip->transform.rotation.y -= B3L_sin(0.5f-pShip->transform.rotation.z)*0.002f;
-        pShip->transform.rotation.x -= B3L_cos(0.5f-pShip->transform.rotation.z)*0.002f;
+        //pShip->transform.rotation.x -= B3L_cos(0.5f-pShip->transform.rotation.z)*0.002f;
+        //pShip->transform.rotation.y -= B3L_sin(0.5f-pShip->transform.rotation.z)*0.002f;
+        //pShip->transform.rotation.y +=0.002f;
         //pShip->transform.rotation.x +=0.002f;
         //pShip->transform.rotation.x -= (f32)((s32)(pShip->transform.rotation.x));
+        //B3Lrender.camera.transform.rotation.x += 0.002f;
+        //B3L_RotateObjInOX((B3LObj_t *)pShip,-0.002f);
+        B3L_RotateCamInOX(&(B3Lrender.camera),-0.002f);
     }
     if (pressed(DPAD_DOWN)){
+        //pShip->transform.rotation.y -=0.002f;
         //angle.x +=0.002f; 
         //B3Lrender.light.lightVect.z -= 0.01f;
         //pShip->transform.rotation.x -=0.002f;
-        pShip->transform.rotation.y += B3L_sin(0.5f-pShip->transform.rotation.z)*0.002f;
-        pShip->transform.rotation.x += B3L_cos(0.5f-pShip->transform.rotation.z)*0.002f;
+        //pShip->transform.rotation.y += B3L_sin(0.5f-pShip->transform.rotation.z)*0.002f;
+        //pShip->transform.rotation.x += B3L_cos(0.5f-pShip->transform.rotation.z)*0.002f;
         //pShip->transform.rotation.x -= (f32)((s32)(pShip->transform.rotation.x)); 
+        //B3Lrender.camera.transform.rotation.x -= 0.002f;
+        //B3L_RotateObjInOX((B3LObj_t *)pShip,0.002f);
+        B3L_RotateCamInOX(&(B3Lrender.camera),0.002f);
     }
     if (pressed(DPAD_LEFT)){
         //angle.y +=0.002f;
         //B3Lrender.light.lightVect.x -= 0.01f; 
-        pShip->transform.rotation.z +=0.002f;
+        //pShip->transform.rotation.z -=0.002f;
         //pShip->transform.rotation.y -= (f32)((s32)(pShip->transform.rotation.y));   
+        //B3Lrender.camera.transform.rotation.z -= 0.002f;
+        //B3L_RotateObjInOY((B3LObj_t *)pShip,-0.002f);
+        B3L_RotateCamInOY(&(B3Lrender.camera),-0.002f);
     }
     if (pressed(DPAD_RIGHT)){
          //angle.y -=0.002f;  
          //B3Lrender.light.lightVect.x += 0.01f;
-         pShip->transform.rotation.z -=0.002f;
+         //pShip->transform.rotation.z +=0.002f;
         //pShip->transform.rotation.y -= (f32)((s32)(pShip->transform.rotation.y));
+        //B3Lrender.camera.transform.rotation.z += 0.002f;
+        //B3L_RotateObjInOY((B3LObj_t *)pShip,0.002f);
+        B3L_RotateCamInOY(&(B3Lrender.camera),0.002f);
     }
     if (pressed(A)){
         B3Lrender.camera.trackDistance += 1.0f;

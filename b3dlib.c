@@ -32,9 +32,6 @@ __attribute__((section(".zbuff")))  zBuff_t  zBuff[Z_BUFF_LENTH];        //75KB 
 B3L_Particle_t  particleBuff[B3L_PARTICLE_BUFF_DEPTH];//18KB
 #endif
 
-#define B3L_MATH_TABLE_SIZE      256
-//not used fix math 
-
 
 
 #if Z_BUFF_LEVEL == 2
@@ -217,7 +214,7 @@ __attribute__((always_inline)) static  inline f32   B3L_Absf(f32 in);
 
 #else
 #define B3L_Sqrtf   sqrtf
-#define B3L_Absf    fabs
+#define B3L_Absf    fabsf
 #endif 
 __attribute__((always_inline)) static  inline s32      B3L_RoundingToS(f32 in);
 __attribute__((always_inline)) static  inline s32      B3L_RoundingToU(f32 in);
@@ -244,6 +241,9 @@ __attribute__((always_inline)) static  inline void     Norm3Xmat4Normalize(vect3
 __attribute__((always_inline)) static  inline void     Vect4Xmat4(vect4_t *pV, mat4_t *pMat, vect4_t *pResult);
 __attribute__((always_inline)) static  inline bool     Vect4BoundTest(vect4_t *pV);
 __attribute__((always_inline)) static  inline void     CopyMat4(mat4_t *target, mat4_t *source);
+static void B3L_Mat3XRotate(mat3_t *pMat,f32 angle);
+static void B3L_Mat3YRotate(mat3_t *pMat,f32 angle);
+static void B3L_Mat3ZRotate(mat3_t *pMat,f32 angle);
 /*-----------------------------------------------------------------------------
 Z buff functions
 -----------------------------------------------------------------------------*/
@@ -454,13 +454,121 @@ __attribute__((always_inline)) static  inline void     Vect3_Add(vect3_t *pV1,ve
 }
 
 /*
-__attribute__((always_inline)) static inline void B3L_ClipToScreen(vect4Test_t *pV, screen4_t *pResult){
-    f32 factor=1.0f / (pV->w);
-    pResult->x = (int32_t)(HALF_RESOLUTION_X + pV->x *factor* HALF_RESOLUTION_X);
-    pResult->y = (int32_t)(HALF_RESOLUTION_Y - pV->y *factor* HALF_RESOLUTION_Y);
-    pResult->z = pV->z*factor;
-}
+    Create 3*3 matrix for rotation in x axis
 */
+static void B3L_Mat3XRotate(mat3_t *pMat,f32 angle){
+    f32 cosp = B3L_cos(angle);
+    f32 sinp = B3L_sin(angle);
+    pMat->m00=1.0f; pMat->m01=0.0f; pMat->m02=0.0f;
+    pMat->m10=0.0f; pMat->m11=cosp; pMat->m12=-sinp;
+    pMat->m20=0.0f; pMat->m21=sinp; pMat->m22=cosp;
+}
+
+/*
+    Create 3*3 matrix for rotation in y axis
+*/
+static void B3L_Mat3YRotate(mat3_t *pMat,f32 angle){
+    f32 cosh = B3L_cos(angle);
+    f32 sinh = B3L_sin(angle);
+    pMat->m00=cosh; pMat->m01=0.0f; pMat->m02=sinh;
+    pMat->m10=0.0f; pMat->m11=1.0f; pMat->m12=0.0f;
+    pMat->m20=-sinh; pMat->m21=0.0f; pMat->m22=cosh;
+}
+
+/*
+    Create 3*3 matrix for rotation in z axis
+*/
+static void B3L_Mat3ZRotate(mat3_t *pMat,f32 angle){
+    f32 cosb = B3L_cos(angle);
+    f32 sinb = B3L_sin(angle);
+    pMat->m00=cosb; pMat->m01=-sinb; pMat->m02=0.0f;
+    pMat->m10=sinb; pMat->m11=cosb; pMat->m12=0.0f;
+    pMat->m20=0.0f; pMat->m21=0.0f; pMat->m22=1.0f;
+}
+
+/*
+    Rotate obj matrix in obj space by x axis
+*/
+void B3L_RotateObjInOX(B3LObj_t *pObj,f32 angle){
+    mat3_t rmat;
+    B3L_Mat3XRotate(&rmat,angle);
+    B3L_Mat3MultMat3ABB(&rmat,&(pObj->mat));
+    B3L_SET(pObj->state,OBJ_NEED_EULER_UPDATE);
+}
+
+/*
+    Rotate obj matrix in obj space by y axis
+*/
+void B3L_RotateObjInOY(B3LObj_t *pObj,f32 angle){
+    mat3_t rmat;
+    B3L_Mat3YRotate(&rmat,angle);
+    B3L_Mat3MultMat3ABB(&rmat,&(pObj->mat));
+    B3L_SET(pObj->state,OBJ_NEED_EULER_UPDATE);
+}
+
+/*
+    Rotate obj matrix in obj space by z axis
+*/
+void B3L_RotateObjInOZ(B3LObj_t *pObj,f32 angle){
+    mat3_t rmat;
+    B3L_Mat3ZRotate(&rmat,angle);
+    B3L_Mat3MultMat3ABB(&rmat,&(pObj->mat));
+    B3L_SET(pObj->state,OBJ_NEED_EULER_UPDATE);
+}
+
+/*
+    Rotate obj matrix in world space by x axis
+*/
+void B3L_RotateObjInWX(B3LObj_t *pObj,f32 angle){
+    mat3_t rmat;
+    B3L_Mat3XRotate(&rmat,angle);
+    B3L_Mat3MultMat3ABA(&(pObj->mat),&rmat);
+    B3L_SET(pObj->state,OBJ_NEED_EULER_UPDATE);
+}
+
+/*
+    Rotate obj matrix in world space by y axis
+*/
+void B3L_RotateObjInWY(B3LObj_t *pObj,f32 angle){
+    mat3_t rmat;
+    B3L_Mat3YRotate(&rmat,angle);
+    B3L_Mat3MultMat3ABA(&(pObj->mat),&rmat);
+    B3L_SET(pObj->state,OBJ_NEED_EULER_UPDATE);
+}
+
+/*
+    Rotate obj matrix in world space by z axis ?? may should use matrix type ABA
+*/
+void B3L_RotateObjInWZ(B3LObj_t *pObj,f32 angle){
+    mat3_t rmat;
+    B3L_Mat3ZRotate(&rmat,angle);
+    B3L_Mat3MultMat3ABA(&(pObj->mat),&rmat);
+    B3L_SET(pObj->state,OBJ_NEED_EULER_UPDATE);
+}
+
+void B3L_RotateCamInOX(camera_t *pCam,f32 angle){
+    mat3_t rmat;
+    B3L_Mat3XRotate(&rmat,angle);
+    B3L_Mat3MultMat3ABB(&rmat,&(pCam->mat));
+    B3L_SET(pCam->state,OBJ_NEED_EULER_UPDATE);
+
+}
+
+void B3L_RotateCamInOY(camera_t *pCam,f32 angle){
+    mat3_t rmat;
+    B3L_Mat3YRotate(&rmat,angle);
+    B3L_Mat3MultMat3ABB(&rmat,&(pCam->mat));
+    B3L_SET(pCam->state,OBJ_NEED_EULER_UPDATE);
+}
+
+void B3L_RotateCamInOZ(camera_t *pCam,f32 angle){
+    mat3_t rmat;
+    B3L_Mat3ZRotate(&rmat,angle);
+    B3L_Mat3MultMat3ABB(&rmat,&(pCam->mat));
+    B3L_SET(pCam->state,OBJ_NEED_EULER_UPDATE);
+
+}
+
 __attribute__((always_inline)) static inline void Vect4Xmat4(vect4_t *pV, mat4_t *pMat, vect4_t *pResult){
     f32 x,y,z,w;
     x = pV->x;
@@ -601,7 +709,7 @@ __attribute__((always_inline)) static  inline void  Norm3Xmat4Normalize(vect3_t 
 
 }
 
-void     B3L_Vect3MulMat4(vect3_t *pV, mat4_t *pMat, vect3_t *pResult){
+void     B3L_Vect3MulMat3(vect3_t *pV, mat3_t *pMat, vect3_t *pResult){
     f32 x,y,z,rx,ry,rz;
     x = pV->x;
     y = pV->y;
@@ -719,83 +827,16 @@ vect4_t B3L_Vect4(f32 x,f32 y,f32 z,f32 w){
     return output;
 }
 
-//math functions
-static const f32 sinTable_f32[B3L_MATH_TABLE_SIZE + 1] = {
-      0.000000000f,0.024541229f,0.049067674f,0.073564564f,0.098017140f,0.122410675f,0.146730474f,0.170961889f,
-      0.195090322f,0.219101240f,0.242980180f,0.266712757f,0.290284677f,0.313681740f,0.336889853f,0.359895037f,
-      0.382683432f,0.405241314f,0.427555093f,0.449611330f,0.471396737f,0.492898192f,0.514102744f,0.534997620f,
-      0.555570233f,0.575808191f,0.595699304f,0.615231591f,0.634393284f,0.653172843f,0.671558955f,0.689540545f,
-      0.707106781f,0.724247083f,0.740951125f,0.757208847f,0.773010453f,0.788346428f,0.803207531f,0.817584813f,
-      0.831469612f,0.844853565f,0.857728610f,0.870086991f,0.881921264f,0.893224301f,0.903989293f,0.914209756f,
-      0.923879533f,0.932992799f,0.941544065f,0.949528181f,0.956940336f,0.963776066f,0.970031253f,0.975702130f,
-      0.980785280f,0.985277642f,0.989176510f,0.992479535f,0.995184727f,0.997290457f,0.998795456f,0.999698819f,
-      1.000000000f,0.999698819f,0.998795456f,0.997290457f,0.995184727f,0.992479535f,0.989176510f,0.985277642f,
-      0.980785280f,0.975702130f,0.970031253f,0.963776066f,0.956940336f,0.949528181f,0.941544065f,0.932992799f,
-      0.923879533f,0.914209756f,0.903989293f,0.893224301f,0.881921264f,0.870086991f,0.857728610f,0.844853565f,
-      0.831469612f,0.817584813f,0.803207531f,0.788346428f,0.773010453f,0.757208847f,0.740951125f,0.724247083f,
-      0.707106781f,0.689540545f,0.671558955f,0.653172843f,0.634393284f,0.615231591f,0.595699304f,0.575808191f,
-      0.555570233f,0.534997620f,0.514102744f,0.492898192f,0.471396737f,0.449611330f,0.427555093f,0.405241314f,
-      0.382683432f,0.359895037f,0.336889853f,0.313681740f,0.290284677f,0.266712757f,0.242980180f,0.219101240f,
-      0.195090322f,0.170961889f,0.146730474f,0.122410675f,0.098017140f,0.073564564f,0.049067674f,0.024541229f,
-      0.000000000f,-0.024541229f,-0.049067674f,-0.073564564f,-0.098017140f,-0.122410675f,-0.146730474f,-0.170961889f,
-     -0.195090322f,-0.219101240f,-0.242980180f,-0.266712757f,-0.290284677f,-0.313681740f,-0.336889853f,-0.359895037f,
-     -0.382683432f,-0.405241314f,-0.427555093f,-0.449611330f,-0.471396737f,-0.492898192f,-0.514102744f,-0.534997620f,
-     -0.555570233f,-0.575808191f,-0.595699304f,-0.615231591f,-0.634393284f,-0.653172843f,-0.671558955f,-0.689540545f,
-     -0.707106781f,-0.724247083f,-0.740951125f,-0.757208847f,-0.773010453f,-0.788346428f,-0.803207531f,-0.817584813f,
-     -0.831469612f,-0.844853565f,-0.857728610f,-0.870086991f,-0.881921264f,-0.893224301f,-0.903989293f,-0.914209756f,
-     -0.923879533f,-0.932992799f,-0.941544065f,-0.949528181f,-0.956940336f,-0.963776066f,-0.970031253f,-0.975702130f,
-     -0.980785280f,-0.985277642f,-0.989176510f,-0.992479535f,-0.995184727f,-0.997290457f,-0.998795456f,-0.999698819f,
-     -1.000000000f,-0.999698819f,-0.998795456f,-0.997290457f,-0.995184727f,-0.992479535f,-0.989176510f,-0.985277642f,
-     -0.980785280f,-0.975702130f,-0.970031253f,-0.963776066f,-0.956940336f,-0.949528181f,-0.941544065f,-0.932992799f,
-     -0.923879533f,-0.914209756f,-0.903989293f,-0.893224301f,-0.881921264f,-0.870086991f,-0.857728610f,-0.844853565f,
-     -0.831469612f,-0.817584813f,-0.803207531f,-0.788346428f,-0.773010453f,-0.757208847f,-0.740951125f,-0.724247083f,
-     -0.707106781f,-0.689540545f,-0.671558955f,-0.653172843f,-0.634393284f,-0.615231591f,-0.595699304f,-0.575808191f,
-     -0.555570233f,-0.534997620f,-0.514102744f,-0.492898192f,-0.471396737f,-0.449611330f,-0.427555093f,-0.405241314f,
-     -0.382683432f,-0.359895037f,-0.336889853f,-0.313681740f,-0.290284677f,-0.266712757f,-0.242980180f,-0.219101240f,
-     -0.195090322f,-0.170961889f,-0.146730474f,-0.122410675f,-0.098017140f,-0.073564564f,-0.049067674f,-0.024541229f,
-      0.000000000f
-};
 f32 B3L_sin(f32 in){
-    f32 sinVal, fract;                   /* Temporary input, output variables */
-    uint16_t index;                                /* Index variable */
-    f32 a, b;                                /* Two nearest output values */
-    int32_t n;
-    f32 findex;
-
-    /* Calculation of floor value of input */
-    n = (int32_t) in;
-
-    /* Make negative values towards -infinity */
-    if (in < 0.0f){
-        n--;
-    }
-
-    /* Map input value to [0 1] */
-    in = in - (f32) n;
-
-    /* Calculation of index of the table */
-    findex = (f32)B3L_MATH_TABLE_SIZE * in;
-    index = (uint16_t)findex;
-
-    /* when "in" is exactly 1, we need to rotate the index down to 0 */
-    if (index >= B3L_MATH_TABLE_SIZE) {
-        index = 0;
-        findex -= (f32)B3L_MATH_TABLE_SIZE;
-    }
-
-    /* fractional value calculation */
-    fract = findex - (f32) index;
-
-    /* Read two nearest values of input value from the sin table */
-    a = sinTable_f32[index];
-    b = sinTable_f32[index+1];
-
-    /* Linear interpolation process */
-    sinVal = (1.0f - fract) * a + fract * b;
-
-    /* Return output value */
-    return (sinVal);
-
+    in = in-(f32)((s32)in);//scale to -1~1
+    if (in>0.25f){in = 0.5f - in;}
+    if (in<-0.25f){in = -0.5f -in;}
+    if (in>0.25f){in = 0.5f - in;}
+    f32 v2 = in*in;
+    f32 v3 = in*v2;
+    f32 v5 = v3*v2;
+    f32 v7 = v5*v2;
+    return  6.28316394434f*in-41.3371315018f*v3+81.3404239211f*v5-70.99090501333f*v7;
 }
 
 f32 B3L_cos(f32 in){
@@ -819,6 +860,34 @@ f32 B3L_asin(f32 in){
     ret = 3.14159265358979f*0.5f - B3L_Sqrtf(1.0f - in)*ret;
     ret = (ret - 2 * negate * ret)*0.15915494309f;
     return ret;
+}
+
+f32  B3L_atan2(f32 y,f32 x){
+    f32 t0, t1, t3, t4;
+
+    t3 = B3L_Absf(x);
+    t1 = B3L_Absf(y);
+    t0 = B3L_MAX(t3, t1);
+    t1 = B3L_MIN(t3, t1);
+    t3 = 1.0f / t0;
+    t3 = t1 * t3;
+    t4 = t3 * t3;
+    t0 =         - 0.013480470f;
+    t0 = t0 * t4 + 0.057477314f;
+    t0 = t0 * t4 - 0.121239071f;
+    t0 = t0 * t4 + 0.195635925f;
+    t0 = t0 * t4 - 0.332994597f;
+    t0 = t0 * t4 + 0.999995630f;
+    t3 = t0 * t3 * 0.159154943f;
+   // t3 = t0 * t3;
+    t3 = (B3L_Absf(y) > B3L_Absf(x)) ? 0.25f - t3 : t3;
+    t3 = (x < 0) ?  0.5f - t3 : t3;
+    t3 = (y < 0) ? -t3 : t3;
+    //t3 = (B3L_Absf(y) > B3L_Absf(x)) ? 1.570796327f - t3 : t3;
+    //t3 = (x < 0) ?  3.141592654f - t3 : t3;
+    //t3 = (y < 0) ? -t3 : t3;
+
+    return t3;
 }
 
 void B3L_NormalizeVec2(vect2_t *pV){
@@ -974,6 +1043,61 @@ void B3L_Mat4XMat4(mat4_t *pMat1,mat4_t *pMat2, mat4_t *pMat3){
     #undef O
 }
 
+/*
+    matrix 3*3 B = AB
+*/
+void B3L_Mat3MultMat3ABB(mat3_t *pMatA,mat3_t *pMatB){
+f32 t0,t1,t2;
+    f32 s0,s1,s2;
+    #define M(x,y) (pMatA)->m##x##y
+    #define N(x,y) (pMatB)->m##x##y
+    s0=N(0,0);s1=N(0,1);s2=N(0,2);
+    t0 = s0*M(0,0)+s1*M(1,0)+s2*M(2,0);
+    t1 = s0*M(0,1)+s1*M(1,1)+s2*M(2,1);
+    t2 = s0*M(0,2)+s1*M(1,2)+s2*M(2,2);  
+    N(0,0) = t0;N(0,1) = t1;N(0,2) = t2;
+    s0=N(1,0);s1=N(1,1);s2=N(1,2);
+    t0 = s0*M(0,0)+s1*M(1,0)+s2*M(2,0);
+    t1 = s0*M(0,1)+s1*M(1,1)+s2*M(2,1);
+    t2 = s0*M(0,2)+s1*M(1,2)+s2*M(2,2);   
+    N(1,0) = t0;N(1,1) = t1;N(1,2) = t2;
+    s0=N(2,0);s1=N(2,1);s2=N(2,2);
+    t0 = s0*M(0,0)+s1*M(1,0)+s2*M(2,0);
+    t1 = s0*M(0,1)+s1*M(1,1)+s2*M(2,1);
+    t2 = s0*M(0,2)+s1*M(1,2)+s2*M(2,2);   
+    N(2,0) = t0;N(2,1) = t1;N(2,2) = t2;   
+    #undef M
+    #undef N
+}
+
+/*
+    matrix 3*3 A = AB
+*/
+void B3L_Mat3MultMat3ABA(mat3_t *pMatA,mat3_t *pMatB){
+    f32 t0,t1,t2;
+    f32 s0,s1,s2;
+    #define M(x,y) (pMatA)->m##x##y
+    #define N(x,y) (pMatB)->m##x##y
+    s0=M(0,0);s1=M(1,0);s2=M(2,0);
+    t0 = s0*N(0,0)+s1*N(0,1)+s2*N(0,2);
+    t1 = s0*N(1,0)+s1*N(1,1)+s2*N(1,2);
+    t2 = s0*N(2,0)+s1*N(2,1)+s2*N(2,2);
+    M(0,0) = t0;M(1,0) = t1;M(2,0) = t2;
+    s0=M(0,1);s1=M(1,1);s2=M(2,1);
+    t0 =s0*N(0,0)+s1*N(0,1)+s2*N(0,2);
+    t1 =s0*N(1,0)+s1*N(1,1)+s2*N(1,2);
+    t2 =s0*N(2,0)+s1*N(2,1)+s2*N(2,2);
+    M(0,1) = t0;M(1,1) = t1;M(2,1) = t2;
+    s0=M(0,2);s1=M(1,2);s2=M(2,2);
+    t0 =s0*N(0,0)+s1*N(0,1)+s2*N(0,2);
+    t1 =s0*N(1,0)+s1*N(1,1)+s2*N(1,2);
+    t2 =s0*N(2,0)+s1*N(2,1)+s2*N(2,2);
+    M(0,2) = t0;M(1,2) = t1;M(2,2) = t2;
+    #undef M
+    #undef N
+}
+
+
 void B3L_MakeRotationMatrixZXY(f32 byX,f32 byY,f32 byZ,mat4_t *pMat){
     byX *= -1.0f;
     byY *= -1.0f;
@@ -1059,6 +1183,48 @@ B3L_logMat4(temp);
               
 
 }
+
+void B3L_MakeO2CMatrix(mat3_t *pRMat,vect3_t *pScale,vect3_t *pTrans,mat4_t *pCamMat, mat4_t *pResult){
+
+    f32 t0,t1,t2,t3;
+    f32 s0,s1,s2;
+    #define M(x,y) (pRMat)->m##x##y
+    #define N(x,y) (pCamMat)->m##x##y
+    #define O(x,y) (pResult)->m##x##y
+    f32 scaleVal = pScale->x;
+    s0=M(0,0)*scaleVal;s1=M(1,0)*scaleVal;s2=M(2,0)*scaleVal;
+    t0 = s0*N(0,0)+s1*N(0,1)+s2*N(0,2);
+    t1 = s0*N(1,0)+s1*N(1,1)+s2*N(1,2);
+    t2 = s0*N(2,0)+s1*N(2,1)+s2*N(2,2);
+    t3 = s0*N(3,0)+s1*N(3,1)+s2*N(3,2);
+    O(0,0) = t0;O(1,0) = t1;O(2,0) = t2;O(3,0) = t3;
+    scaleVal = pScale->y;
+    s0=M(0,1)*scaleVal;s1=M(1,1)*scaleVal;s2=M(2,1)*scaleVal;
+    t0 =s0*N(0,0)+s1*N(0,1)+s2*N(0,2);
+    t1 =s0*N(1,0)+s1*N(1,1)+s2*N(1,2);
+    t2 =s0*N(2,0)+s1*N(2,1)+s2*N(2,2);
+    t3 =s0*N(3,0)+s1*N(3,1)+s2*N(3,2);
+    O(0,1) = t0;O(1,1) = t1;O(2,1) = t2;O(3,1) = t3;
+    scaleVal = pScale->z;
+    s0=M(0,2)*scaleVal;s1=M(1,2)*scaleVal;s2=M(2,2)*scaleVal;
+    t0 =s0*N(0,0)+s1*N(0,1)+s2*N(0,2);
+    t1 =s0*N(1,0)+s1*N(1,1)+s2*N(1,2);
+    t2 =s0*N(2,0)+s1*N(2,1)+s2*N(2,2);
+    t3 =s0*N(3,0)+s1*N(3,1)+s2*N(3,2);
+    O(0,2) = t0;O(1,2) = t1;O(2,2) = t2;O(3,2) = t3;
+    s0=pTrans->x;s1=pTrans->y;s2=pTrans->z;
+    t0 = s0*N(0,0)+s1*N(0,1)+s2*N(0,2)+N(0,3);
+    t1 = s0*N(1,0)+s1*N(1,1)+s2*N(1,2)+N(1,3);
+    t2 = s0*N(2,0)+s1*N(2,1)+s2*N(2,2)+N(2,3);
+    t3 = s0*N(3,0)+s1*N(3,1)+s2*N(3,2)+N(3,3);
+    O(0,3) = t0;O(1,3) = t1;O(2,3) = t2;O(3,3) = t3;
+    #undef M
+    #undef N
+    #undef O
+
+}
+
+
 __attribute__((always_inline)) static  inline zBuff_t CalZbuffValue(f32 z){
              #if  (Z_BUFF_LEVEL == 0) 
             u32 tempZ = B3L_RoundingToU(z*255.0f);
@@ -1137,9 +1303,9 @@ __attribute__((always_inline)) static inline u32 CalLightFactor(f32 normalDotLig
 __attribute__((always_inline)) static  inline void  UpdateLightVect(render_t *pRender){
     //if it is a point light type, then we need to calculate the current light position in camera space 
     if (B3L_TEST((pRender->light.state),LIGHT_TYPE_BIT)){
-        Vect3Xmat4(&(pRender->light.lightVect), &(pRender->camera.camMat), &(pRender->light.pointLightVectInCamSpaceBuff));
+        Vect3Xmat4(&(pRender->light.lightVect), &(pRender->camera.camW2CMat), &(pRender->light.pointLightVectInCamSpaceBuff));
     }else{
-        Norm3Xmat4Normalize(&(pRender->light.lightVect), &(pRender->camera.camMat) , (vect3_t *)&(pRender->light.pointLightVectInCamSpaceBuff)); 
+        Norm3Xmat4Normalize(&(pRender->light.lightVect), &(pRender->camera.camW2CMat) , (vect3_t *)&(pRender->light.pointLightVectInCamSpaceBuff)); 
     }
 }
 
@@ -1172,6 +1338,7 @@ void B3L_InitCamera(camera_t *pCam){
     pCam->transform.translation.x = 0.0f;
     pCam->transform.translation.y = 0.0f;
     pCam->transform.translation.z = 0.0f;
+    B3L_InitUnitMat3(&(pCam->mat));
     pCam->pTrackObj = (B3LObj_t *)NULL;
     pCam->trackDistance = 0.0f;
     pCam->trackTweenSpeed = 0.0f;
@@ -1183,16 +1350,33 @@ void B3L_InitCamera(camera_t *pCam){
     pCam->PrevPositionAngle.z = 0.0f;
     pCam->state = 0;
 
-    //B3L_SetCameraMatrixByTransform(pCam,&(pCam->camMat));
+    //B3L_SetCameraMatrixByTransform(pCam,&(pCam->camW2CMat));
 }
 
-//this function could be used to track some moving obj, generate matrix and mul with obj->world matrix
-void B3L_SetCamToManualMatUpdate(camera_t *pCam){
-    B3L_SET(pCam->state,B3L_USE_CAM_MATRIX_DIRECTLY);
-}
+void B3L_GenerateW2CMatrix(camera_t *pCam){
+    mat3_t *pMat3 = &(pCam->mat);
+    mat4_t *pW2CMat = &(pCam->camW2CMat);
+    f32 x = -1.0f*(pCam->transform.translation.x);
+    f32 y = -1.0f*(pCam->transform.translation.y);
+    f32 z = -1.0f*(pCam->transform.translation.z);
+    //get the shift by translation
 
-void B3L_SetCamToAutoMatUpdate(camera_t *pCam){
-    B3L_CLR(pCam->state,B3L_USE_CAM_MATRIX_DIRECTLY);
+    pW2CMat->m33 = 1.0f;
+    pW2CMat->m30 = 0.0f;
+    pW2CMat->m31 = 0.0f;
+    pW2CMat->m32 = 0.0f;
+    pW2CMat->m00 = pMat3->m00;
+    pW2CMat->m01 = pMat3->m10;
+    pW2CMat->m02 = pMat3->m20;
+    pW2CMat->m10 = pMat3->m01;
+    pW2CMat->m11 = pMat3->m11;
+    pW2CMat->m12 = pMat3->m21;
+    pW2CMat->m20 = pMat3->m02;
+    pW2CMat->m21 = pMat3->m12;
+    pW2CMat->m22 = pMat3->m22;
+    pW2CMat->m03 = x*pW2CMat->m00 + y*pW2CMat->m01 + z*pW2CMat->m02;
+    pW2CMat->m13 = x*pW2CMat->m10 + y*pW2CMat->m11 + z*pW2CMat->m12;
+    pW2CMat->m23 = x*pW2CMat->m20 + y*pW2CMat->m21 + z*pW2CMat->m22;
 }
 
 //If B3L_USE_CAM_MATRIX_DIRECTLY not set, this function will be call automaticly during render
@@ -1208,12 +1392,14 @@ void B3L_SetCameraMatrixByTransform(camera_t *pCam,mat4_t *pMat){
                               pCam->transform.rotation.z,&(temp)); 
     B3L_TransposeMat4(&(temp));   
     B3L_Mat4XMat4(pMat,&temp,pMat);  
-    //B3L_Mat4XMat4(&(pCam->camMat),&temp); 
+    //B3L_Mat4XMat4(&(pCam->camW2CMat),&temp); 
     MakeClipMatrix(pCam->focalLength,pCam->aspectRate,&temp);
     B3L_Mat4XMat4(pMat,&temp,pMat);  
-    //B3L_Mat4XMat4(&(pCam->camMat),&temp);   
+    //B3L_Mat4XMat4(&(pCam->camW2CMat),&temp);   
             
 }
+
+
 void B3L_CameraMoveTo(vect3_t position,camera_t *pCam){
     pCam->transform.translation.x = position.x;
     pCam->transform.translation.y = position.y;
@@ -1232,7 +1418,7 @@ void B3L_CameraLookAt(camera_t *pCam, vect3_t *pAt){
 
     dx = v.x / NonZero(l); // normalize
 
-    pCam->transform.rotation.y = -1.0f * B3L_asin(dx);
+    pCam->transform.rotation.y = B3L_asin(dx);
 
     if (v.y < 0){
         pCam->transform.rotation.y = 0.5f - pCam->transform.rotation.y ;
@@ -1246,7 +1432,10 @@ void B3L_CameraLookAt(camera_t *pCam, vect3_t *pAt){
  
     dx = v.x / NonZero(l);
 
-    pCam->transform.rotation.x = B3L_asin(dx);
+    pCam->transform.rotation.x = -B3L_asin(dx);
+    //now the camera euler angle is up-to-date
+    B3L_CLR(pCam->state,OBJ_NEED_EULER_UPDATE);
+    B3L_EulerToMatrix(&(pCam->transform.rotation),&(pCam->mat));
 }
 
 void   B3L_SetCameraUpDirection(camera_t *pCam, vect3_t *pUp){
@@ -1348,6 +1537,7 @@ static void CalTargetPositonAngle(vect3_t *pTgtRotate, vect3_t *pTgtPositionAngl
 
 static void  UpdateCam(render_t *pRender){
     //if current in track obj mode
+    /*
     if(B3L_TEST(pRender->camera.state,B3L_CAMERA_TRACK_OBJ_MODEL)){
         //calculate the track information 
         vect3_t tweenPositionAngle;
@@ -1360,11 +1550,15 @@ static void  UpdateCam(render_t *pRender){
         CameraTrackPoint(&(pRender->camera),&(pRender->camera.pTrackObj->transform.translation),
                               &tweenPositionAngle,pRender->camera.trackDistance);
     }
+    */
+    mat4_t temp;
+    B3L_GenerateW2CMatrix(&(pRender->camera));
+    MakeClipMatrix(pRender->camera.focalLength,pRender->camera.aspectRate,&temp);
+    B3L_Mat4XMat4(&(pRender->camera.camW2CMat),&temp,&(pRender->camera.camW2CMat));  
+    
     //printf("start render\n");
     //if not use customer matrix set, generate camera matrix from camera transform
-    if (!B3L_TEST(pRender->camera.state,B3L_USE_CAM_MATRIX_DIRECTLY)){
-        B3L_SetCameraMatrixByTransform(&(pRender->camera),&(pRender->camera.camMat));
-    }
+
 
 }
 /*-----------------------------------------------------------------------------
@@ -1374,7 +1568,7 @@ obj functions
 static void UpdateParticleObjs(render_t *pRender, u32 time){
     B3LObj_t  *pCurrentObj =(pRender->scene.pActiveParticleGenObjs);
     u32 state;
-    mat4_t mat;
+    //mat4_t mat;
     //u32 i;
 
     //switch(state & OBJ_TYPE_MASK)
@@ -1389,22 +1583,19 @@ static void UpdateParticleObjs(render_t *pRender, u32 time){
         //Create generator -> world matrix into mat1
 //TODO: generate matrix
         //if it has a mother obj
-        if(B3L_TEST(pCurrentObj->state,OBJ_USING_CUSTOMERIZE_MAT)){
 
-            ((B3LParticleGenObj_t *)pCurrentObj)->PtlUpdFunc(time,(B3LParticleGenObj_t *)pCurrentObj,
-                                                         pCurrentObj->pCustMat,pRender);
-        }else{
             
-            f32 x = ((B3LParticleGenObj_t *)pCurrentObj)->rotation.x;
-            f32 y = ((B3LParticleGenObj_t *)pCurrentObj)->rotation.y;
-            f32 z = ((B3LParticleGenObj_t *)pCurrentObj)->rotation.z;
-            B3L_MakeRotationMatrixZXY(x,y,z,&mat);
-            mat.m03 = ((B3LParticleGenObj_t *)pCurrentObj)->translation.x;
-            mat.m13 = ((B3LParticleGenObj_t *)pCurrentObj)->translation.y;
-            mat.m23 = ((B3LParticleGenObj_t *)pCurrentObj)->translation.z; 
-            ((B3LParticleGenObj_t *)pCurrentObj)->PtlUpdFunc(time,(B3LParticleGenObj_t *)pCurrentObj,
-                                                         &mat,pRender);   
-        }
+            //f32 x = ((B3LParticleGenObj_t *)pCurrentObj)->rotation.x;
+            //f32 y = ((B3LParticleGenObj_t *)pCurrentObj)->rotation.y;
+            //f32 z = ((B3LParticleGenObj_t *)pCurrentObj)->rotation.z;
+            //B3L_MakeRotationMatrixZXY(x,y,z,&mat);
+            //mat.m03 = ((B3LParticleGenObj_t *)pCurrentObj)->translation.x;
+            //mat.m13 = ((B3LParticleGenObj_t *)pCurrentObj)->translation.y;
+            //mat.m23 = ((B3LParticleGenObj_t *)pCurrentObj)->translation.z; 
+
+        ((B3LParticleGenObj_t *)pCurrentObj)->PtlUpdFunc(time,(B3LParticleGenObj_t *)pCurrentObj,
+                                                         &(((B3LParticleGenObj_t *)pCurrentObj)->mat),&(((B3LParticleGenObj_t *)pCurrentObj)->translation),pRender);   
+        
         
         pCurrentObj = pCurrentObj->next;    
     }
@@ -1413,7 +1604,7 @@ static void UpdateParticleObjs(render_t *pRender, u32 time){
 static void RenderParticleObjs(render_t *pRender) {
     B3LObj_t  *pCurrentObj =(pRender->scene.pActiveParticleGenObjs);
     u32 state;
-    mat4_t *pCamMat = &(pRender->camera.camMat);
+    mat4_t *pcamW2CMat = &(pRender->camera.camW2CMat);
     screen4_t screenVect;
     u32 i;
     B3L_Particle_t *pParticle;
@@ -1433,7 +1624,7 @@ static void RenderParticleObjs(render_t *pRender) {
         pParticle = ((B3LParticleGenObj_t *)pCurrentObj)->pParticleActive;     
         //project the particle from world space to screen space
         while(i--){
-            Vect3Xmat4WithTestToScreen4(&(pParticle->position), pCamMat, &screenVect);
+            Vect3Xmat4WithTestToScreen4(&(pParticle->position), pcamW2CMat, &screenVect);
             //get the screen position
             u32 test = screenVect.test;
             if (B3L_TEST(test,B3L_IN_SPACE)){
@@ -1490,7 +1681,7 @@ void B3L_UpdateAllParticlesStatesInGen(render_t *pRender,B3LParticleGenObj_t *pG
 
 
 
-void     B3L_DefaultParticleUpdFunc(u32 time,B3LParticleGenObj_t *pSelf,mat4_t *pMat,render_t *pRender){
+void    B3L_DefaultParticleUpdFunc(u32 time,B3LParticleGenObj_t *pSelf,mat3_t *pMat,vect3_t *pTrans,render_t *pRender){
 //TODO here
     u32 deltaTime;
     u32 i;
@@ -1513,7 +1704,7 @@ void     B3L_DefaultParticleUpdFunc(u32 time,B3LParticleGenObj_t *pSelf,mat4_t *
         while(i--){
             pParticle = B3L_GetFreeParticle(&(pRender->scene));
             //setup position
-            B3L_SET_PARTICLE_POSITION(pParticle,pMat->m03,pMat->m13,pMat->m23);
+            B3L_SET_PARTICLE_POSITION(pParticle,pTrans->x,pTrans->y,pTrans->z);
             //pParticle->position.x = pMat->m03;
             //pParticle->position.y = pMat->m13;
             //pParticle->position.z = pMat->m23;
@@ -1529,7 +1720,7 @@ void     B3L_DefaultParticleUpdFunc(u32 time,B3LParticleGenObj_t *pSelf,mat4_t *
             randValue = B3L_Random();
             randValue = randValue&0x000000FF;
             delta.z = 0.5f*((f32)(randValue-128))*inv256;
-            B3L_Vect3MulMat4(&delta, pMat, &delta);
+            B3L_Vect3MulMat3(&delta, pMat, &delta);
             B3L_SET_PARTICLE_DELTA(pParticle,delta.x,delta.y,delta.z);
             //pParticle->delta.x = delta.x;
             //pParticle->delta.y = delta.y;
@@ -1565,15 +1756,15 @@ static void RenderMeshObjs(render_t *pRender){
             pCurrentObj = pCurrentObj->next;
             continue;
         }
-        //create the obj->clip matrix
-        if(B3L_TEST(pCurrentObj->state,OBJ_USING_CUSTOMERIZE_MAT)){
-            B3L_Mat4XMat4(pCurrentObj->pCustMat,&(pRender->camera.camMat), &mat);
-            //CopyMat4(&mat,pCurrentObj->pCustMat);
-        }else{    
+        //create the obj->clip matrix  
+        B3L_MakeO2CMatrix(&(pCurrentObj->mat),&(pCurrentObj->transform.scale),
+                          &(pCurrentObj->transform.translation),&(pRender->camera.camW2CMat), &mat);
+            /*
             B3L_MakeWorldMatrix(&(pCurrentObj->transform), &mat);
-            B3L_Mat4XMat4(&mat, &(pRender->camera.camMat),&mat);
-            //B3L_Mat4XMat4(&mat, &(pRender->camera.camMat));
-        } 
+            B3L_Mat4XMat4(&mat, &(pRender->camera.camW2CMat),&mat);
+           */
+            //B3L_Mat4XMat4(&mat, &(pRender->camera.camW2CMat));
+        
         //B3L_logMat4(mat);
         //calculate the bound box position in the clip space
         inClipSpace = false;
@@ -1643,6 +1834,7 @@ static void RenderMeshObjs(render_t *pRender){
 }
 
 void B3L_RenderScence(render_t *pRender){
+    //from camera's rotation matrix to create world -> clip space matrix
     UpdateCam(pRender);
 
     UpdateLightVect(pRender);
@@ -1783,6 +1975,7 @@ B3LObj_t * B3L_GetFreeObj(render_t *pRender){
         returnObj->next = (B3LObj_t *)NULL;
         returnObj->privous = (B3LObj_t *)NULL;
         returnObj->state = 0;
+        B3L_InitUnitMat3(&(returnObj->mat));
         return returnObj;
     }else{
         return (B3LObj_t *)NULL;
@@ -1839,6 +2032,7 @@ B3LPolygonObj_t    *B3L_GetFreePolygonObj(render_t *pRender){
         pObj->transform.scale.x = 1.0f;
         pObj->transform.scale.y = 1.0f;
         pObj->transform.scale.z = 1.0f;
+        
     }
     return (B3LPolygonObj_t *)pObj;
 }
@@ -1947,6 +2141,7 @@ void B3L_InitBoxObj(B3LMeshObj_t *pObj,f32 size){
     pObj->transform.scale.y = size;
     pObj->transform.scale.z = size;
     pObj->pBoundBox = B3L_box.pVect;
+
     B3L_SET(pObj->state,MESH_OBJ); 
     B3L_SET(pObj->state,OBJ_VISUALIZABLE);
 
@@ -2965,6 +3160,198 @@ __attribute__((always_inline)) static  inline void  DrawTriColor(
         bZ += dz02; 
     }
 }
+
+/*-----------------------------------------------------------------------------
+Rotation calculation functions 
+-----------------------------------------------------------------------------*/
+void B3L_EulerToMatrix(euler3_t *pEuler,mat3_t *pMat){
+    f32 byX = pEuler->x;
+    f32 byY = pEuler->y;
+    f32 byZ = pEuler->z;
+
+    f32 sx = B3L_sin(byX);
+    f32 sy = B3L_sin(byY);
+    f32 sz = B3L_sin(byZ);
+    f32 cx = B3L_cos(byX);
+    f32 cy = B3L_cos(byY);
+    f32 cz = B3L_cos(byZ);
+    #define M(x,y) (pMat)->m##x##y
+    M(0,0) = (cy * cz)  + (sy * sx * sz);
+    M(0,1) = (cz * sy * sx)  - (cy * sz);
+    M(0,2) = (cx * sy) ;
+    M(1,0) = (cx * sz) ;
+    M(1,1) = (cx * cz);
+    M(1,2) = -1.0f * sx;
+    M(2,0) = (cy * sx * sz)  - (cz * sy);
+    M(2,1) = (cy * cz * sx)+ (sy * sz) ;
+    M(2,2) = (cy * cx) ;
+    #undef M
+
+}
+void B3L_MatrixToEuler(mat3_t *pMat, euler3_t *pEuler){
+    f32 sp = -pMat->m12;
+    if (sp <= -1.0f){
+        pEuler->x = -0.25f;
+    } else if (sp>=1.0f){
+        pEuler->x = 0.25f;
+    } else {
+        pEuler->x = B3L_asin(sp);
+    }
+    if (B3L_Absf(sp)>0.9999f){
+        pEuler->z = 0.0f;
+        pEuler->y = B3L_atan2(-pMat->m02,pMat->m00);
+    }else{
+        pEuler->y = B3L_atan2(pMat->m02,pMat->m22);
+        pEuler->z = B3L_atan2(pMat->m10,pMat->m11);
+    }
+}
+
+void B3L_QuaternionToMatrix(quat4_t *pQuat, mat3_t *pMat){
+    f32 x = pQuat->x; f32 y = pQuat->y; f32 z = pQuat->z; f32 w = pQuat->w;
+    pMat->m00 = 1.0f - 2.0f*(y*y + z*z);
+    pMat->m01 = 2.0f*(x*y - w*z);
+    pMat->m02 = 2.0f*(x*z + w*y);
+    pMat->m10 = 2.0f*(x*y + w*z);
+    pMat->m11 = 1.0f - 2.0f*(x*x + z*z);
+    pMat->m12 = 2.0f*(y*z - w*x);
+    pMat->m20 = 2.0f*(x*z - w*y);
+    pMat->m21 = 2.0f*(y*z + w*x);
+    pMat->m22 = 1.0f - 2.0f*(x*x + y*y);
+}
+
+void B3L_MatrixToQuaternion(mat3_t *pMat, quat4_t *pQuat){
+    f32 fWSM = pMat->m00 + pMat->m11 + pMat->m22;
+    f32 fXSM = pMat->m00 - pMat->m11 - pMat->m22;
+    f32 fYSM = pMat->m11 - pMat->m00 - pMat->m22;
+    f32 fZSM = pMat->m22 - pMat->m00 - pMat->m11;
+    s32 biggestIndex = 0;
+    f32 fBSM = fWSM;
+    if (fXSM>fBSM){
+        fBSM = fXSM;
+        biggestIndex = 1;
+    }
+    if(fYSM>fBSM){
+        fBSM=fYSM;
+        biggestIndex = 2;
+    }
+    if(fZSM>fBSM){
+        fBSM=fZSM;
+        biggestIndex = 3;
+    }
+    f32 biggestVal = B3L_Sqrtf(fBSM + 1.0f)*0.5f;
+    f32 mult = 0.25f/biggestVal;
+    switch(biggestIndex){
+        case 0:
+            pQuat->w = biggestVal;
+            pQuat->x = (pMat->m21 - pMat->m12)*mult;
+            pQuat->y = (pMat->m02 - pMat->m20)*mult;
+            pQuat->z = (pMat->m10 - pMat->m01)*mult;
+        break;
+        case 1:
+            pQuat->x = biggestVal;
+            pQuat->w = (pMat->m21 - pMat->m12)*mult;
+            pQuat->y = (pMat->m10 - pMat->m01)*mult;
+            pQuat->z = (pMat->m02 + pMat->m20)*mult;
+        break;
+        case 2:
+            pQuat->y = biggestVal;
+            pQuat->w = (pMat->m02 - pMat->m20)*mult;
+            pQuat->x = (pMat->m10 - pMat->m01)*mult;
+            pQuat->z = (pMat->m21 + pMat->m12)*mult;
+        break;
+        case 3:
+            pQuat->z = biggestVal;
+            pQuat->w = (pMat->m10 - pMat->m01)*mult;
+            pQuat->x = (pMat->m02 - pMat->m20)*mult;
+            pQuat->y = (pMat->m21 + pMat->m12)*mult;
+        break;
+    }
+
+}
+
+void B3L_EulerToQuaternion(euler3_t *pEuler,quat4_t *pQuat){
+    f32 cp = B3L_cos(pEuler->x * 0.5f);
+    f32 ch = B3L_cos(pEuler->y * 0.5f);
+    f32 cb = B3L_cos(pEuler->z * 0.5f);
+    f32 sp = B3L_sin(pEuler->x * 0.5f);
+    f32 sh = B3L_sin(pEuler->y * 0.5f);
+    f32 sb = B3L_sin(pEuler->z * 0.5f);
+    pQuat->w = ch*cp*cb + sh*sp*sb;
+    pQuat->x = ch*sp*cb + sh*cp*sb;
+    pQuat->y = sh*cp*cb - ch*sp*sb;
+    pQuat->z = ch*cp*sb - sh*sp*cb;
+}
+
+
+void B3L_QuaternionToEuler(quat4_t *pQuat,euler3_t *pEuler){
+    f32 x = pQuat->x;
+    f32 y = pQuat->y;
+    f32 z = pQuat->z;
+    f32 w = pQuat->w;
+    f32 sp = -2.0f*(y*z - w*x);
+    if (B3L_Absf(sp)>0.9999f){
+        pEuler->x = 0.25f * sp;
+        pEuler->y = B3L_atan2(-x*z+w*y,0.5f-y*y-z*z);
+        pEuler->z = 0.0f;
+    }else{
+        pEuler->x = B3L_asin(sp);
+        pEuler->y = B3L_atan2(x*z+w*y,0.5f-x*x-y*y);
+        pEuler->z = B3L_atan2(x*y+w*z,0.5f-x*x-z*z);
+    }
+
+}
+
+void B3L_QuaternionInterp(quat4_t *pQuat0,quat4_t *pQuat1,quat4_t *pResult, f32 t){
+    f32 w0 = pQuat0->w; f32 x0 = pQuat0->x; f32 y0 = pQuat0->y; f32 z0 = pQuat0->z;
+    f32 w1 = pQuat1->w; f32 x1 = pQuat1->x; f32 y1 = pQuat1->y; f32 z1 = pQuat1->z;
+    f32 cosOmega = w0*w1+x0*x1+y0*y1+z0*z1;
+    if(cosOmega <0.0f){
+        w1 = -w1;x1 = -x1; y1 = -y1; z1 = -z1; 
+        cosOmega = -cosOmega;
+    }
+    f32 k0,k1;
+    if (cosOmega >0.9999f){
+        k0 = 1.0f-t;
+        k1 = t;
+    }else{
+        f32 sinOmega = B3L_Sqrtf(1.0f - cosOmega*cosOmega);
+        f32 omega = B3L_atan2(sinOmega,cosOmega);
+        f32 oneOverSinOmega = 1.0f/sinOmega;
+        k0 = B3L_sin((1.0f-t)*omega)*oneOverSinOmega;
+        k1 = B3L_sin(t*omega)*oneOverSinOmega;
+    }
+    pResult->w = w0*k0 + w1*k1;
+    pResult->x = x0*k0 + x1*k1;
+    pResult->y = y0*k0 + y1*k1;
+    pResult->z = z0*k0 + z1*k1;
+}
+
+void B3L_InitUnitMat3(mat3_t *pMat){
+    pMat->m00 = 1.0f;
+    pMat->m01 = 0.0f;
+    pMat->m02 = 0.0f;
+    pMat->m10 = 0.0f;
+    pMat->m11 = 1.0f;
+    pMat->m12 = 0.0f;
+    pMat->m20 = 0.0f;
+    pMat->m21 = 0.0f;
+    pMat->m22 = 1.0f;
+
+}
+
+
+void B3L_CreateO2WMat(mat3_t *pRMat, vect3_t *pTranslation, vect3_t *pScale, mat4_t *pResult){
+    f32 sx = pScale->x;
+    f32 sy = pScale->y;
+    f32 sz = pScale->z;
+    pResult->m03 = pTranslation->x; pResult->m13 = pTranslation->y; pResult->m23 = pTranslation->z;
+    pResult->m00 = pRMat->m00*sx; pResult->m01 = pRMat->m01*sy; pResult->m02 = pRMat->m02*sz;
+    pResult->m10 = pRMat->m10*sx; pResult->m11 = pRMat->m11*sy; pResult->m12 = pRMat->m12*sz;
+    pResult->m20 = pRMat->m20*sx; pResult->m21 = pRMat->m21*sy; pResult->m22 = pRMat->m22*sz;
+    pResult->m30 = 0.0f; pResult->m31 = 0.0f; pResult->m32 = 0.0f; pResult->m33 = 1.0f;
+}
+
+
 
 fBuff_t *B3L_3dRenderAreaShiftCal(fBuff_t *startOfWholeFrameBuff,u32 x, u32 y){
     startOfWholeFrameBuff += y*WHOLE_FRAME_BUFF_WIDTH+x;
