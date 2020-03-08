@@ -32,8 +32,8 @@ void init() {
     //init particle generator
     pParticleGen = B3L_GetFreeParticleGeneratorObj(&B3Lrender);
     B3L_InitDemoParticleGenObj(pParticleGen);
-    pParticleGen->translation.x = 0.0f;
-    pParticleGen->translation.y = 0.0f;
+    pParticleGen->transform.translation.x = 0.0f;
+    pParticleGen->transform.translation.y = 0.0f;
     //B3L_AddObjToRenderList((B3LObj_t *)pParticleGen, &B3Lrender);
     //init light
     B3L_SetLightType(&B3Lrender,parallelLight);
@@ -48,15 +48,14 @@ void init() {
     B3L_AddObjToRenderList((B3LObj_t *)pShip, &B3Lrender);
     //init the camera
     
-    B3Lrender.camera.transform.translation = {50.0f,50.0f,-200.0f};
+    B3Lrender.camera.transform.translation = {0.0f,0.0f,-200.0f};
 
-    B3L_CameraLookAt(&(B3Lrender.camera), &at);
+    //B3L_CameraLookAt(&(B3Lrender.camera), &at);
     
     B3L_TweenStart(&tCatZ,0);
-    //B3L_CamSetTrack(&(B3Lrender.camera), (B3LObj_t  *)pShip,200.0f, 0.0035f,0.20f, 0.0f, 0.0f);
-    //B3L_CamStartTrack(&(B3Lrender.camera));
-    //printf("Atan 1 1: %.4f\n",B3L_atan2(0.70710f,0.70710f));
-    //printf("Atan 1 3sqrt: %.4f\n",B3L_atan2(0.5f,0.86602f));
+
+    printf("obj %d,particle %d\n",sizeof(B3LObj_t),sizeof(B3LParticleGenObj_t));
+    
 }
 
 void update(uint32_t time){

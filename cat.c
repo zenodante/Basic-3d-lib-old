@@ -4725,9 +4725,9 @@ void InitCatObj(B3LMeshObj_t *pObj,f32 size){
     pObj->transform.translation.x = 0.0f;
     pObj->transform.translation.y = 0.0f;
     pObj->transform.translation.z = 0.0f;
-    pObj->transform.rotation.x = 0.0f;
-    pObj->transform.rotation.y = 0.0f;
-    pObj->transform.rotation.z = 0.0f;
+    //pObj->transform.rotation.x = 0.0f;
+    //pObj->transform.rotation.y = 0.0f;
+    //pObj->transform.rotation.z = 0.0f;
     pObj->transform.scale.x = size;
     pObj->transform.scale.y = size;
     pObj->transform.scale.z = size;

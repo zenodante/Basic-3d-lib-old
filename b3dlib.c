@@ -296,7 +296,7 @@ Camera functions
 static void     UpdateCam(render_t *pRender);
 static void     CameraTweenPositionAngle(vect3_t  *pPrevPAngle,f32 tweenSpeed, vect3_t *pModifiTarget);
 static void     CameraTrackPoint(camera_t *pCam, vect3_t *pAt, vect3_t *paxisAngle, f32 distance);
-static void     CalTargetPositonAngle(vect3_t *pTgtRotate, vect3_t *pTgtPositionAngle,vect3_t *pResult);
+//static void     CalTargetPositonAngle(vect3_t *pTgtRotate, vect3_t *pTgtPositionAngle,vect3_t *pResult);
 static void     GenerateW2CMatrix(camera_t *pCam);
  /*-----------------------------------------------------------------------------
 Obj list functions
@@ -1206,7 +1206,7 @@ void B3L_MakeTranslationMat(f32 offsetX,f32 offsetY,f32 offsetZ,mat4_t *pMat){
     M(0,3) = offsetX; M(1,3) = offsetY; M(2,3) = offsetZ; M(3,3) = one;
     #undef M
 }
-
+/*
 void B3L_MakeWorldMatrix(transform3D_t *pWorldTransform, mat4_t *pMat){
     mat4_t temp;
     B3L_MakeScaleMatrix(pWorldTransform->scale.x,
@@ -1218,13 +1218,7 @@ void B3L_MakeWorldMatrix(transform3D_t *pWorldTransform, mat4_t *pMat){
                                 pWorldTransform->rotation.z,&temp);
 
     B3L_Mat4XMat4(pMat,&temp,pMat);
-    //B3L_Mat4XMat4(pMat,&temp); 
-    /*   
-    B3L_MakeTranslationMat(pWorldTransform->translation.x,
-                                pWorldTransform->translation.y,
-                                pWorldTransform->translation.z,&temp);
-    B3L_Mat4XMat4(pMat,&temp);   
-    */
+
     pMat->m03 = pWorldTransform->translation.x;
     pMat->m13 = pWorldTransform->translation.y;
     pMat->m23 = pWorldTransform->translation.z;
@@ -1234,9 +1228,8 @@ printf("In make world matrix, temp matrix:\n");
 B3L_logMat4(temp);  
 #endif  
               
-
 }
-
+*/
 void B3L_MakeO2CMatrix(mat3_t *pRMat,vect3_t *pScale,vect3_t *pTrans,mat4_t *pCamMat, mat4_t *pResult){
 
     f32 t0,t1,t2,t3;
@@ -1382,9 +1375,9 @@ Camera functions
 void B3L_InitCamera(camera_t *pCam){
     pCam->aspectRate = DEFAULT_ASPECT_RATIO;
     pCam->focalLength = DEFAULT_FOCUS_LENGTH;
-    pCam->transform.rotation.x = 0.0f;
-    pCam->transform.rotation.y = 0.0f;
-    pCam->transform.rotation.z = 0.0f;
+    //pCam->transform.rotation.x = 0.0f;
+    //pCam->transform.rotation.y = 0.0f;
+    //pCam->transform.rotation.z = 0.0f;
     pCam->transform.scale.x = 1.0f;
     pCam->transform.scale.y = 1.0f;
     pCam->transform.scale.z = 1.0f;
@@ -1465,7 +1458,15 @@ void B3L_CameraMoveTo(vect3_t position,camera_t *pCam){
 }
 
 
-void B3L_CameraLookAt(camera_t *pCam, vect3_t *pAt){
+void B3L_CameraLookAt(camera_t *pCam, vect3_t *pAt,vect3_t *pUp){
+    B3L_SET(pCam->state,OBJ_NEED_MATRIX_UPDATE);
+    
+    //now need a quat version camera look at function
+
+    //setup the quat
+
+
+    /*
     vect3_t v;
 
     v.x = pAt->x - pCam->transform.translation.x;
@@ -1494,6 +1495,7 @@ void B3L_CameraLookAt(camera_t *pCam, vect3_t *pAt){
     //now the camera euler angle is up-to-date
     B3L_CLR(pCam->state,OBJ_NEED_QUAT_UPDATE);
     B3L_EulerToMatrix(&(pCam->transform.rotation),&(pCam->mat));
+    */
 }
 /*
 void   B3L_SetCameraUpDirection(camera_t *pCam, vect3_t *pUp){
@@ -1513,6 +1515,7 @@ void B3L_CamStartTrack(camera_t *pCam){
 }
 
 void B3L_CamSetTrack(camera_t *pCam, B3LObj_t  *pTrackObj,f32 trackDistance, f32 trackAngleSpeed, f32 targetAX, f32 targetAY, f32 targetAZ){
+    /*
     pCam->pTrackObj = pTrackObj;
     pCam->trackDistance = trackDistance;
     pCam->trackTweenSpeed = trackAngleSpeed;
@@ -1520,10 +1523,11 @@ void B3L_CamSetTrack(camera_t *pCam, B3LObj_t  *pTrackObj,f32 trackDistance, f32
     pCam->PositionAngle.y = targetAY;
     pCam->PositionAngle.z = targetAZ;
     CalTargetPositonAngle(&(pCam->pTrackObj->transform.rotation), &(pCam->PositionAngle),&(pCam->PrevPositionAngle));
-
+    */
 }
 
 static void   CameraTweenPositionAngle(vect3_t  *pPrevPAngle,f32 tweenSpeed, vect3_t *pModifiTarget){
+    /*
     pModifiTarget->x -= (f32)((s32)(pModifiTarget->x));
     pModifiTarget->y -= (f32)((s32)(pModifiTarget->y));
     pModifiTarget->y -= (f32)((s32)(pModifiTarget->y));
@@ -1557,9 +1561,11 @@ static void   CameraTweenPositionAngle(vect3_t  *pPrevPAngle,f32 tweenSpeed, vec
     }else if(dz > tweenSpeed){
         pModifiTarget->z = pModifiTarget->z - dz + tweenSpeed;
     }
+    */
 }
 
 static void   CameraTrackPoint(camera_t *pCam, vect3_t *pAt, vect3_t *paxisAngle, f32 distance){
+    /*
     paxisAngle->x -= (f32)((s32)(paxisAngle->x));
     paxisAngle->y -= (f32)((s32)(paxisAngle->y));
     paxisAngle->z -= (f32)((s32)(paxisAngle->z));
@@ -1585,14 +1591,15 @@ static void   CameraTrackPoint(camera_t *pCam, vect3_t *pAt, vect3_t *paxisAngle
     }else{
         pCam->transform.rotation.z = paxisAngle->z;
     }
+   */ 
 }
-
+/*
 static void CalTargetPositonAngle(vect3_t *pTgtRotate, vect3_t *pTgtPositionAngle,vect3_t *pResult){
      pResult->x = pTgtRotate->x + pTgtPositionAngle->x;
      pResult->y = pTgtRotate->y - pTgtPositionAngle->y;
      pResult->z = pTgtRotate->z + pTgtPositionAngle->z;
 }
-
+*/
 static void  UpdateCam(render_t *pRender){
     //if current in track obj mode
     /*
@@ -1657,11 +1664,11 @@ static void UpdateParticleObjs(render_t *pRender, u32 time){
             //mat.m23 = ((B3LParticleGenObj_t *)pCurrentObj)->translation.z; 
         if (B3L_TEST(state,OBJ_NEED_MATRIX_UPDATE)){
             //update the matrix from quat4
-            B3L_QuaternionToMatrix(&(((B3LParticleGenObj_t *)pCurrentObj)->quaternion), &(pCurrentObj->mat));
+            B3L_QuaternionToMatrix(&(((B3LParticleGenObj_t *)pCurrentObj)->transform.quaternion), &(pCurrentObj->mat));
             B3L_CLR(pCurrentObj->state,OBJ_NEED_MATRIX_UPDATE);
         }
         ((B3LParticleGenObj_t *)pCurrentObj)->PtlUpdFunc(time,(B3LParticleGenObj_t *)pCurrentObj,
-                                                         &(((B3LParticleGenObj_t *)pCurrentObj)->mat),&(((B3LParticleGenObj_t *)pCurrentObj)->translation),pRender);   
+                                                         &(((B3LParticleGenObj_t *)pCurrentObj)->mat),&(((B3LParticleGenObj_t *)pCurrentObj)->transform.translation),pRender);   
         
         
         pCurrentObj = pCurrentObj->next;    
@@ -2065,9 +2072,9 @@ B3LMeshObj_t *B3L_GetFreeMeshObj(render_t *pRender){
         pObj->transform.translation.x = 0.0f;
         pObj->transform.translation.y = 0.0f;
         pObj->transform.translation.z = 0.0f;
-        pObj->transform.rotation.x = 0.0f;
-        pObj->transform.rotation.y = 0.0f;
-        pObj->transform.rotation.z = 0.0f;
+        //pObj->transform.rotation.x = 0.0f;
+        //pObj->transform.rotation.y = 0.0f;
+        //pObj->transform.rotation.z = 0.0f;
         pObj->transform.scale.x = 1.0f;
         pObj->transform.scale.y = 1.0f;
         pObj->transform.scale.z = 1.0f;
@@ -2083,9 +2090,9 @@ B3LMeshNoTexObj_t *B3L_GetFreeMeshNoTexObj(render_t *pRender){
         pObj->transform.translation.x = 0.0f;
         pObj->transform.translation.y = 0.0f;
         pObj->transform.translation.z = 0.0f;
-        pObj->transform.rotation.x = 0.0f;
-        pObj->transform.rotation.y = 0.0f;
-        pObj->transform.rotation.z = 0.0f;
+        //pObj->transform.rotation.x = 0.0f;
+        //pObj->transform.rotation.y = 0.0f;
+        //pObj->transform.rotation.z = 0.0f;
         pObj->transform.scale.x = 1.0f;
         pObj->transform.scale.y = 1.0f;
         pObj->transform.scale.z = 1.0f;
@@ -2101,9 +2108,9 @@ B3LPolygonObj_t    *B3L_GetFreePolygonObj(render_t *pRender){
         pObj->transform.translation.x = 0.0f;
         pObj->transform.translation.y = 0.0f;
         pObj->transform.translation.z = 0.0f;
-        pObj->transform.rotation.x = 0.0f;
-        pObj->transform.rotation.y = 0.0f;
-        pObj->transform.rotation.z = 0.0f;
+        //pObj->transform.rotation.x = 0.0f;
+        //pObj->transform.rotation.y = 0.0f;
+        //pObj->transform.rotation.z = 0.0f;
         pObj->transform.scale.x = 1.0f;
         pObj->transform.scale.y = 1.0f;
         pObj->transform.scale.z = 1.0f;
@@ -2118,12 +2125,16 @@ B3LParticleGenObj_t  *B3L_GetFreeParticleGeneratorObj(render_t *pRender){
         B3L_SET(pObj->state,PARTICLE_GEN_OBJ);
         B3L_SET(pObj->state,OBJ_VISUALIZABLE);
         B3L_SET(pObj->state,OBJ_PARTICLE_ACTIVE);
-        ((B3LParticleGenObj_t  *)pObj)->rotation.x = 0.0f;
-        ((B3LParticleGenObj_t  *)pObj)->rotation.y = 0.0f;
-        ((B3LParticleGenObj_t  *)pObj)->rotation.z = 0.0f;
-        ((B3LParticleGenObj_t  *)pObj)->translation.x = 0.0f;
-        ((B3LParticleGenObj_t  *)pObj)->translation.y = 0.0f;
-        ((B3LParticleGenObj_t  *)pObj)->translation.z = 0.0f;
+        //((B3LParticleGenObj_t  *)pObj)->transform.rotation.x = 0.0f;
+        //((B3LParticleGenObj_t  *)pObj)->transform.rotation.y = 0.0f;
+        //((B3LParticleGenObj_t  *)pObj)->transform.rotation.z = 0.0f;
+        ((B3LParticleGenObj_t  *)pObj)->transform.translation.x = 0.0f;
+        ((B3LParticleGenObj_t  *)pObj)->transform.translation.y = 0.0f;
+        ((B3LParticleGenObj_t  *)pObj)->transform.translation.z = 0.0f;
+        ((B3LParticleGenObj_t  *)pObj)->transform.quaternion.x = 0.0f;
+        ((B3LParticleGenObj_t  *)pObj)->transform.quaternion.y = 0.0f;
+        ((B3LParticleGenObj_t  *)pObj)->transform.quaternion.z = 0.0f;
+        ((B3LParticleGenObj_t  *)pObj)->transform.quaternion.w = 1.0f;
         ((B3LParticleGenObj_t  *)pObj)->particleNum = 0;
         ((B3LParticleGenObj_t  *)pObj)->pParticleActive = (B3L_Particle_t *)NULL;
         ((B3LParticleGenObj_t  *)pObj)->lastTime = 0;
@@ -2209,9 +2220,9 @@ void B3L_InitBoxObj(B3LMeshObj_t *pObj,f32 size){
     pObj->transform.translation.x = 0.0f;
     pObj->transform.translation.y = 0.0f;
     pObj->transform.translation.z = 0.0f;
-    pObj->transform.rotation.x = 0.0f;
-    pObj->transform.rotation.y = 0.0f;
-    pObj->transform.rotation.z = 0.0f;
+    //pObj->transform.rotation.x = 0.0f;
+    //pObj->transform.rotation.y = 0.0f;
+    //pObj->transform.rotation.z = 0.0f;
     pObj->transform.scale.x = size;
     pObj->transform.scale.y = size;
     pObj->transform.scale.z = size;
@@ -2230,9 +2241,9 @@ void B3L_InitBoxObjNoTexture(B3LMeshNoTexObj_t *pObj,f32 size){
     pObj->transform.translation.x = 0.0f;
     pObj->transform.translation.y = 0.0f;
     pObj->transform.translation.z = 0.0f;
-    pObj->transform.rotation.x = 0.0f;
-    pObj->transform.rotation.y = 0.0f;
-    pObj->transform.rotation.z = 0.0f;
+    //pObj->transform.rotation.x = 0.0f;
+   // pObj->transform.rotation.y = 0.0f;
+   // pObj->transform.rotation.z = 0.0f;
     pObj->transform.scale.x = size;
     pObj->transform.scale.y = size;
     pObj->transform.scale.z = size;
@@ -2261,9 +2272,9 @@ void B3L_InitBoxObjPolygon(B3LPolygonObj_t *pObj,f32 size){
     pObj->transform.translation.x = 0.0f;
     pObj->transform.translation.y = 0.0f;
     pObj->transform.translation.z = 0.0f;
-    pObj->transform.rotation.x = 0.0f;
-    pObj->transform.rotation.y = 0.0f;
-    pObj->transform.rotation.z = 0.0f;
+    //pObj->transform.rotation.x = 0.0f;
+    //pObj->transform.rotation.y = 0.0f;
+    //pObj->transform.rotation.z = 0.0f;
     pObj->transform.scale.x = size;
     pObj->transform.scale.y = size;
     pObj->transform.scale.z = size;
@@ -2290,12 +2301,16 @@ void     B3L_InitDemoParticleGenObj(B3LParticleGenObj_t  *pParticleGen){
     pParticleGen->PtlUpdFunc = B3L_DefaultParticleUpdFunc;
     pParticleGen->lastTime = 0;
     pParticleGen->particleNum = 0;
-    pParticleGen->rotation.x = 0.0f;
-    pParticleGen->rotation.y = 0.0f;
-    pParticleGen->rotation.z = 0.0f;
-    pParticleGen->translation.x = 0.0f;
-    pParticleGen->translation.y = 0.0f;
-    pParticleGen->translation.z = 0.0f;
+    //pParticleGen->transform.rotation.x = 0.0f;
+    //pParticleGen->transform.rotation.y = 0.0f;
+    //pParticleGen->transform.rotation.z = 0.0f;
+    pParticleGen->transform.translation.x = 0.0f;
+    pParticleGen->transform.translation.y = 0.0f;
+    pParticleGen->transform.translation.z = 0.0f;
+    pParticleGen->transform.quaternion.x = 0.0f;
+    pParticleGen->transform.quaternion.y = 0.0f;
+    pParticleGen->transform.quaternion.z = 0.0f;
+    pParticleGen->transform.quaternion.w = 1.0f;
     pParticleGen->pParticleActive = (B3L_Particle_t *)NULL;
     B3L_SET(pParticleGen->state,PARTICLE_GEN_OBJ);
     B3L_SET(pParticleGen->state,OBJ_VISUALIZABLE);

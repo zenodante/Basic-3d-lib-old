@@ -212,7 +212,7 @@ typedef struct{
 
 typedef struct{
     quat4_t             quaternion;
-    vect3_t             rotation;
+    //vect3_t             rotation;
     vect3_t             scale;
     vect3_t             translation;
 }transform3D_t;
@@ -312,16 +312,16 @@ B3LObj_t state
 #define OBJ_NEED_MATRIX_UPDATE             (25)
 //all different obj types's size is <= sizeof(B3LObj_t)
 typedef struct B3LOBJ{
-    struct B3LOBJ       *privous;
-    struct B3LOBJ       *next;
-    u32                 state;
-    mat3_t              mat;
-    transform3D_t       transform;
-    f32                 *pBoundBox;
+    struct B3LOBJ       *privous;//8 4
+    struct B3LOBJ       *next;//8 4
+    u32                 state;//4 4
+    mat3_t              mat;//36 36
+    transform3D_t       transform;//40 40
+    f32                 *pBoundBox;//8 4
     #if B3L_ARM  == 1   
-    u32                 dummy[2];
+    u32                 dummy[4];//   16----100 
     #else    
-    u32                 dummy[4];
+    u32                 dummy[6];//24 ----136
     #endif
 }B3LObj_t;//16 not common on ARM32,24 not common on WIN64 ?why 96byte not 88?
 
@@ -440,19 +440,16 @@ typedef struct{
 
 
 typedef struct PARTICLEGENOBJ{
-    B3LObj_t            *privous;
-    B3LObj_t            *next;
-    u32                 state;
-    mat3_t              mat;
-    
-    quat4_t             quaternion;
-    vect3_t             rotation;//for particle generate 
-    vect3_t             translation;//for particle generate 
-    u32                 lastTime;
-    u32                 particleNum;
-    B3L_Particle_t      *pParticleActive;   
-    void      (*DrawFunc)(B3L_Particle_t *, screen4_t *,fBuff_t *,zBuff_t *);
-    void      (*PtlUpdFunc)(u32,struct PARTICLEGENOBJ *,mat3_t *,vect3_t *,render_t *);   
+    B3LObj_t            *privous;//8  4
+    B3LObj_t            *next;//8   4
+    u32                 state;//4   4
+    mat3_t              mat;//36    36
+    transform3D_t       transform;//40    40
+    u32                 lastTime;//4   4
+    u32                 particleNum;//4   4
+    B3L_Particle_t      *pParticleActive;//8   4   
+    void      (*DrawFunc)(B3L_Particle_t *, screen4_t *,fBuff_t *,zBuff_t *);//8   4
+    void      (*PtlUpdFunc)(u32,struct PARTICLEGENOBJ *,mat3_t *,vect3_t *,render_t *); //8    4  
     //time, self, obj->world matrix,free particle num pointer,free particle pool  
 }B3LParticleGenObj_t; //15 not common on ARM32,22 not common on WIN64
 
@@ -551,7 +548,7 @@ extern void     B3L_MakeRotationMatrixZXY(f32 byX,f32 byY,f32 byZ,mat4_t *pMat);
 extern void     B3L_MakeScaleMatrix(f32 scaleX,f32 scaleY,f32 scaleZ,mat4_t *pMat);
 extern void     B3L_MakeTranslationMat(f32 offsetX,f32 offsetY,f32 offsetZ,mat4_t *pMat);
 //
-extern void     B3L_MakeWorldMatrix(transform3D_t *pWorldTransform, mat4_t *pMat);
+//extern void     B3L_MakeWorldMatrix(transform3D_t *pWorldTransform, mat4_t *pMat);
 extern void     B3L_MakeO2CMatrix(mat3_t *pRMat,vect3_t *pScale,vect3_t *pTrans,mat4_t *pCamMat, mat4_t *pResult);
 //vect mul will not add translate m03, m13, m23
 //point mul will add translate m03, m13, m23
@@ -578,7 +575,7 @@ Camera functions
 -----------------------------------------------------------------------------*/
 extern void     B3L_InitCamera(camera_t *pCam);
 extern void     B3L_CameraMoveTo(vect3_t position,camera_t *pCam);
-extern void     B3L_CameraLookAt(camera_t *pCam, vect3_t *pAt);
+extern void     B3L_CameraLookAt(camera_t *pCam, vect3_t *pAt,vect3_t *pUp);
 //extern void     B3L_SetCameraMatrixByTransform(camera_t *pCam, mat4_t *pMat);
 //extern void     B3L_SetCameraUpDirection(camera_t *pCam, vect3_t *pUp);
 
