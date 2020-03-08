@@ -241,9 +241,7 @@ __attribute__((always_inline)) static  inline void     Norm3Xmat4Normalize(vect3
 __attribute__((always_inline)) static  inline void     Vect4Xmat4(vect4_t *pV, mat4_t *pMat, vect4_t *pResult);
 __attribute__((always_inline)) static  inline bool     Vect4BoundTest(vect4_t *pV);
 __attribute__((always_inline)) static  inline void     CopyMat4(mat4_t *target, mat4_t *source);
-static void B3L_Mat3XRotate(mat3_t *pMat,f32 angle);
-static void B3L_Mat3YRotate(mat3_t *pMat,f32 angle);
-static void B3L_Mat3ZRotate(mat3_t *pMat,f32 angle);
+
 /*-----------------------------------------------------------------------------
 Z buff functions
 -----------------------------------------------------------------------------*/
@@ -299,6 +297,7 @@ static void     UpdateCam(render_t *pRender);
 static void     CameraTweenPositionAngle(vect3_t  *pPrevPAngle,f32 tweenSpeed, vect3_t *pModifiTarget);
 static void     CameraTrackPoint(camera_t *pCam, vect3_t *pAt, vect3_t *paxisAngle, f32 distance);
 static void     CalTargetPositonAngle(vect3_t *pTgtRotate, vect3_t *pTgtPositionAngle,vect3_t *pResult);
+static void     GenerateW2CMatrix(camera_t *pCam);
  /*-----------------------------------------------------------------------------
 Obj list functions
 -----------------------------------------------------------------------------*/
@@ -456,7 +455,7 @@ __attribute__((always_inline)) static  inline void     Vect3_Add(vect3_t *pV1,ve
 /*
     Create 3*3 matrix for rotation in x axis
 */
-static void B3L_Mat3XRotate(mat3_t *pMat,f32 angle){
+void B3L_Mat3XRotate(mat3_t *pMat,f32 angle){
     f32 cosp = B3L_cos(angle);
     f32 sinp = B3L_sin(angle);
     pMat->m00=1.0f; pMat->m01=0.0f; pMat->m02=0.0f;
@@ -467,7 +466,7 @@ static void B3L_Mat3XRotate(mat3_t *pMat,f32 angle){
 /*
     Create 3*3 matrix for rotation in y axis
 */
-static void B3L_Mat3YRotate(mat3_t *pMat,f32 angle){
+void B3L_Mat3YRotate(mat3_t *pMat,f32 angle){
     f32 cosh = B3L_cos(angle);
     f32 sinh = B3L_sin(angle);
     pMat->m00=cosh; pMat->m01=0.0f; pMat->m02=sinh;
@@ -478,7 +477,7 @@ static void B3L_Mat3YRotate(mat3_t *pMat,f32 angle){
 /*
     Create 3*3 matrix for rotation in z axis
 */
-static void B3L_Mat3ZRotate(mat3_t *pMat,f32 angle){
+void B3L_Mat3ZRotate(mat3_t *pMat,f32 angle){
     f32 cosb = B3L_cos(angle);
     f32 sinb = B3L_sin(angle);
     pMat->m00=cosb; pMat->m01=-sinb; pMat->m02=0.0f;
@@ -490,83 +489,137 @@ static void B3L_Mat3ZRotate(mat3_t *pMat,f32 angle){
     Rotate obj matrix in obj space by x axis
 */
 void B3L_RotateObjInOX(B3LObj_t *pObj,f32 angle){
+    /*
     mat3_t rmat;
     B3L_Mat3XRotate(&rmat,angle);
     B3L_Mat3MultMat3ABB(&rmat,&(pObj->mat));
-    B3L_SET(pObj->state,OBJ_NEED_EULER_UPDATE);
+    B3L_SET(pObj->state,OBJ_NEED_QUAT_UPDATE);
+    */
+    quat4_t rqat;
+    B3L_QuatCreateXRotate(&rqat,angle);
+    B3L_QuatMult(&(pObj->transform.quaternion),&rqat, &(pObj->transform.quaternion));
+    B3L_SET(pObj->state,OBJ_NEED_MATRIX_UPDATE);
 }
 
 /*
     Rotate obj matrix in obj space by y axis
 */
 void B3L_RotateObjInOY(B3LObj_t *pObj,f32 angle){
+    /*
     mat3_t rmat;
     B3L_Mat3YRotate(&rmat,angle);
     B3L_Mat3MultMat3ABB(&rmat,&(pObj->mat));
-    B3L_SET(pObj->state,OBJ_NEED_EULER_UPDATE);
+    B3L_SET(pObj->state,OBJ_NEED_QUAT_UPDATE);
+    */
+    quat4_t rqat;
+    B3L_QuatCreateYRotate(&rqat,angle);
+    B3L_QuatMult(&(pObj->transform.quaternion),&rqat, &(pObj->transform.quaternion));
+    B3L_SET(pObj->state,OBJ_NEED_MATRIX_UPDATE);
 }
 
 /*
     Rotate obj matrix in obj space by z axis
 */
 void B3L_RotateObjInOZ(B3LObj_t *pObj,f32 angle){
+    /*
     mat3_t rmat;
     B3L_Mat3ZRotate(&rmat,angle);
     B3L_Mat3MultMat3ABB(&rmat,&(pObj->mat));
-    B3L_SET(pObj->state,OBJ_NEED_EULER_UPDATE);
+    B3L_SET(pObj->state,OBJ_NEED_QUAT_UPDATE);
+    */
+    quat4_t rqat;
+    B3L_QuatCreateZRotate(&rqat,angle);
+    B3L_QuatMult(&(pObj->transform.quaternion),&rqat, &(pObj->transform.quaternion));
+    B3L_SET(pObj->state,OBJ_NEED_MATRIX_UPDATE);
 }
 
 /*
     Rotate obj matrix in world space by x axis
 */
 void B3L_RotateObjInWX(B3LObj_t *pObj,f32 angle){
+    /*
     mat3_t rmat;
     B3L_Mat3XRotate(&rmat,angle);
     B3L_Mat3MultMat3ABA(&(pObj->mat),&rmat);
-    B3L_SET(pObj->state,OBJ_NEED_EULER_UPDATE);
+    B3L_SET(pObj->state,OBJ_NEED_QUAT_UPDATE);
+    */
+    quat4_t rqat;
+    B3L_QuatCreateXRotate(&rqat,angle);
+    B3L_QuatMult(&rqat,&(pObj->transform.quaternion), &(pObj->transform.quaternion));
+    B3L_SET(pObj->state,OBJ_NEED_MATRIX_UPDATE);
 }
 
 /*
     Rotate obj matrix in world space by y axis
 */
 void B3L_RotateObjInWY(B3LObj_t *pObj,f32 angle){
+    /*
     mat3_t rmat;
     B3L_Mat3YRotate(&rmat,angle);
     B3L_Mat3MultMat3ABA(&(pObj->mat),&rmat);
-    B3L_SET(pObj->state,OBJ_NEED_EULER_UPDATE);
+    B3L_SET(pObj->state,OBJ_NEED_QUAT_UPDATE);
+    */
+    quat4_t rqat;
+    B3L_QuatCreateYRotate(&rqat,angle);
+    B3L_QuatMult(&rqat,&(pObj->transform.quaternion), &(pObj->transform.quaternion));
+    B3L_SET(pObj->state,OBJ_NEED_MATRIX_UPDATE);
 }
 
 /*
     Rotate obj matrix in world space by z axis ?? may should use matrix type ABA
 */
 void B3L_RotateObjInWZ(B3LObj_t *pObj,f32 angle){
+    /*
     mat3_t rmat;
     B3L_Mat3ZRotate(&rmat,angle);
     B3L_Mat3MultMat3ABA(&(pObj->mat),&rmat);
-    B3L_SET(pObj->state,OBJ_NEED_EULER_UPDATE);
+    B3L_SET(pObj->state,OBJ_NEED_QUAT_UPDATE);
+    */
+    quat4_t rqat;
+    B3L_QuatCreateZRotate(&rqat,angle);
+    B3L_QuatMult(&rqat,&(pObj->transform.quaternion), &(pObj->transform.quaternion));
+    B3L_SET(pObj->state,OBJ_NEED_MATRIX_UPDATE);
+
 }
 
 void B3L_RotateCamInOX(camera_t *pCam,f32 angle){
+    /*
     mat3_t rmat;
     B3L_Mat3XRotate(&rmat,angle);
     B3L_Mat3MultMat3ABB(&rmat,&(pCam->mat));
-    B3L_SET(pCam->state,OBJ_NEED_EULER_UPDATE);
+    B3L_SET(pCam->state,OBJ_NEED_QUAT_UPDATE);
+    */
+    quat4_t rqat;
+    B3L_QuatCreateXRotate(&rqat,angle);
+    B3L_QuatMult(&(pCam->transform.quaternion),&rqat, &(pCam->transform.quaternion));
+    B3L_SET(pCam->state,OBJ_NEED_MATRIX_UPDATE);
 
 }
 
 void B3L_RotateCamInOY(camera_t *pCam,f32 angle){
+    /*
     mat3_t rmat;
     B3L_Mat3YRotate(&rmat,angle);
     B3L_Mat3MultMat3ABB(&rmat,&(pCam->mat));
-    B3L_SET(pCam->state,OBJ_NEED_EULER_UPDATE);
+    B3L_SET(pCam->state,OBJ_NEED_QUAT_UPDATE);
+    */
+    quat4_t rqat;
+    B3L_QuatCreateYRotate(&rqat,angle);
+    B3L_QuatMult(&(pCam->transform.quaternion),&rqat, &(pCam->transform.quaternion));
+    B3L_SET(pCam->state,OBJ_NEED_MATRIX_UPDATE);
 }
 
 void B3L_RotateCamInOZ(camera_t *pCam,f32 angle){
+    /*
     mat3_t rmat;
     B3L_Mat3ZRotate(&rmat,angle);
     B3L_Mat3MultMat3ABB(&rmat,&(pCam->mat));
-    B3L_SET(pCam->state,OBJ_NEED_EULER_UPDATE);
-
+    B3L_SET(pCam->state,OBJ_NEED_QUAT_UPDATE);
+    */
+    quat4_t rqat;
+    B3L_QuatCreateZRotate(&rqat,angle);
+    B3L_QuatMult(&(pCam->transform.quaternion),&rqat, &(pCam->transform.quaternion));
+    B3L_SET(pCam->state,OBJ_NEED_MATRIX_UPDATE);
 }
 
 __attribute__((always_inline)) static inline void Vect4Xmat4(vect4_t *pV, mat4_t *pMat, vect4_t *pResult){
@@ -1339,6 +1392,11 @@ void B3L_InitCamera(camera_t *pCam){
     pCam->transform.translation.y = 0.0f;
     pCam->transform.translation.z = 0.0f;
     B3L_InitUnitMat3(&(pCam->mat));
+    pCam->transform.quaternion.x = 0.0f;
+    pCam->transform.quaternion.y = 0.0f;
+    pCam->transform.quaternion.z = 0.0f;
+    pCam->transform.quaternion.w = 1.0f;
+
     pCam->pTrackObj = (B3LObj_t *)NULL;
     pCam->trackDistance = 0.0f;
     pCam->trackTweenSpeed = 0.0f;
@@ -1353,7 +1411,7 @@ void B3L_InitCamera(camera_t *pCam){
     //B3L_SetCameraMatrixByTransform(pCam,&(pCam->camW2CMat));
 }
 
-void B3L_GenerateW2CMatrix(camera_t *pCam){
+static void GenerateW2CMatrix(camera_t *pCam){
     mat3_t *pMat3 = &(pCam->mat);
     mat4_t *pW2CMat = &(pCam->camW2CMat);
     f32 x = -1.0f*(pCam->transform.translation.x);
@@ -1378,7 +1436,7 @@ void B3L_GenerateW2CMatrix(camera_t *pCam){
     pW2CMat->m13 = x*pW2CMat->m10 + y*pW2CMat->m11 + z*pW2CMat->m12;
     pW2CMat->m23 = x*pW2CMat->m20 + y*pW2CMat->m21 + z*pW2CMat->m22;
 }
-
+/*
 //If B3L_USE_CAM_MATRIX_DIRECTLY not set, this function will be call automaticly during render
 void B3L_SetCameraMatrixByTransform(camera_t *pCam,mat4_t *pMat){
 
@@ -1398,7 +1456,7 @@ void B3L_SetCameraMatrixByTransform(camera_t *pCam,mat4_t *pMat){
     //B3L_Mat4XMat4(&(pCam->camW2CMat),&temp);   
             
 }
-
+*/
 
 void B3L_CameraMoveTo(vect3_t position,camera_t *pCam){
     pCam->transform.translation.x = position.x;
@@ -1434,10 +1492,10 @@ void B3L_CameraLookAt(camera_t *pCam, vect3_t *pAt){
 
     pCam->transform.rotation.x = -B3L_asin(dx);
     //now the camera euler angle is up-to-date
-    B3L_CLR(pCam->state,OBJ_NEED_EULER_UPDATE);
+    B3L_CLR(pCam->state,OBJ_NEED_QUAT_UPDATE);
     B3L_EulerToMatrix(&(pCam->transform.rotation),&(pCam->mat));
 }
-
+/*
 void   B3L_SetCameraUpDirection(camera_t *pCam, vect3_t *pUp){
     //calculate the length of vect
     f32 length = B3L_Vec3Length(pUp);
@@ -1445,7 +1503,7 @@ void   B3L_SetCameraUpDirection(camera_t *pCam, vect3_t *pUp){
     f32 zAngle = 0.25f - B3L_asin(cosValue);
     pCam->transform.rotation.z = zAngle;
 }
-
+*/
 void B3L_CamStopTrack(camera_t *pCam){
     B3L_CLR(pCam->state,B3L_CAMERA_TRACK_OBJ_MODEL);
 }
@@ -1551,8 +1609,13 @@ static void  UpdateCam(render_t *pRender){
                               &tweenPositionAngle,pRender->camera.trackDistance);
     }
     */
+    camera_t *pCam = &(pRender->camera);
+    if(B3L_TEST(pCam->state,OBJ_NEED_MATRIX_UPDATE)){
+        B3L_QuaternionToMatrix(&(pCam->transform.quaternion), &(pCam->mat));
+        B3L_CLR(pCam->state,OBJ_NEED_MATRIX_UPDATE);
+    }
     mat4_t temp;
-    B3L_GenerateW2CMatrix(&(pRender->camera));
+    GenerateW2CMatrix(&(pRender->camera));
     MakeClipMatrix(pRender->camera.focalLength,pRender->camera.aspectRate,&temp);
     B3L_Mat4XMat4(&(pRender->camera.camW2CMat),&temp,&(pRender->camera.camW2CMat));  
     
@@ -1592,7 +1655,11 @@ static void UpdateParticleObjs(render_t *pRender, u32 time){
             //mat.m03 = ((B3LParticleGenObj_t *)pCurrentObj)->translation.x;
             //mat.m13 = ((B3LParticleGenObj_t *)pCurrentObj)->translation.y;
             //mat.m23 = ((B3LParticleGenObj_t *)pCurrentObj)->translation.z; 
-
+        if (B3L_TEST(state,OBJ_NEED_MATRIX_UPDATE)){
+            //update the matrix from quat4
+            B3L_QuaternionToMatrix(&(((B3LParticleGenObj_t *)pCurrentObj)->quaternion), &(pCurrentObj->mat));
+            B3L_CLR(pCurrentObj->state,OBJ_NEED_MATRIX_UPDATE);
+        }
         ((B3LParticleGenObj_t *)pCurrentObj)->PtlUpdFunc(time,(B3LParticleGenObj_t *)pCurrentObj,
                                                          &(((B3LParticleGenObj_t *)pCurrentObj)->mat),&(((B3LParticleGenObj_t *)pCurrentObj)->translation),pRender);   
         
@@ -1757,6 +1824,10 @@ static void RenderMeshObjs(render_t *pRender){
             continue;
         }
         //create the obj->clip matrix  
+        if (B3L_TEST(state,OBJ_NEED_MATRIX_UPDATE)){
+            B3L_QuaternionToMatrix(&(pCurrentObj->transform.quaternion), &(pCurrentObj->mat));
+            B3L_CLR(pCurrentObj->state,OBJ_NEED_MATRIX_UPDATE);
+        }
         B3L_MakeO2CMatrix(&(pCurrentObj->mat),&(pCurrentObj->transform.scale),
                           &(pCurrentObj->transform.translation),&(pRender->camera.camW2CMat), &mat);
             /*
@@ -1975,6 +2046,10 @@ B3LObj_t * B3L_GetFreeObj(render_t *pRender){
         returnObj->next = (B3LObj_t *)NULL;
         returnObj->privous = (B3LObj_t *)NULL;
         returnObj->state = 0;
+        returnObj->transform.quaternion.x = 0.0f;
+        returnObj->transform.quaternion.y = 0.0f;
+        returnObj->transform.quaternion.z = 0.0f;
+        returnObj->transform.quaternion.w = 1.0f;
         B3L_InitUnitMat3(&(returnObj->mat));
         return returnObj;
     }else{
@@ -3325,6 +3400,47 @@ void B3L_QuaternionInterp(quat4_t *pQuat0,quat4_t *pQuat1,quat4_t *pResult, f32 
     pResult->y = y0*k0 + y1*k1;
     pResult->z = z0*k0 + z1*k1;
 }
+
+void B3L_QuatMult(quat4_t *pL,quat4_t *pR, quat4_t *pResult){
+    f32 x1 = pL->x;f32 y1 = pL->y;f32 z1 = pL->z;f32 w1 = pL->w;
+    f32 x2 = pR->x;f32 y2 = pR->y;f32 z2 = pR->z;f32 w2 = pR->w;
+    pResult->x = w1*x2+x1*w2+y1*z2-z1*y2;
+    pResult->y = w1*y2+y1*w2+z1*x2-x1*z2;
+    pResult->z = w1*z2+z1*w2+x1*y2-y1*x2;
+    pResult->w = w1*w2-x1*x2-y1*y2-z1*z2;
+}
+
+void     B3L_QuatCreateXRotate(quat4_t *pQ,f32 angle){
+    f32 halfAngle = 0.5f*angle;
+    f32 cosh = B3L_cos(halfAngle);
+    f32 sinh = B3L_sin(halfAngle);
+    pQ->w = cosh;
+    pQ->x = sinh;
+    pQ->y = 0.0f;
+    pQ->z = 0.0f;
+}
+
+void     B3L_QuatCreateYRotate(quat4_t *pQ,f32 angle){
+    f32 halfAngle = 0.5f*angle;
+    f32 cosh = B3L_cos(halfAngle);
+    f32 sinh = B3L_sin(halfAngle);
+    pQ->w = cosh;
+    pQ->x = 0.0f;
+    pQ->y = sinh;
+    pQ->z = 0.0f;
+}
+
+void     B3L_QuatCreateZRotate(quat4_t *pQ,f32 angle){
+    f32 halfAngle = 0.5f*angle;
+    f32 cosh = B3L_cos(halfAngle);
+    f32 sinh = B3L_sin(halfAngle);
+    pQ->w = cosh;
+    pQ->x = 0.0f;
+    pQ->y = 0.0f;
+    pQ->z = sinh;
+}
+
+
 
 void B3L_InitUnitMat3(mat3_t *pMat){
     pMat->m00 = 1.0f;
