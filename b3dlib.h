@@ -80,11 +80,11 @@ type 2: 16bit 8:8     AL
 #define DEFAULT_FOCUS_LENGTH    (1.0f)
 
 //maybe all here parameter could be dynamic set in render struct to balance render load?
-#define FAR_PLANE                    800.0f
-#define NEAR_PLANE                   0.1f
+#define DEFAULT_FAR_PLANE            800.0f
+#define DEFAULT_NEAR_PLANE             0.1f
 #define LEVEL_0_DEFAULT_DISTANCE     400.0f
 #define LEVEL_1_DEFAULT_DISTANCE     800.0f
-#define LEVEL_1_DEFAULT_LIGHT        0xA0
+#define LEVEL_1_DEFAULT_LIGHT          0xA0
 //level 0, calculate light, texture
 //level 1, calculate texture
 //level 2,??
@@ -211,7 +211,8 @@ typedef struct{
 
 
 typedef struct{
-    vect3_t             rotation;
+    quat4_t             quaternion;
+    //vect3_t             rotation;
     vect3_t             scale;
     vect3_t             translation;
 }transform3D_t;
@@ -307,20 +308,20 @@ B3LObj_t state
 #define OBJ_RENDER_LEVEL_MASK        0x00030000
 #define OBJ_FIX_RENDER_LEVEL_SHIFT   (16)
 
-#define OBJ_NEED_EULER_UPDATE              (24)
+#define OBJ_NEED_QUAT_UPDATE              (24)
 #define OBJ_NEED_MATRIX_UPDATE             (25)
 //all different obj types's size is <= sizeof(B3LObj_t)
 typedef struct B3LOBJ{
-    struct B3LOBJ       *privous;
-    struct B3LOBJ       *next;
-    u32                 state;
-    mat3_t              mat;
-    f32                 *pBoundBox;
-    transform3D_t       transform;  
+    struct B3LOBJ       *privous;//8 4
+    struct B3LOBJ       *next;//8 4
+    u32                 state;//4 4
+    mat3_t              mat;//36 36
+    transform3D_t       transform;//40 40
+    f32                 *pBoundBox;//8 4
     #if B3L_ARM  == 1   
-    u32                 dummy[2];
+    u32                 dummy[4];//   16----100 
     #else    
-    u32                 dummy[4];
+    u32                 dummy[6];//24 ----136
     #endif
 }B3LObj_t;//16 not common on ARM32,24 not common on WIN64 ?why 96byte not 88?
 
@@ -329,8 +330,8 @@ typedef struct{
     B3LObj_t            *next;
     u32                 state;
     mat3_t              mat;
-    f32                 *pBoundBox;
     transform3D_t       transform; 
+    f32                 *pBoundBox;
     B3L_Mesh_t          *pMesh;
     B3L_texture_t       *pTexture;   
 }B3LMeshObj_t;//16 not common on ARM32,24 not common on WIN64
@@ -341,8 +342,8 @@ typedef struct{
     B3LObj_t            *next;
     u32                 state;
     mat3_t              mat;
-    f32                 *pBoundBox;
     transform3D_t       transform; 
+    f32                 *pBoundBox;
     B3L_Mesh_NoTex_t    *pMesh; 
     texLUT_t            *pLUT;
 }B3LMeshNoTexObj_t;//16 not common on ARM32,24 not common on WIN64
@@ -352,8 +353,8 @@ typedef struct{
     B3LObj_t            *next;
     u32                 state;
     mat3_t              mat;
-    f32                 *pBoundBox;
-    transform3D_t       transform; 
+    transform3D_t       transform;
+    f32                 *pBoundBox; 
     B3L_Polygon_t       *pPolygon; 
     texLUT_t            color;
 }B3LPolygonObj_t;//16 not common on ARM32,23 not common on WIN64
@@ -409,19 +410,17 @@ B   camera track obj mode
 
 #define  B3L_W2CMATRIX_NEED_UPDATE           (0)
 #define  B3L_CAMERA_TRACK_OBJ_MODEL          (1)
-#define OBJ_NEED_EULER_UPDATE                (24)
-#define OBJ_NEED_MATRIX_UPDATE               (25)
+#define OBJ_NEED_QUAT_UPDATE                (24)
+//#define OBJ_NEED_MATRIX_UPDATE               (25)
 typedef struct{
     u32                 state;
     f32                 aspectRate;
     f32                 focalLength;
-    transform3D_t       transform;
     mat3_t              mat;
+    transform3D_t       transform; 
     mat4_t              camW2CMat;
     f32                 trackDistance;
     f32                 trackTweenSpeed;
-    vect3_t             PositionAngle;
-    vect3_t             PrevPositionAngle;
     B3LObj_t           *pTrackObj;
 }camera_t;
 
@@ -434,22 +433,23 @@ typedef struct{
     scene_t             scene;
     f32                 lvl0Distance;
     f32                 lvl1Distance;
+    f32                 farPlane;
+    f32                 nearPlane;
     u8                  lvl1Light;
 }render_t;   
 
 
 typedef struct PARTICLEGENOBJ{
-    B3LObj_t            *privous;
-    B3LObj_t            *next;
-    u32                 state;
-    mat3_t              mat;
-    vect3_t             translation;//for particle generate 
-    vect3_t             rotation;//for particle generate 
-    u32                 lastTime;
-    u32                 particleNum;
-    B3L_Particle_t      *pParticleActive;   
-    void      (*DrawFunc)(B3L_Particle_t *, screen4_t *,fBuff_t *,zBuff_t *);
-    void      (*PtlUpdFunc)(u32,struct PARTICLEGENOBJ *,mat3_t *,vect3_t *,render_t *);   
+    B3LObj_t            *privous;//8  4
+    B3LObj_t            *next;//8   4
+    u32                 state;//4   4
+    mat3_t              mat;//36    36
+    transform3D_t       transform;//40    40
+    u32                 lastTime;//4   4
+    u32                 particleNum;//4   4
+    B3L_Particle_t      *pParticleActive;//8   4   
+    void      (*DrawFunc)(B3L_Particle_t *, screen4_t *,fBuff_t *,zBuff_t *);//8   4
+    void      (*PtlUpdFunc)(u32,struct PARTICLEGENOBJ *,mat3_t *,vect3_t *,render_t *); //8    4  
     //time, self, obj->world matrix,free particle num pointer,free particle pool  
 }B3LParticleGenObj_t; //15 not common on ARM32,22 not common on WIN64
 
@@ -471,6 +471,12 @@ typedef void (*B3L_DrawFunc_t)(B3L_Particle_t *, screen4_t *,fBuff_t *,zBuff_t *
     (m).m01,(m).m11,(m).m21,(m).m31,\
     (m).m02,(m).m12,(m).m22,(m).m32,\
     (m).m03,(m).m13,(m).m23,(m).m33)
+#define B3L_logMat3(m)\
+  printf("Matrix3:\n  %.3f %.3f %.3f \n  %.3f %.3f %.3f \n  %.3f %.3f %.3f \n"\
+   ,(m).m00,(m).m10,(m).m20,\
+    (m).m01,(m).m11,(m).m21,\
+    (m).m02,(m).m12,(m).m22)
+    
 
 /*Function declear-----------------------------------------------------------*/
 /*-----------------------------------------------------------------------------
@@ -500,15 +506,15 @@ extern vect4_t  B3L_Vect4(f32 x,f32 y,f32 z,f32 w);
 #define         B3L_VECT4_SET(v,vx,vy,vz,vw)   v.x=vx;v.y=vy;v.z=vz;v.w=vw
 extern f32      B3L_Vec2Length(vect2_t *pV);
 extern f32      B3L_Vec3Length(vect3_t *pV);
-extern void     B3L_NormalizeVec2(vect2_t *pV);
-extern void     B3L_NormalizeVec3(vect3_t *pV);
-extern void     B3L_Vec3Add(vect3_t *pVa,vect3_t *pVb,vect3_t *pVc);
+extern void     B3L_Vect2Normalize(vect2_t *pV);
+extern void     B3L_Vect3Normalize(vect3_t *pV);
+extern void     B3L_Vect3Add(vect3_t *pVa,vect3_t *pVb,vect3_t *pVc);
+extern void     B3L_Vect3Sub(vect3_t *pVa,vect3_t *pVb,vect3_t *pVc);
 extern void     B3L_VecInterp(vect3_t *pVa,vect3_t *pVb,vect3_t *pVc,f32 t);
-extern void     B3L_CrossProductVect3(vect3_t *pA, vect3_t *pB, vect3_t *pResult);
-extern f32      B3L_DotProductVect3(vect3_t *pA, vect3_t *pB);
-
+extern void     B3L_Vect3Cross(vect3_t *pA, vect3_t *pB, vect3_t *pResult);
+extern f32      B3L_Vect3Dot(vect3_t *pA, vect3_t *pB);
 /*-----------------------------------------------------------------------------
-Rotation functions
+Rotation convert functions
 -----------------------------------------------------------------------------*/
 extern void     B3L_EulerToMatrix(euler3_t *pEuler,mat3_t *pMat);
 extern void     B3L_MatrixToEuler(mat3_t *pMat, euler3_t *pEuler);
@@ -516,6 +522,17 @@ extern void     B3L_QuaternionToMatrix(quat4_t *pQuat, mat3_t *pMat);
 extern void     B3L_MatrixToQuaternion(mat3_t *pMat, quat4_t *pQuat);
 extern void     B3L_EulerToQuaternion(euler3_t *pEuler,quat4_t *pQuat);
 extern void     B3L_QuaternionToEuler(quat4_t *pQuat,euler3_t *pEuler);
+/*-----------------------------------------------------------------------------
+Quaternion functions
+-----------------------------------------------------------------------------*/
+#define         SET_IDENTITY_P_QUAT(a)       (a)->x=0.0f;(a)->y=0.0f;(a)->z=0.0f;(a)->w=1.0f
+extern void     B3L_QuatMult(quat4_t *pL,quat4_t *pR, quat4_t *pResult);
+extern void     B3L_CreateQuaternionByAxisAngle(vect3_t *pAxis, f32 angle, quat4_t *pResult);
+extern void     B3L_QuaternionGetRotationTo(vect3_t *pA, vect3_t *pB, vect3_t *pUp, quat4_t *pResult);
+extern void     B3L_CreateLookAtQuaternion(vect3_t *pFrom, vect3_t *pAt, vect3_t *pUp, quat4_t *pResult);
+extern void     B3L_QuatCreateXRotate(quat4_t *pQ,f32 angle);
+extern void     B3L_QuatCreateYRotate(quat4_t *pQ,f32 angle);
+extern void     B3L_QuatCreateZRotate(quat4_t *pQ,f32 angle);
 extern void     B3L_QuaternionInterp(quat4_t *pQuat0,quat4_t *pQuat1,quat4_t *pResult, f32 t);
 /*-----------------------------------------------------------------------------
 Matrix functions
@@ -530,16 +547,18 @@ extern void     B3L_TransposeMat4(mat4_t *pMat);
 extern void     B3L_Mat4XMat4(mat4_t *pMat1,mat4_t *pMat2, mat4_t *pMat3);
 extern void     B3L_Mat3MultMat3ABB(mat3_t *pMatA,mat3_t *pMatB);
 extern void     B3L_Mat3MultMat3ABA(mat3_t *pMatA,mat3_t *pMatB);
-extern void     B3L_MakeRotationMatrixZXY(f32 byX,f32 byY,f32 byZ,mat4_t *pMat);
+//extern void     B3L_MakeRotationMatrixZXY(f32 byX,f32 byY,f32 byZ,mat4_t *pMat);
 extern void     B3L_MakeScaleMatrix(f32 scaleX,f32 scaleY,f32 scaleZ,mat4_t *pMat);
 extern void     B3L_MakeTranslationMat(f32 offsetX,f32 offsetY,f32 offsetZ,mat4_t *pMat);
 //
-extern void     B3L_MakeWorldMatrix(transform3D_t *pWorldTransform, mat4_t *pMat);
+//extern void     B3L_MakeWorldMatrix(transform3D_t *pWorldTransform, mat4_t *pMat);
 extern void     B3L_MakeO2CMatrix(mat3_t *pRMat,vect3_t *pScale,vect3_t *pTrans,mat4_t *pCamMat, mat4_t *pResult);
 //vect mul will not add translate m03, m13, m23
 //point mul will add translate m03, m13, m23
 extern void     B3L_Vect3MulMat3(vect3_t *pV, mat3_t *pMat, vect3_t *pResult);
 extern void     B3L_Point3MulMat4(vect3_t *pV, mat4_t *pMat, vect3_t *pResult);
+
+
 
 extern void     B3L_RotateObjInOX(B3LObj_t *pObj,f32 angle);
 extern void     B3L_RotateObjInOY(B3LObj_t *pObj,f32 angle);
@@ -548,18 +567,19 @@ extern void     B3L_RotateObjInWX(B3LObj_t *pObj,f32 angle);
 extern void     B3L_RotateObjInWY(B3LObj_t *pObj,f32 angle);
 extern void     B3L_RotateObjInWZ(B3LObj_t *pObj,f32 angle);
 
-extern void     B3L_RotateCamInOX(camera_t *pCam,f32 angle);
-extern void     B3L_RotateCamInOY(camera_t *pCam,f32 angle);
-extern void     B3L_RotateCamInOZ(camera_t *pCam,f32 angle);
+
 /*-----------------------------------------------------------------------------
 Camera functions
 -----------------------------------------------------------------------------*/
+extern void     B3L_RotateCamInOX(camera_t *pCam,f32 angle);
+extern void     B3L_RotateCamInOY(camera_t *pCam,f32 angle);
+extern void     B3L_RotateCamInOZ(camera_t *pCam,f32 angle);
 extern void     B3L_InitCamera(camera_t *pCam);
-extern void     B3L_GenerateW2CMatrix(camera_t *pCam);
 extern void     B3L_CameraMoveTo(vect3_t position,camera_t *pCam);
-extern void     B3L_CameraLookAt(camera_t *pCam, vect3_t *pAt);
-extern void     B3L_SetCameraMatrixByTransform(camera_t *pCam, mat4_t *pMat);
-extern void     B3L_SetCameraUpDirection(camera_t *pCam, vect3_t *pUp);
+extern void     B3L_CameraLookAt(camera_t *pCam, vect3_t *pAt,vect3_t *pUp);
+//extern void     B3L_SetCameraMatrixByTransform(camera_t *pCam, mat4_t *pMat);
+//extern void     B3L_SetCameraUpDirection(camera_t *pCam, vect3_t *pUp);
+
 extern void     B3L_CamStopTrack(camera_t *pCam);
 extern void     B3L_CamStartTrack(camera_t *pCam);
 extern void     B3L_CamSetTrack(camera_t *pCam, B3LObj_t  *pTrackObj,f32 trackDistance, f32 trackAngleSpeed, f32 targetAX, f32 targetAY, f32 targetAZ);
