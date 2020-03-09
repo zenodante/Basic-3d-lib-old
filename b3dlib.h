@@ -191,7 +191,6 @@ typedef struct{
 }vect4_t;
 
 typedef vect3_t euler3_t;
-
 typedef vect4_t quat4_t;
 //in column first order, mxy -- x is column num, y is the row number
 typedef struct{
@@ -212,7 +211,6 @@ typedef struct{
 
 typedef struct{
     quat4_t             quaternion;
-    //vect3_t             rotation;
     vect3_t             scale;
     vect3_t             translation;
 }transform3D_t;
@@ -251,8 +249,6 @@ typedef struct B3L_PARTICLE{
     vect3_t             position;
     vect3_t             delta;
 }B3L_Particle_t;
-
-
 
 
 #define LUT4         0
@@ -308,7 +304,7 @@ B3LObj_t state
 #define OBJ_RENDER_LEVEL_MASK        0x00030000
 #define OBJ_FIX_RENDER_LEVEL_SHIFT   (16)
 
-#define OBJ_NEED_QUAT_UPDATE              (24)
+#define OBJ_NEED_QUAT_UPDATE               (24)
 #define OBJ_NEED_MATRIX_UPDATE             (25)
 //all different obj types's size is <= sizeof(B3LObj_t)
 typedef struct B3LOBJ{
@@ -401,17 +397,15 @@ typedef struct{
 camera_t state
    31     2423     1615      87
    ------------------------------------
-31|      ZY|        |        |     BA|0
+31|      ZY|        |        |       A|0
   ------------------------------------
 A   ueed update the world to camera matrix
 B   camera track obj mode
   Y-- need update euler angle
 */
-
-#define  B3L_W2CMATRIX_NEED_UPDATE           (0)
-#define  B3L_CAMERA_TRACK_OBJ_MODEL          (1)
-#define OBJ_NEED_QUAT_UPDATE                (24)
-//#define OBJ_NEED_MATRIX_UPDATE               (25)
+#define  B3L_CAMERA_TRACK_OBJ_MODEL          (0)
+#define  CAM_NEED_QUAT_UPDATE                (24)
+#define  CAM_NEED_MATRIX_UPDATE              (25)
 typedef struct{
     u32                 state;
     f32                 aspectRate;
@@ -505,14 +499,14 @@ extern vect4_t  B3L_Vect4(f32 x,f32 y,f32 z,f32 w);
 #define         B3L_VECT3_SET(v,vx,vy,vz)      v.x=vx;v.y=vy;v.z=vz
 #define         B3L_VECT4_SET(v,vx,vy,vz,vw)   v.x=vx;v.y=vy;v.z=vz;v.w=vw
 extern f32      B3L_Vec2Length(vect2_t *pV);
-extern f32      B3L_Vec3Length(vect3_t *pV);
 extern void     B3L_Vect2Normalize(vect2_t *pV);
+extern f32      B3L_Vect3Length(vect3_t *pV);
 extern void     B3L_Vect3Normalize(vect3_t *pV);
 extern void     B3L_Vect3Add(vect3_t *pVa,vect3_t *pVb,vect3_t *pVc);
 extern void     B3L_Vect3Sub(vect3_t *pVa,vect3_t *pVb,vect3_t *pVc);
-extern void     B3L_VecInterp(vect3_t *pVa,vect3_t *pVb,vect3_t *pVc,f32 t);
-extern void     B3L_Vect3Cross(vect3_t *pA, vect3_t *pB, vect3_t *pResult);
 extern f32      B3L_Vect3Dot(vect3_t *pA, vect3_t *pB);
+extern void     B3L_Vect3Cross(vect3_t *pA, vect3_t *pB, vect3_t *pResult);
+extern void     B3L_Vect3Interp(vect3_t *pVa,vect3_t *pVb,vect3_t *pVc,f32 t);
 /*-----------------------------------------------------------------------------
 Rotation convert functions
 -----------------------------------------------------------------------------*/
@@ -547,11 +541,8 @@ extern void     B3L_TransposeMat4(mat4_t *pMat);
 extern void     B3L_Mat4XMat4(mat4_t *pMat1,mat4_t *pMat2, mat4_t *pMat3);
 extern void     B3L_Mat3MultMat3ABB(mat3_t *pMatA,mat3_t *pMatB);
 extern void     B3L_Mat3MultMat3ABA(mat3_t *pMatA,mat3_t *pMatB);
-//extern void     B3L_MakeRotationMatrixZXY(f32 byX,f32 byY,f32 byZ,mat4_t *pMat);
 extern void     B3L_MakeScaleMatrix(f32 scaleX,f32 scaleY,f32 scaleZ,mat4_t *pMat);
 extern void     B3L_MakeTranslationMat(f32 offsetX,f32 offsetY,f32 offsetZ,mat4_t *pMat);
-//
-//extern void     B3L_MakeWorldMatrix(transform3D_t *pWorldTransform, mat4_t *pMat);
 extern void     B3L_MakeO2CMatrix(mat3_t *pRMat,vect3_t *pScale,vect3_t *pTrans,mat4_t *pCamMat, mat4_t *pResult);
 //vect mul will not add translate m03, m13, m23
 //point mul will add translate m03, m13, m23
