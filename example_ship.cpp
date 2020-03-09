@@ -16,6 +16,7 @@ B3L_timeTweenCtl_t ttCtl;
 B3L_tween_t tCatZ;
 B3LMeshObj_t *pShip;
 vect3_t at={0.0f,0.0f,0.0f};
+vect3_t up = {0.0f,1.0f,0.0f};
 f32 distance = 200.0f;
 vect3_t angle={0.125f,0.0f,0.0f};
 u16 frame4[320*240];
@@ -48,13 +49,15 @@ void init() {
     B3L_AddObjToRenderList((B3LObj_t *)pShip, &B3Lrender);
     //init the camera
     
-    B3Lrender.camera.transform.translation = {0.0f,0.0f,-200.0f};
+    B3Lrender.camera.transform.translation = {50.0f,50.0f,-200.0f};
 
-    //B3L_CameraLookAt(&(B3Lrender.camera), &at);
-    
+    B3L_CameraLookAt(&(B3Lrender.camera), &at,&up);
+    euler3_t euler;
+    B3L_QuaternionToEuler(&(B3Lrender.camera.transform.quaternion),&euler);
+    //B3L_logVec3(euler);
     B3L_TweenStart(&tCatZ,0);
 
-    printf("obj %d,particle %d\n",sizeof(B3LObj_t),sizeof(B3LParticleGenObj_t));
+    //printf("obj %d,particle %d\n",sizeof(B3LObj_t),sizeof(B3LParticleGenObj_t));
     
 }
 

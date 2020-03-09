@@ -943,47 +943,53 @@ f32  B3L_atan2(f32 y,f32 x){
     return t3;
 }
 
-void B3L_NormalizeVec2(vect2_t *pV){
+void B3L_Vect2Normalize(vect2_t *pV){
     f32 factor = FastInvertSqrt(pV->x*pV->x+pV->y*pV->y);
     pV->x = (pV->x*factor);
     pV->y = (pV->y*factor);
 }
 
-void B3L_NormalizeVec3(vect3_t *pV){
+void B3L_Vect3Normalize(vect3_t *pV){
     f32 factor = FastInvertSqrt(pV->x*pV->x+pV->y*pV->y+pV->z*pV->z);
     pV->x = (pV->x*factor);
     pV->y = (pV->y*factor);
     pV->z = (pV->z*factor);
 }
 
-f32 B3L_Vec2Length(vect2_t *pV){
+f32 B3L_Vect2Length(vect2_t *pV){
     return B3L_Sqrtf(pV->x*pV->x+pV->y*pV->y);
 
 }
 
-f32 B3L_Vec3Length(vect3_t *pV){
+f32 B3L_Vect3Length(vect3_t *pV){
     return B3L_Sqrtf(pV->x * pV->x + pV->y * pV->y + pV->z * pV->z);  
 }
 
-void B3L_Vec3Add(vect3_t *pVa,vect3_t *pVb,vect3_t *pVc){
+void B3L_Vect3Add(vect3_t *pVa,vect3_t *pVb,vect3_t *pVc){
     pVc->x = pVa->x + pVb->x;
     pVc->y = pVa->y + pVb->y;
     pVc->z = pVa->z + pVb->z;
 }
 
-void B3L_VecInterp(vect3_t *pVa,vect3_t *pVb,vect3_t *pVc,f32 t){
+void B3L_Vect3Sub(vect3_t *pVa,vect3_t *pVb,vect3_t *pVc){
+    pVc->x = pVa->x - pVb->x;
+    pVc->y = pVa->y - pVb->y;
+    pVc->z = pVa->z - pVb->z;
+}
+
+void B3L_Vect3Interp(vect3_t *pVa,vect3_t *pVb,vect3_t *pVc,f32 t){
     pVc->x = Interp_f(pVa->x,pVb->x,t);
     pVc->y = Interp_f(pVa->y,pVb->y,t);
     pVc->z = Interp_f(pVa->z,pVb->z,t);
 }
 
-void B3L_CrossProductVect3(vect3_t *pA, vect3_t *pB, vect3_t *pResult){
+void B3L_Vect3Cross(vect3_t *pA, vect3_t *pB, vect3_t *pResult){
     pResult->x = pA->y * pB->z - pA->z * pB->y;
     pResult->y = pA->z * pB->x - pA->x * pB->z;
     pResult->z = pA->x * pB->y - pA->y * pB->x;  
 }
 
-f32 B3L_DotProductVect3(vect3_t *pA, vect3_t *pB){
+f32 B3L_Vect3Dot(vect3_t *pA, vect3_t *pB){
     return (pA->x*pB->x+pA->y*pB->y+pA->z*pB->z);
 }
 
@@ -1460,7 +1466,10 @@ void B3L_CameraMoveTo(vect3_t position,camera_t *pCam){
 
 void B3L_CameraLookAt(camera_t *pCam, vect3_t *pAt,vect3_t *pUp){
     B3L_SET(pCam->state,OBJ_NEED_MATRIX_UPDATE);
-    
+    B3L_CreateLookAtQuaternion(&(pCam->transform.translation), 
+                                pAt, pUp, &(pCam->transform.quaternion));
+    //quat4_t unit = {0.0f,0.0f,0.0f,1.0f};                            
+    //B3L_QuatMult(&unit,&(pCam->transform.quaternion), &(pCam->transform.quaternion));
     //now need a quat version camera look at function
 
     //setup the quat
@@ -1473,7 +1482,7 @@ void B3L_CameraLookAt(camera_t *pCam, vect3_t *pAt,vect3_t *pUp){
     v.y = pAt->z - pCam->transform.translation.z;
 
     f32 dx = v.x;
-    f32 l = B3L_Vec2Length((vect2_t *)(&v));
+    f32 l = B3L_Vect2Length((vect2_t *)(&v));
 
     dx = v.x / NonZero(l); // normalize
 
@@ -1487,7 +1496,7 @@ void B3L_CameraLookAt(camera_t *pCam, vect3_t *pAt,vect3_t *pUp){
     v.x = pAt->y - pCam->transform.translation.y;
     v.y = l;
  
-    l = B3L_Vec2Length((vect2_t *)(&v));
+    l = B3L_Vect2Length((vect2_t *)(&v));
  
     dx = v.x / NonZero(l);
 
@@ -1500,7 +1509,7 @@ void B3L_CameraLookAt(camera_t *pCam, vect3_t *pAt,vect3_t *pUp){
 /*
 void   B3L_SetCameraUpDirection(camera_t *pCam, vect3_t *pUp){
     //calculate the length of vect
-    f32 length = B3L_Vec3Length(pUp);
+    f32 length = B3L_Vect3Length(pUp);
     f32 cosValue = (pUp->y)/length;
     f32 zAngle = 0.25f - B3L_asin(cosValue);
     pCam->transform.rotation.z = zAngle;
@@ -3423,6 +3432,48 @@ void B3L_QuatMult(quat4_t *pL,quat4_t *pR, quat4_t *pResult){
     pResult->y = w1*y2+y1*w2+z1*x2-x1*z2;
     pResult->z = w1*z2+z1*w2+x1*y2-y1*x2;
     pResult->w = w1*w2-x1*x2-y1*y2-z1*z2;
+}
+
+void B3L_CreateQuaternionByAxisAngle(vect3_t *pAxis, f32 angle, quat4_t *pResult){
+    f32 halfAngle = 0.5f*angle;
+    f32 sinh = B3L_sin(halfAngle);
+    f32 cosh = B3L_cos(halfAngle);
+    pResult->x = pAxis->x*sinh;
+    pResult->y = pAxis->y*sinh;
+    pResult->z = pAxis->z*sinh;
+    pResult->w = cosh;
+}
+
+//create a quaternion that rotates vector a to vector b
+void B3L_QuaternionGetRotationTo(vect3_t *pA, vect3_t *pB, vect3_t *pUp, quat4_t *pResult){
+    B3L_Vect3Normalize(pA);
+
+    B3L_Vect3Normalize(pB); 
+
+    B3L_Vect3Normalize(pUp);  
+
+    f32 dot = B3L_Vect3Dot(pA,pB);
+    if (dot < -0.99999f){
+        B3L_CreateQuaternionByAxisAngle(pUp,0.5f,pResult);
+        return;
+    }else if(dot > 0.99999f){
+        SET_IDENTITY_P_QUAT(pResult);
+        return;
+    }
+    f32 rotAngle = 0.25f-B3L_asin(dot);
+    vect3_t ortAxis;
+    B3L_Vect3Cross(pA,pB,&ortAxis);
+    B3L_Vect3Normalize(&ortAxis);
+    B3L_CreateQuaternionByAxisAngle(&ortAxis,rotAngle,pResult);
+
+}
+
+
+void  B3L_CreateLookAtQuaternion(vect3_t *pFrom, vect3_t *pAt, vect3_t *pUp, quat4_t *pResult){
+    vect3_t toObj;
+    B3L_Vect3Sub(pAt,pFrom,&toObj);
+    vect3_t zAxis = {0.0f,0.0f,1.0f};
+    B3L_QuaternionGetRotationTo(&zAxis,&toObj, pUp, pResult);
 }
 
 void     B3L_QuatCreateXRotate(quat4_t *pQ,f32 angle){

@@ -504,14 +504,15 @@ extern vect4_t  B3L_Vect4(f32 x,f32 y,f32 z,f32 w);
 #define         B3L_VECT2_SET(v,vx,vy)         v.x=vx;v.y=vy
 #define         B3L_VECT3_SET(v,vx,vy,vz)      v.x=vx;v.y=vy;v.z=vz
 #define         B3L_VECT4_SET(v,vx,vy,vz,vw)   v.x=vx;v.y=vy;v.z=vz;v.w=vw
-extern f32      B3L_Vec2Length(vect2_t *pV);
-extern f32      B3L_Vec3Length(vect3_t *pV);
-extern void     B3L_NormalizeVec2(vect2_t *pV);
-extern void     B3L_NormalizeVec3(vect3_t *pV);
-extern void     B3L_Vec3Add(vect3_t *pVa,vect3_t *pVb,vect3_t *pVc);
-extern void     B3L_VecInterp(vect3_t *pVa,vect3_t *pVb,vect3_t *pVc,f32 t);
-extern void     B3L_CrossProductVect3(vect3_t *pA, vect3_t *pB, vect3_t *pResult);
-extern f32      B3L_DotProductVect3(vect3_t *pA, vect3_t *pB);
+extern f32      B3L_Vect2Length(vect2_t *pV);
+extern f32      B3L_Vect3Length(vect3_t *pV);
+extern void     B3L_Vect2Normalize(vect2_t *pV);
+extern void     B3L_Vect3Normalize(vect3_t *pV);
+extern void     B3L_Vect3Add(vect3_t *pVa,vect3_t *pVb,vect3_t *pVc);
+extern void     B3L_Vect3Sub(vect3_t *pVa,vect3_t *pVb,vect3_t *pVc);
+extern void     B3L_Vect3Interp(vect3_t *pVa,vect3_t *pVb,vect3_t *pVc,f32 t);
+extern void     B3L_Vect3Cross(vect3_t *pA, vect3_t *pB, vect3_t *pResult);
+extern f32      B3L_Vect3Dot(vect3_t *pA, vect3_t *pB);
 
 /*-----------------------------------------------------------------------------
 Rotation functions
@@ -527,7 +528,11 @@ extern void     B3L_QuaternionInterp(quat4_t *pQuat0,quat4_t *pQuat1,quat4_t *pR
 /*-----------------------------------------------------------------------------
 Quaternion functions
 -----------------------------------------------------------------------------*/
+#define         SET_IDENTITY_P_QUAT(a)       (a)->x=0.0f;(a)->y=0.0f;(a)->z=0.0f;(a)->w=1.0f
 extern void     B3L_QuatMult(quat4_t *pL,quat4_t *pR, quat4_t *pResult);
+extern void     B3L_CreateQuaternionByAxisAngle(vect3_t *pAxis, f32 angle, quat4_t *pResult);
+extern void     B3L_QuaternionGetRotationTo(vect3_t *pA, vect3_t *pB, vect3_t *pUp, quat4_t *pResult);
+extern void     B3L_CreateLookAtQuaternion(vect3_t *pFrom, vect3_t *pAt, vect3_t *pUp, quat4_t *pResult);
 extern void     B3L_QuatCreateXRotate(quat4_t *pQ,f32 angle);
 extern void     B3L_QuatCreateYRotate(quat4_t *pQ,f32 angle);
 extern void     B3L_QuatCreateZRotate(quat4_t *pQ,f32 angle);
