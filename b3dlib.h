@@ -506,7 +506,7 @@ extern void     B3L_Vect3Sub(vect3_t *pVa,vect3_t *pVb,vect3_t *pVc);
 extern f32      B3L_Vect3Dot(vect3_t *pA, vect3_t *pB);
 extern void     B3L_Vect3Cross(vect3_t *pA, vect3_t *pB, vect3_t *pResult);
 extern void     B3L_Vect3Interp(vect3_t *pVa,vect3_t *pVb,vect3_t *pVc,f32 t);
-extern void     Vect3_Scale(vect3_t *pV,f32 scale,vect3_t *pResult);
+extern void     B3L_Vect3Scale(vect3_t *pV,f32 scale,vect3_t *pResult);
 /*-----------------------------------------------------------------------------
 Rotation convert functions
 -----------------------------------------------------------------------------*/

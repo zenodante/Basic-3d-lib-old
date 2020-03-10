@@ -70,7 +70,6 @@ __attribute__((always_inline)) static  inline s32      VcvtF32ToS32_Fix(f32 in);
 __attribute__((always_inline)) static  inline f32      VcvtS32ToF32_Fix(s32 in);
 __attribute__((always_inline)) static  inline u32      SatToU8(u32 in);
 __attribute__((always_inline)) static  inline u32      SatToU16(u32 in);
-__attribute__((always_inline)) static  inline f32      NonZero(f32 value);
 __attribute__((always_inline)) static  inline f32      Interp_f(f32 x1, f32 x2, f32 t);
 __attribute__((always_inline)) static  inline s32      Clamp_i(s32 v, s32 v1, s32 v2);
 __attribute__((always_inline)) static  inline f32      Clamp_f(f32 v, f32 v1, f32 v2);
@@ -83,9 +82,6 @@ __attribute__((always_inline)) static  inline void     MakeClipMatrix(render_t *
 __attribute__((always_inline)) static  inline void     Vect3Xmat4(vect3_t *pV, mat4_t *pMat, vect4_t *pResult);
 __attribute__((always_inline)) static  inline void     Vect3Xmat4WithTestToScreen4(vect3_t *pV, mat4_t *pMat, screen4_t *pResult);
 __attribute__((always_inline)) static  inline void     Vect3Xmat4WithTest_f(vect3_t *pV, mat4_t *pMat, screen3f_t *pResult);
-__attribute__((always_inline)) static  inline void     Norm3Xmat4(vect3_t *pV, mat4_t *pMat, vect3_t *pResult);
-__attribute__((always_inline)) static  inline void     Norm3Xmat4Normalize(vect3_t *pV, mat4_t *pMat, vect3_t *pResult);
-__attribute__((always_inline)) static  inline void     Vect4Xmat4(vect4_t *pV, mat4_t *pMat, vect4_t *pResult);
 __attribute__((always_inline)) static  inline bool     Vect4BoundTest(vect4_t *pV);
 __attribute__((always_inline)) static  inline void     CopyMat4(mat4_t *target, mat4_t *source);
 
@@ -102,7 +98,6 @@ __attribute__((always_inline)) static  inline u32      CalLightFactor(f32 normal
  /*-----------------------------------------------------------------------------
 Triangle testing functions
 -----------------------------------------------------------------------------*/
-__attribute__((always_inline)) static  inline bool     TriangleFaceToViewer(s32 x0, s32 y0, s32 x1, s32 y1, s32 x2, s32 y2);
 __attribute__((always_inline)) static  inline bool     TriangleFaceToViewer_f(f32 x0, f32 y0, f32 x1, f32 y1, f32 x2, f32 y2);
 __attribute__((always_inline)) static  inline bool     TriVisable(u32 r0,u32 r1,u32 r2);
  /*-----------------------------------------------------------------------------
@@ -275,25 +270,13 @@ __attribute__((always_inline)) static  inline f32 FastInvertSqrt(f32 x){
         return x;
 }
 
-__attribute__((always_inline)) static inline f32 NonZero  (f32 value){
-    if (value == 0.0f){
-        return value + 0.00001f;
-    }else{
-        return value;
-    }
-}
-
 __attribute__((always_inline)) static inline f32 Interp_f(f32 x1, f32 x2, f32 t){
     return x1 + (x2 - x1) * t;
 }
 
-void     Vect3_Scale(vect3_t *pV,f32 scale,vect3_t *pResult){
-    pResult->x = scale*pV->x;
-    pResult->y = scale*pV->y;
-    pResult->z = scale*pV->z;
-}
 
-__attribute__((always_inline)) static  inline void     Vect3_Add(vect3_t *pV1,vect3_t *pV2,vect3_t *pResult){
+
+__attribute__((always_inline)) static  inline void Vect3_Add(vect3_t *pV1,vect3_t *pV2,vect3_t *pResult){
     pResult->x = pV1->x + pV2->x;
     pResult->y = pV1->y + pV2->y;
     pResult->z = pV1->z + pV2->z;
@@ -415,24 +398,6 @@ void B3L_RotateCamInOZ(camera_t *pCam,f32 angle){
     B3L_SET(pCam->state,CAM_NEED_MATRIX_UPDATE);
 }
 
-__attribute__((always_inline)) static inline void Vect4Xmat4(vect4_t *pV, mat4_t *pMat, vect4_t *pResult){
-    f32 x,y,z,w;
-    x = pV->x;
-    y = pV->y;
-    z = pV->z;
-    w = pV->w;
-    #define dotCol(col)\
-        ((x*(pMat->m##col##0)) +\
-        (y*(pMat->m##col##1)) +\
-        (z*(pMat->m##col##2)) +\
-        (w*(pMat->m##col##3)))
-    
-    pResult->x = dotCol(0);
-    pResult->y = dotCol(1);
-    pResult->z = dotCol(2);
-    pResult->w = dotCol(3);
-    #undef dotCol
-}
 __attribute__((always_inline)) static inline void Vect3Xmat4(vect3_t *pV, mat4_t *pMat, vect4_t *pResult){
     f32 x,y,z;
     x = pV->x;
@@ -533,28 +498,6 @@ __attribute__((always_inline)) static  inline void  Vect3Xmat4WithTestToScreen4(
 
 }
 
-__attribute__((always_inline)) static  inline void  Norm3Xmat4Normalize(vect3_t *pV, mat4_t *pMat, vect3_t *pResult){
-    f32 x,y,z,rx,ry,rz,factor;
-    x = pV->x;
-    y = pV->y;
-    z = pV->z;
-
-    #define dotCol(col)\
-        (x*(pMat->m##col##0)) +\
-        (y*(pMat->m##col##1)) +\
-        (z*(pMat->m##col##2)) 
-    
-    rx = dotCol(0);
-    ry = dotCol(1);
-    rz = dotCol(2);
-    factor = FastInvertSqrt(rx * rx + ry * ry + rz * rz);
-    pResult->x = rx*factor;
-    pResult->y = ry*factor;
-    pResult->z = rz*factor;
-    #undef dotCol 
-
-}
-
 void     B3L_Vect3MulMat3(vect3_t *pV, mat3_t *pMat, vect3_t *pResult){
     f32 x,y,z,rx,ry,rz;
     x = pV->x;
@@ -596,27 +539,6 @@ void     B3L_Point3MulMat4(vect3_t *pV, mat4_t *pMat, vect3_t *pResult){
     pResult->y = ry;
     pResult->z = rz;
     #undef dotCol
-}
-
-__attribute__((always_inline)) static  inline void  Norm3Xmat4(vect3_t *pV, mat4_t *pMat, vect3_t *pResult){
-    f32 x,y,z,rx,ry,rz;
-    x = pV->x;
-    y = pV->y;
-    z = pV->z;
-
-    #define dotCol(col)\
-        (x*(pMat->m##col##0)) +\
-        (y*(pMat->m##col##1)) +\
-        (z*(pMat->m##col##2)) 
-    
-    rx = dotCol(0);
-    ry = dotCol(1);
-    rz = dotCol(2);
-
-    pResult->x = rx;
-    pResult->y = ry;
-    pResult->z = rz;
-    #undef dotCol 
 }
 
 __attribute__((always_inline)) static  inline bool Vect4BoundTest(vect4_t *pV){
@@ -790,6 +712,12 @@ void B3L_Vect3Cross(vect3_t *pA, vect3_t *pB, vect3_t *pResult){
 
 f32 B3L_Vect3Dot(vect3_t *pA, vect3_t *pB){
     return (pA->x*pB->x+pA->y*pB->y+pA->z*pB->z);
+}
+
+void B3L_Vect3Scale(vect3_t *pV,f32 scale,vect3_t *pResult){
+    pResult->x = scale*pV->x;
+    pResult->y = scale*pV->y;
+    pResult->z = scale*pV->z;
 }
 
 void B3L_Vect3Interp(vect3_t *pVa,vect3_t *pVb,vect3_t *pVc,f32 t){
@@ -1038,15 +966,6 @@ __attribute__((always_inline)) static inline bool TriangleFaceToViewer_f(f32 x0,
     // ^ cross product for points with z == 0
 
   return winding >= 0.0f ? true : false;
-}
-
-
-__attribute__((always_inline)) static inline bool TriangleFaceToViewer(s32 x0, s32 y0, s32 x1, s32 y1, s32 x2, s32 y2){
-  int32_t winding =
-    (x1 - x0) * (y2 - y0) - (y1 - y0) * (x2 - x0) ;
-    // ^ cross product for points with z == 0
-
-  return winding >= 0 ? true : false;
 }
 
 __attribute__((always_inline)) static  inline bool TriVisable(u32 r0,u32 r1,u32 r2){
@@ -1302,9 +1221,9 @@ void B3L_UpdateAllParticlesStatesInGen(render_t *pRender,B3LParticleGenObj_t *pG
             B3L_ReturnParticleToPool(pParticle,&(pRender->scene));
             pParticle = pPrevParticle->next;
         }else{
-            Vect3_Scale(pForce,(f32)deltaTime,&deltadelta);
+            B3L_Vect3Scale(pForce,(f32)deltaTime,&deltadelta);
             Vect3_Add(&(pParticle->delta), &deltadelta ,&(pParticle->delta));//update the delta
-            Vect3_Scale(&(pParticle->delta),(f32)deltaTime,&deltadelta);
+            B3L_Vect3Scale(&(pParticle->delta),(f32)deltaTime,&deltadelta);
             Vect3_Add(&(pParticle->position),&(deltadelta),&(pParticle->position));//update the position
             pPrevParticle = pParticle;
             pParticle = pParticle->next;
@@ -1881,7 +1800,8 @@ static void RenderNoTexMesh(B3LMeshNoTexObj_t *pObj,render_t *pRender, mat4_t *p
         }
 
         if (renderLevel==0){
-            Norm3Xmat4Normalize(pVectSource+i, pMat, &normalVect); 
+            //Norm3Xmat4Normalize(pVectSource+i, pMat, &normalVect); 
+            B3L_Vect3MulMat3(pVectSource+i, &(pObj->mat),&normalVect);
             //dot multi light and normalvect to get the light factor
             normalDotLight = normalVect.x*lightX + normalVect.y*lightY + normalVect.z*lightZ;
             //normalDotLight is in the range -1.0f to 1.0f
