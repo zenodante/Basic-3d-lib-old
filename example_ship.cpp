@@ -2,7 +2,8 @@
 
 extern "C" {
 #include "b3dlib.h"
-#include "B3L_support.h"
+#include "b3dSupport.h"
+#include "b3dTestObj.h"
 #include "cat.h"
 #include "ship2_72tri.h"
 }
@@ -35,7 +36,7 @@ void init() {
     B3L_InitDemoParticleGenObj(pParticleGen);
     pParticleGen->transform.translation.x = 0.0f;
     pParticleGen->transform.translation.y = 0.0f;
-    //B3L_AddObjToRenderList((B3LObj_t *)pParticleGen, &B3Lrender);
+    B3L_AddObjToRenderList((B3LObj_t *)pParticleGen, &B3Lrender);
     //init light
     B3L_SetLightType(&B3Lrender,parallelLight);
     //B3L_SetLightVect();
@@ -49,9 +50,9 @@ void init() {
     B3L_AddObjToRenderList((B3LObj_t *)pShip, &B3Lrender);
     //init the camera
     
-    B3Lrender.camera.transform.translation = {0.0f,0.0f,-200.0f};
+    B3Lrender.camera.transform.translation = {50.0f,50.0f,-200.0f};
 
-    //B3L_CameraLookAt(&(B3Lrender.camera), &at,&up);
+    B3L_CameraLookAt(&(B3Lrender.camera), &at,&up);
     
     B3L_TweenStart(&tCatZ,0);
 
@@ -76,8 +77,8 @@ void update(uint32_t time){
         //pShip->transform.rotation.x +=0.002f;
         //pShip->transform.rotation.x -= (f32)((s32)(pShip->transform.rotation.x));
         //B3Lrender.camera.transform.rotation.x += 0.002f;
-        //B3L_RotateObjInOX((B3LObj_t *)pShip,-0.002f);
-        B3L_RotateCamInOX(&(B3Lrender.camera),-0.002f);
+        B3L_RotateObjInOX((B3LObj_t *)pShip,-0.002f);
+        //B3L_RotateCamInOX(&(B3Lrender.camera),-0.002f);
     }
     if (pressed(DPAD_DOWN)){
         //pShip->transform.rotation.y -=0.002f;
@@ -88,8 +89,8 @@ void update(uint32_t time){
         //pShip->transform.rotation.x += B3L_cos(0.5f-pShip->transform.rotation.z)*0.002f;
         //pShip->transform.rotation.x -= (f32)((s32)(pShip->transform.rotation.x)); 
         //B3Lrender.camera.transform.rotation.x -= 0.002f;
-        //B3L_RotateObjInOX((B3LObj_t *)pShip,0.002f);
-        B3L_RotateCamInOX(&(B3Lrender.camera),0.002f);
+        B3L_RotateObjInOX((B3LObj_t *)pShip,0.002f);
+        //B3L_RotateCamInOX(&(B3Lrender.camera),0.002f);
     }
     if (pressed(DPAD_LEFT)){
         //angle.y +=0.002f;
@@ -97,8 +98,8 @@ void update(uint32_t time){
         //pShip->transform.rotation.z -=0.002f;
         //pShip->transform.rotation.y -= (f32)((s32)(pShip->transform.rotation.y));   
         //B3Lrender.camera.transform.rotation.z -= 0.002f;
-        //B3L_RotateObjInOY((B3LObj_t *)pShip,-0.002f);
-        B3L_RotateCamInOY(&(B3Lrender.camera),-0.002f);
+        B3L_RotateObjInOY((B3LObj_t *)pShip,-0.002f);
+        //B3L_RotateCamInOY(&(B3Lrender.camera),-0.002f);
     }
     if (pressed(DPAD_RIGHT)){
          //angle.y -=0.002f;  
@@ -106,8 +107,8 @@ void update(uint32_t time){
          //pShip->transform.rotation.z +=0.002f;
         //pShip->transform.rotation.y -= (f32)((s32)(pShip->transform.rotation.y));
         //B3Lrender.camera.transform.rotation.z += 0.002f;
-        //B3L_RotateObjInOY((B3LObj_t *)pShip,0.002f);
-        B3L_RotateCamInOY(&(B3Lrender.camera),0.002f);
+        B3L_RotateObjInOY((B3LObj_t *)pShip,0.002f);
+        //B3L_RotateCamInOY(&(B3Lrender.camera),0.002f);
     }
     if (pressed(A)){
         B3Lrender.camera.trackDistance += 1.0f;

@@ -51,159 +51,6 @@ B3L_Particle_t  particleBuff[B3L_PARTICLE_BUFF_DEPTH];//18KB
 #define _swap_int32_t(a, b) { int32_t t = a; a = b; b = t; }
 #endif
 
-const u8 B3L_polygonIdx[24] = {
-    0,1,0,2,1,3,2,3,0,4,1,5,2,6,3,7,4,5,4,6,5,7,6,7
-};
-
-
-const f32   B3L_boxVect[24] = {
-    /* 0 front, bottom, right */
-     0.5f, -0.5f, -0.5f,
-     /* 1 front, bottom, left */
-    -0.5f, -0.5f, -0.5f,
-     /* 2 front, top,    right */
-     0.5f,  0.5f, -0.5f,
-     /* 3 front, top,    left */
-    -0.5f,  0.5f, -0.5f,
-     /* 4 back,  bottom, right */
-     0.5f, -0.5f,  0.5f,
-     /* 5 back,  bottom, left */
-    -0.5f, -0.5f,  0.5f,
-     /* 6 back,  top,    right */
-     0.5f,  0.5f,  0.5f,
-     /* 7 back,  top,    left */
-    -0.5f,  0.5f,  0.5f
-};
-
-const u16 B3L_boxTri[36] ={
-    3, 0, 2, /* front  */
-    1, 0, 3,
-    0, 4, 2, /* right  */
-    2, 4, 6,
-    4, 5, 6, /* back   */
-    7, 6, 5,
-    3, 7, 1, /* left   */
-    1, 7, 5,
-    6, 3, 2, /* top    */
-    7, 3, 6,
-    1, 4, 0, /* bottom */
-    5, 4, 1
-};
-
-const u8 B3L_boxColorIdx[12]={
-    0,1,2,3,4,5,
-    6,7,8,9,10,11
-};
-
-
-
-#define m 15
-const u8 B3L_boxUV[72]={
-    0,0,  m,m,  m,0,\
-    0,m,  m,m,  0,0,\
-    m,m,  m,0,  0,m,\
-    0,m,  m,0,  0,0,\
-    m,0,  0,0,  m,m,\
-    0,m,  m,m,  0,0,\
-    0,0,  0,m,  m,0,\
-    m,0,  0,m,  m,m,\
-    0,0,  m,m,  m,0,\
-    0,m,  m,m,  0,0,\
-    m,0,  0,m,  m,m,\
-    0,0,  0,m,  m,0
-};
-#undef m
-
-const f32 B3L_boxNormal[36]={
-    0.0f,0.0f,-1.0f,
-    0.0f,0.0f,-1.0f,
-    1.0f,0.0f, 0.0f,
-    1.0f,0.0f, 0.0f,
-    0.0f,0.0f, 1.0f,
-    0.0f,0.0f, 1.0f,
-    -1.0f,0.0f, 0.0f,
-    -1.0f,0.0f, 0.0f,
-    0.0f,1.0f,0.0f,
-    0.0f,1.0f,0.0f,
-    0.0f,-1.0f,0.0f,
-    0.0f,-1.0f,0.0f,
-};
-
-#if (FRAME_BUFF_COLOR_TYPE == 0) ||(FRAME_BUFF_COLOR_TYPE == 2)
-const u32 B3L_boxLUT32bit[16]={
-    0XFF000000,0XFF1D2B53,0XFF7E2553,0XFF008751,
-    0XFFAB5236,0XFF5F574F,0XFFC2C3C7,0XFFFFF1E8,
-    0XFFFF004D,0XFFFFA300,0XFFFFEC27,0XFF00E436,
-    0XFF29ADFF,0XFF83769C,0XFFFF77A8,0XFFFFCCAA
-};
-#endif
-#if FRAME_BUFF_COLOR_TYPE == 1
-const u16 B3L_boxLUT4444[16]={
-    0XF000,0XF235,0XF825,0XF085,
-    0XFB53,0XF655,0XFCCC,0XFFFF,
-    0XFF05,0XFFA0,0XFFF2,0XF0E3,
-    0XF3BF,0XF87A,0XFF7B,0XFFDB
-};
-#endif
-#if FRAME_BUFF_COLOR_TYPE == 2
-const u8 B3L_boxLUTL8Idx[16]={
-    0,1,2,3,
-    4,5,6,7,
-    8,9,10,11,
-    12,13,14,15
-};
-#endif
-
-const u8 B3L_boxTexData[128]={
-	0X44, 0X44, 0X44, 0X44, 0X44, 0X44, 0X44, 0X44, 0X44, 0X99, 0X99, 0X99, 0X99, 0X99, 0X99, 0X49, 
-	0X14, 0X73, 0X77, 0XFF, 0XFF, 0X22, 0XD2, 0X49, 0X14, 0XA3, 0XAA, 0XAA, 0XAA, 0XAA, 0XDA, 0X49, 
-	0X14, 0XB3, 0XBB, 0XBB, 0XBB, 0XBB, 0XDB, 0X49, 0X14, 0XC3, 0XCC, 0XCC, 0XCC, 0XCC, 0XDC, 0X49, 
-	0X14, 0X83, 0X88, 0X88, 0X88, 0X88, 0XD8, 0X49, 0X14, 0XE3, 0XEE, 0XEE, 0XEE, 0XEE, 0XDE, 0X49, 
-	0X14, 0XED, 0XEE, 0XEE, 0XEE, 0XEE, 0X5E, 0X49, 0X14, 0X8D, 0X88, 0X88, 0X88, 0X88, 0X58, 0X49, 
-	0X14, 0XCD, 0XCC, 0XCC, 0XCC, 0XCC, 0X5C, 0X49, 0X14, 0XBD, 0XBB, 0XBB, 0XBB, 0XBB, 0X5B, 0X49, 
-	0X14, 0XAD, 0XAA, 0XAA, 0XAA, 0XAA, 0X5A, 0X49, 0X14, 0X2D, 0X22, 0XFF, 0XFF, 0X77, 0X57, 0X49, 
-	0X14, 0X11, 0X11, 0X11, 0X11, 0X11, 0X11, 0X44, 0X66, 0X66, 0X66, 0X66, 0X66, 0X66, 0X66, 0X66, 
-};
-const B3L_Mesh_t B3L_box = {
-                      .vectNum = 8,
-                      .triNum  = 12,
-                      .pVect   = (f32 *)B3L_boxVect,
-                      .pTri    = (u16 *)B3L_boxTri,
-                      .pUv     = (u8 *)B3L_boxUV,
-                      .pNormal = (f32 *)B3L_boxNormal
-                      };
-const B3L_Mesh_NoTex_t B3L_box_noTex = {
-                      .vectNum = 8,
-                      .triNum  = 12,
-                      .pVect   = (f32 *)B3L_boxVect,
-                      .pTri    = (u16 *)B3L_boxTri,
-                      .pColorIdx  = (u8  *)B3L_boxColorIdx,
-                      .pNormal = (f32 *)B3L_boxNormal
-                      };
-
-const B3L_Polygon_t B3L_box_Polygon = {
-                        .vectNum = 8,
-                        .lineNum = 12,
-                        .pVect = (f32 *)B3L_boxVect,
-                        .pLine = (u8 *) B3L_polygonIdx
-                        };
-
-
-const B3L_texture_t B3L_boxTexture = { 
-                                 .type    = LUT16,
-                                 .uvSize  = 16,
-                                 #if FRAME_BUFF_COLOR_TYPE == 0
-                                 .pLUT    = (texLUT_t *)B3L_boxLUT32bit,
-                                 #endif
-                                 #if FRAME_BUFF_COLOR_TYPE == 1
-                                 .pLUT    =  (texLUT_t *)B3L_boxLUT4444,
-                                 #endif
-                                 #if FRAME_BUFF_COLOR_TYPE == 2
-                                 .pLUT    =  (texLUT_t *)B3L_boxLUTL8Idx,
-                                 #endif
-                                 .pData   = (u8 *)B3L_boxTexData,
-                                 .transColorIdx = 16
-};
 /*Private Fuction declare ---------------------------------------------------*/ 
 /*-----------------------------------------------------------------------------
 Math functions
@@ -230,7 +77,7 @@ __attribute__((always_inline)) static  inline f32      Clamp_f(f32 v, f32 v1, f3
 /*-----------------------------------------------------------------------------
 Vector and matrix functions
 -----------------------------------------------------------------------------*/
-__attribute__((always_inline)) static  inline void     Vect3_Scale(vect3_t *pV,f32 scale,vect3_t *pResult);
+
 __attribute__((always_inline)) static  inline void     Vect3_Add(vect3_t *pV1,vect3_t *pV2,vect3_t *pResult);
 __attribute__((always_inline)) static  inline void     MakeClipMatrix(render_t *pRender,f32 focalLength, f32 aspectRatio,mat4_t *mat);
 __attribute__((always_inline)) static  inline void     Vect3Xmat4(vect3_t *pV, mat4_t *pMat, vect4_t *pResult);
@@ -440,7 +287,7 @@ __attribute__((always_inline)) static inline f32 Interp_f(f32 x1, f32 x2, f32 t)
     return x1 + (x2 - x1) * t;
 }
 
-__attribute__((always_inline)) static  inline void     Vect3_Scale(vect3_t *pV,f32 scale,vect3_t *pResult){
+void     Vect3_Scale(vect3_t *pV,f32 scale,vect3_t *pResult){
     pResult->x = scale*pV->x;
     pResult->y = scale*pV->y;
     pResult->z = scale*pV->z;
@@ -1436,26 +1283,12 @@ static void RenderParticleObjs(render_t *pRender) {
         pCurrentObj = pCurrentObj->next;    
     }
 }
-void B3L_DefaultParticleDrawFunc(B3L_Particle_t *pParticle, screen4_t *pScreenVect,fBuff_t *pFBuff,zBuff_t *pZBuff){
 
-    zBuff_t compZ = CalZbuffValue(pScreenVect->z);
-    s32     intX = pScreenVect->x;
-    s32     intY = pScreenVect->y;
-    u32     shift = RENDER_RESOLUTION_X*intY + intX;
-    pZBuff = (pZBuff+shift);
-    shift = RENDER_X_SHIFT *intY + intX;
-    pFBuff = (pFBuff+shift);
-    if (compZ<= *pZBuff){
-        *pZBuff = compZ;
-        *pFBuff = 0XFFFFFFFF;
-    }
-
-}
 void B3L_UpdateAllParticlesStatesInGen(render_t *pRender,B3LParticleGenObj_t *pGen,u32 deltaTime,vect3_t *pForce){
     u32 i = pGen->particleNum ;
-    vect3_t delta;
     B3L_Particle_t *pParticle = pGen->pParticleActive;
     B3L_Particle_t *pPrevParticle = pGen->pParticleActive;
+    vect3_t deltadelta;
     while(i--){
         pParticle->life -= deltaTime;
         if (pParticle->life <= 0){
@@ -1469,9 +1302,10 @@ void B3L_UpdateAllParticlesStatesInGen(render_t *pRender,B3LParticleGenObj_t *pG
             B3L_ReturnParticleToPool(pParticle,&(pRender->scene));
             pParticle = pPrevParticle->next;
         }else{
-            Vect3_Add(&(pParticle->delta), pForce ,&(pParticle->delta));//update the delta
-            Vect3_Scale(&(pParticle->delta),(f32)deltaTime,&delta);
-            Vect3_Add(&(pParticle->position),&(delta),&(pParticle->position));//update the position
+            Vect3_Scale(pForce,(f32)deltaTime,&deltadelta);
+            Vect3_Add(&(pParticle->delta), &deltadelta ,&(pParticle->delta));//update the delta
+            Vect3_Scale(&(pParticle->delta),(f32)deltaTime,&deltadelta);
+            Vect3_Add(&(pParticle->position),&(deltadelta),&(pParticle->position));//update the position
             pPrevParticle = pParticle;
             pParticle = pParticle->next;
         }            
@@ -1480,59 +1314,7 @@ void B3L_UpdateAllParticlesStatesInGen(render_t *pRender,B3LParticleGenObj_t *pG
 
 
 
-void    B3L_DefaultParticleUpdFunc(u32 time,B3LParticleGenObj_t *pSelf,mat3_t *pMat,vect3_t *pTrans,render_t *pRender){
-//TODO here
-    u32 deltaTime;
-    u32 i;
-    B3L_Particle_t *pParticle;
-    //B3L_Particle_t *pPrevParticle;
-    vect3_t  delta;
-    vect3_t  force ={.x=0.0f,.y=-0.0001f,.z=0.0f};
-    u32 newParticleNum = 1;
-    if(pSelf->lastTime == 0){//this is the first time a generator is updated, only get the time
-        pSelf->lastTime = time;
-        return;
-    }else{
-        //calculate the delta time 
-        deltaTime = time - pSelf->lastTime;
-        pSelf->lastTime = time;
-        //add necessary new particles into the list
-        i = B3L_MIN(pRender->scene.freeParticleNum,newParticleNum);
-        s32 randValue;
-        f32 inv256 = 0.00390625f;
-        while(i--){
-            pParticle = B3L_GetFreeParticle(&(pRender->scene));
-            //setup position
-            B3L_SET_PARTICLE_POSITION(pParticle,pTrans->x,pTrans->y,pTrans->z);
-            //pParticle->position.x = pMat->m03;
-            //pParticle->position.y = pMat->m13;
-            //pParticle->position.z = pMat->m23;
-            //setup lifetime
-            pParticle->life = 800;
-            //setup init delta
-            randValue = B3L_Random();
-            randValue = randValue&0x000000FF;
-            delta.x = 0.5f*((f32)(randValue-128))*inv256;//need a fast rendom function here!
-            randValue = B3L_Random();
-            randValue = randValue&0x000000FF;
-            delta.y = 0.5f*((f32)randValue)*inv256;
-            randValue = B3L_Random();
-            randValue = randValue&0x000000FF;
-            delta.z = 0.5f*((f32)(randValue-128))*inv256;
-            B3L_Vect3MulMat3(&delta, pMat, &delta);
-            B3L_SET_PARTICLE_DELTA(pParticle,delta.x,delta.y,delta.z);
-            //pParticle->delta.x = delta.x;
-            //pParticle->delta.y = delta.y;
-            //pParticle->delta.z = delta.z;
-            B3L_AddParticleToGenerator(pParticle,pSelf);
-        }
-        Vect3_Scale(&force,(f32)deltaTime,&force);//force * time
-        B3L_UpdateAllParticlesStatesInGen(pRender,pSelf,deltaTime,&force);
-    }
-}
-
 #endif
-
 static void RenderMeshObjs(render_t *pRender){
     
     mat4_t mat; //64 byte
@@ -1770,16 +1552,9 @@ B3LObj_t * B3L_GetFreeObj(render_t *pRender){
         returnObj->next = (B3LObj_t *)NULL;
         returnObj->privous = (B3LObj_t *)NULL;
         returnObj->state = 0;
-        returnObj->transform.quaternion.x = 0.0f;
-        returnObj->transform.quaternion.y = 0.0f;
-        returnObj->transform.quaternion.z = 0.0f;
-        returnObj->transform.quaternion.w = 1.0f;
-        returnObj->transform.scale.x = 1.0f;
-        returnObj->transform.scale.y = 1.0f;
-        returnObj->transform.scale.z = 1.0f;
-        returnObj->transform.translation.x = 0.0f;
-        returnObj->transform.translation.y = 0.0f;
-        returnObj->transform.translation.z = 0.0f;
+        B3L_VECT4_SET(returnObj->transform.quaternion,0.0f,0.0f,0.0f,1.0f);
+        B3L_VECT3_SET(returnObj->transform.scale,1.0f,1.0f,1.0f);
+        B3L_VECT3_SET(returnObj->transform.translation,0.0f,0.0f,0.0f);
         B3L_InitUnitMat3(&(returnObj->mat));
         return returnObj;
     }else{
@@ -1792,15 +1567,6 @@ B3LMeshObj_t *B3L_GetFreeMeshObj(render_t *pRender){
     if (pObj !=  (B3LObj_t *)NULL){
         B3L_SET(pObj->state,MESH_OBJ);
         B3L_SET(pObj->state,OBJ_VISUALIZABLE);
-        //pObj->transform.translation.x = 0.0f;
-        //pObj->transform.translation.y = 0.0f;
-        //pObj->transform.translation.z = 0.0f;
-        //pObj->transform.rotation.x = 0.0f;
-        //pObj->transform.rotation.y = 0.0f;
-        //pObj->transform.rotation.z = 0.0f;
-        //pObj->transform.scale.x = 1.0f;
-        //pObj->transform.scale.y = 1.0f;
-        //pObj->transform.scale.z = 1.0f;
     }
     return (B3LMeshObj_t *)pObj;
 }
@@ -1810,15 +1576,6 @@ B3LMeshNoTexObj_t *B3L_GetFreeMeshNoTexObj(render_t *pRender){
     if (pObj !=  (B3LObj_t *)NULL){
         B3L_SET(pObj->state,NOTEX_MESH_OBJ);
         B3L_SET(pObj->state,OBJ_VISUALIZABLE);
-        //pObj->transform.translation.x = 0.0f;
-        //pObj->transform.translation.y = 0.0f;
-        //pObj->transform.translation.z = 0.0f;
-        //pObj->transform.rotation.x = 0.0f;
-        //pObj->transform.rotation.y = 0.0f;
-        //pObj->transform.rotation.z = 0.0f;
-        //pObj->transform.scale.x = 1.0f;
-       // pObj->transform.scale.y = 1.0f;
-        //pObj->transform.scale.z = 1.0f;
     }
     return (B3LMeshNoTexObj_t *)pObj;
 }
@@ -1827,17 +1584,7 @@ B3LPolygonObj_t    *B3L_GetFreePolygonObj(render_t *pRender){
     B3LObj_t *pObj = B3L_GetFreeObj(pRender);
     if (pObj !=  (B3LObj_t *)NULL){
         B3L_SET(pObj->state,POLYGON_OBJ);
-        B3L_SET(pObj->state,OBJ_VISUALIZABLE);
-        //pObj->transform.translation.x = 0.0f;
-        //pObj->transform.translation.y = 0.0f;
-        //pObj->transform.translation.z = 0.0f;
-        //pObj->transform.rotation.x = 0.0f;
-        //pObj->transform.rotation.y = 0.0f;
-        //pObj->transform.rotation.z = 0.0f;
-        //pObj->transform.scale.x = 1.0f;
-        //pObj->transform.scale.y = 1.0f;
-        //pObj->transform.scale.z = 1.0f;
-        
+        B3L_SET(pObj->state,OBJ_VISUALIZABLE);       
     }
     return (B3LPolygonObj_t *)pObj;
 }
@@ -1848,16 +1595,6 @@ B3LParticleGenObj_t  *B3L_GetFreeParticleGeneratorObj(render_t *pRender){
         B3L_SET(pObj->state,PARTICLE_GEN_OBJ);
         B3L_SET(pObj->state,OBJ_VISUALIZABLE);
         B3L_SET(pObj->state,OBJ_PARTICLE_ACTIVE);
-        //((B3LParticleGenObj_t  *)pObj)->transform.rotation.x = 0.0f;
-        //((B3LParticleGenObj_t  *)pObj)->transform.rotation.y = 0.0f;
-        //((B3LParticleGenObj_t  *)pObj)->transform.rotation.z = 0.0f;
-        //((B3LParticleGenObj_t  *)pObj)->transform.translation.x = 0.0f;
-        //((B3LParticleGenObj_t  *)pObj)->transform.translation.y = 0.0f;
-        //((B3LParticleGenObj_t  *)pObj)->transform.translation.z = 0.0f;
-        //((B3LParticleGenObj_t  *)pObj)->transform.quaternion.x = 0.0f;
-        //((B3LParticleGenObj_t  *)pObj)->transform.quaternion.y = 0.0f;
-        //((B3LParticleGenObj_t  *)pObj)->transform.quaternion.z = 0.0f;
-       // ((B3LParticleGenObj_t  *)pObj)->transform.quaternion.w = 1.0f;
         ((B3LParticleGenObj_t  *)pObj)->particleNum = 0;
         ((B3LParticleGenObj_t  *)pObj)->pParticleActive = (B3L_Particle_t *)NULL;
         ((B3LParticleGenObj_t  *)pObj)->lastTime = 0;
@@ -1934,115 +1671,7 @@ void B3L_RenderInit(render_t *pRender,fBuff_t *pFrameBuff){
     pRender->farPlane = DEFAULT_FAR_PLANE;
     pRender->nearPlane = DEFAULT_NEAR_PLANE;
 }
-/*-----------------------------------------------------------------------------
-Testing functions
------------------------------------------------------------------------------*/
-void B3L_InitBoxObj(B3LMeshObj_t *pObj,f32 size){
-    pObj->privous = (B3LObj_t *)NULL;
-    pObj->next = (B3LObj_t *)NULL;
-    pObj->pMesh = (B3L_Mesh_t *)&B3L_box;
-    pObj->pTexture = (B3L_texture_t *)&B3L_boxTexture;
-    pObj->transform.translation.x = 0.0f;
-    pObj->transform.translation.y = 0.0f;
-    pObj->transform.translation.z = 0.0f;
-    //pObj->transform.rotation.x = 0.0f;
-    //pObj->transform.rotation.y = 0.0f;
-    //pObj->transform.rotation.z = 0.0f;
-    pObj->transform.scale.x = size;
-    pObj->transform.scale.y = size;
-    pObj->transform.scale.z = size;
-    pObj->pBoundBox = B3L_box.pVect;
 
-    B3L_SET(pObj->state,MESH_OBJ); 
-    B3L_SET(pObj->state,OBJ_VISUALIZABLE);
-
-    B3L_SET(pObj->state,OBJ_BACK_CULLING_CLOCK);
-}
-void B3L_InitBoxObjNoTexture(B3LMeshNoTexObj_t *pObj,f32 size){
-    pObj->privous = (B3LObj_t *)NULL;
-    pObj->next = (B3LObj_t *)NULL;
-    pObj->pMesh = (B3L_Mesh_NoTex_t *)&B3L_box_noTex;
-
-    pObj->transform.translation.x = 0.0f;
-    pObj->transform.translation.y = 0.0f;
-    pObj->transform.translation.z = 0.0f;
-    //pObj->transform.rotation.x = 0.0f;
-   // pObj->transform.rotation.y = 0.0f;
-   // pObj->transform.rotation.z = 0.0f;
-    pObj->transform.scale.x = size;
-    pObj->transform.scale.y = size;
-    pObj->transform.scale.z = size;
-    pObj->pBoundBox = B3L_box.pVect;
-    #if FRAME_BUFF_COLOR_TYPE == 0
-    pObj->pLUT =  (texLUT_t *)B3L_boxLUT32bit;
-    #endif
-    #if FRAME_BUFF_COLOR_TYPE == 1
-    pObj->pLUT =  (texLUT_t *)B3L_boxLUT4444;
-    #endif
-    #if FRAME_BUFF_COLOR_TYPE == 2
-    pObj->pLUT =  (texLUT_t *)B3L_boxLUTL8Idx;
-    #endif
-    B3L_SET(pObj->state,NOTEX_MESH_OBJ); 
-    B3L_SET(pObj->state,OBJ_VISUALIZABLE);
-
-    B3L_SET(pObj->state,OBJ_BACK_CULLING_CLOCK);
-
-}
-
-void B3L_InitBoxObjPolygon(B3LPolygonObj_t *pObj,f32 size){
-    pObj->privous = (B3LObj_t *)NULL;
-    pObj->next = (B3LObj_t *)NULL;
-    pObj->pPolygon = (B3L_Polygon_t *)&B3L_box_Polygon;
-
-    pObj->transform.translation.x = 0.0f;
-    pObj->transform.translation.y = 0.0f;
-    pObj->transform.translation.z = 0.0f;
-    //pObj->transform.rotation.x = 0.0f;
-    //pObj->transform.rotation.y = 0.0f;
-    //pObj->transform.rotation.z = 0.0f;
-    pObj->transform.scale.x = size;
-    pObj->transform.scale.y = size;
-    pObj->transform.scale.z = size;
-    pObj->pBoundBox = B3L_box.pVect;
-    #if FRAME_BUFF_COLOR_TYPE == 0
-    pObj->color = 0xFF00FF00;
-    #endif
-    #if FRAME_BUFF_COLOR_TYPE == 1
-    pObj->color = 0xF0F0;
-    #endif
-    #if FRAME_BUFF_COLOR_TYPE == 2
-    pObj->color = 1;
-    #endif
-    B3L_SET(pObj->state,POLYGON_OBJ); 
-    B3L_SET(pObj->state,OBJ_VISUALIZABLE);
-
-    //B3L_SET(pObj->state,OBJ_BACK_CULLING_CLOCK);
-
-}
-
-void     B3L_InitDemoParticleGenObj(B3LParticleGenObj_t  *pParticleGen){
-    //todo create a generator based on default functions
-    pParticleGen->DrawFunc = B3L_DefaultParticleDrawFunc;
-    pParticleGen->PtlUpdFunc = B3L_DefaultParticleUpdFunc;
-    pParticleGen->lastTime = 0;
-    pParticleGen->particleNum = 0;
-    //pParticleGen->transform.rotation.x = 0.0f;
-    //pParticleGen->transform.rotation.y = 0.0f;
-    //pParticleGen->transform.rotation.z = 0.0f;
-    pParticleGen->transform.translation.x = 0.0f;
-    pParticleGen->transform.translation.y = 0.0f;
-    pParticleGen->transform.translation.z = 0.0f;
-    pParticleGen->transform.quaternion.x = 0.0f;
-    pParticleGen->transform.quaternion.y = 0.0f;
-    pParticleGen->transform.quaternion.z = 0.0f;
-    pParticleGen->transform.quaternion.w = 1.0f;
-    pParticleGen->pParticleActive = (B3L_Particle_t *)NULL;
-    B3L_SET(pParticleGen->state,PARTICLE_GEN_OBJ);
-    B3L_SET(pParticleGen->state,OBJ_VISUALIZABLE);
-    B3L_SET(pParticleGen->state,OBJ_PARTICLE_ACTIVE);
-
-
-}
 /*-----------------------------------------------------------------------------
 Draw functions
 -----------------------------------------------------------------------------*/
@@ -2192,6 +1821,7 @@ static void RenderNoTexMesh(B3LMeshNoTexObj_t *pObj,render_t *pRender, mat4_t *p
             lightX = pRender->light.lightVect.x - translation->x;
             lightY = pRender->light.lightVect.y - translation->y;
             lightZ = pRender->light.lightVect.z - translation->z;
+            //normalize the obj to light vector
             normalFact = FastInvertSqrt(lightX*lightX+lightY*lightY+lightZ*lightZ);
             lightX = lightX * normalFact;
             lightY = lightY * normalFact;
@@ -2404,9 +2034,7 @@ printf("Draw a mesh");
         if (((cullingState==1) && backFaceCullingResult)||((cullingState==2) && (!backFaceCullingResult))){    
             continue;
         }
-        //if ((cullingState==2) && (!backFaceCullingResult)){  
-        //    continue;
-        //}
+
         if (renderLevel==0){
             //Norm3Xmat4Normalize(pVectSource+i, pMat, &normalVect); 
             B3L_Vect3MulMat3(pVectSource+i, &(pObj->mat),&normalVect);
@@ -2674,10 +2302,6 @@ __attribute__((always_inline)) static  inline void  DrawTriTexture(
                                                                         f32 x2,f32 y2,f32 u2,f32 v2,f32 z2,
                                                                         u32 renderLevel,u32 lightFactor,B3L_texture_t *pTexture,
                                                                         fBuff_t *pFrameBuff,zBuff_t *pZbuff){
-//to calculate 0.5 pixel, if it works, then we will modified the project functions
-    //#ifndef _swap_f32_t
-    //#define _swap_f32_t(a, b) { f32 t = a; a = b; b = t; }
-    //#endif
     s32 y,last;
     if(y0 > y1){
         //B3L_SWAP_DRAW_TRI_VECT(0,1);
@@ -3136,28 +2760,19 @@ void  B3L_CreateLookAtQuaternion(vect3_t *pFrom, vect3_t *pAt, vect3_t *pUp, qua
 void     B3L_QuatCreateXRotate(quat4_t *pQ,f32 angle){
     f32 halfAngle = 0.5f*angle;
     f32 cosh = B3L_cos(halfAngle);f32 sinh = B3L_sin(halfAngle);
-    pQ->w = cosh;
-    pQ->x = sinh;
-    pQ->y = 0.0f;
-    pQ->z = 0.0f;
+    pQ->w = cosh;pQ->x = sinh;pQ->y = 0.0f;pQ->z = 0.0f;
 }
 
 void     B3L_QuatCreateYRotate(quat4_t *pQ,f32 angle){
     f32 halfAngle = 0.5f*angle;
     f32 cosh = B3L_cos(halfAngle);f32 sinh = B3L_sin(halfAngle);
-    pQ->w = cosh;
-    pQ->x = 0.0f;
-    pQ->y = sinh;
-    pQ->z = 0.0f;
+    pQ->w = cosh;pQ->x = 0.0f;pQ->y = sinh;pQ->z = 0.0f;
 }
 
 void     B3L_QuatCreateZRotate(quat4_t *pQ,f32 angle){
     f32 halfAngle = 0.5f*angle;
     f32 cosh = B3L_cos(halfAngle);f32 sinh = B3L_sin(halfAngle);
-    pQ->w = cosh;
-    pQ->x = 0.0f;
-    pQ->y = 0.0f;
-    pQ->z = sinh;
+    pQ->w = cosh;pQ->x = 0.0f;pQ->y = 0.0f;pQ->z = sinh;
 }
 
 

@@ -387,7 +387,6 @@ A-- 1, point light
 typedef struct{
     u32                 state;
     vect3_t             lightVect;
-    //vect4_t             pointLightVectInCamSpaceBuff;
     u32                 color;
     f32                 factor_0;
     f32                 factor_1;
@@ -507,6 +506,7 @@ extern void     B3L_Vect3Sub(vect3_t *pVa,vect3_t *pVb,vect3_t *pVc);
 extern f32      B3L_Vect3Dot(vect3_t *pA, vect3_t *pB);
 extern void     B3L_Vect3Cross(vect3_t *pA, vect3_t *pB, vect3_t *pResult);
 extern void     B3L_Vect3Interp(vect3_t *pVa,vect3_t *pVb,vect3_t *pVc,f32 t);
+extern void     Vect3_Scale(vect3_t *pV,f32 scale,vect3_t *pResult);
 /*-----------------------------------------------------------------------------
 Rotation convert functions
 -----------------------------------------------------------------------------*/
@@ -603,13 +603,7 @@ extern B3LParticleGenObj_t  *B3L_GetFreeParticleGeneratorObj(render_t *pRender);
 extern void                 B3L_AddObjToRenderList(B3LObj_t *pObj, render_t *pRender);
 extern void                 B3L_PopObjFromRenderList(B3LObj_t *pObj, render_t *pRender);
 extern void                 B3L_ReturnObjToInactiveList(B3LObj_t *pObj,  render_t *pRender);
-/*-----------------------------------------------------------------------------
-Demo objs functions
------------------------------------------------------------------------------*/
-extern void                 B3L_InitBoxObj(B3LMeshObj_t *pObj,f32 size);
-extern void                 B3L_InitBoxObjNoTexture(B3LMeshNoTexObj_t *pObj,f32 size);
-extern void                 B3L_InitBoxObjPolygon(B3LPolygonObj_t *pObj,f32 size);
-extern void                 B3L_InitDemoParticleGenObj(B3LParticleGenObj_t  *pParticleGen);
+
 /*-----------------------------------------------------------------------------
 Particle functions
 -----------------------------------------------------------------------------*/
@@ -618,12 +612,9 @@ extern B3L_Particle_t       *B3L_GetFreeParticle(scene_t *pScene);
 extern u32                  B3L_GetFreeParticleNum(render_t *pRender);
 extern void                 B3L_ReturnParticleToPool(B3L_Particle_t *pParticle,scene_t *pScene);
 extern void                 B3L_AddParticleToGenerator(B3L_Particle_t *pParticle,B3LParticleGenObj_t  *pGenerator);
-extern void                 B3L_UpdateAllParticlesStatesInGen(render_t *pRender,B3LParticleGenObj_t *pGen,
-                                                              u32 deltaTime,vect3_t *pForce);
+extern void                 B3L_UpdateAllParticlesStatesInGen(render_t *pRender,B3LParticleGenObj_t *pGen,                                                            u32 deltaTime,vect3_t *pForce);
 #define                     B3L_SET_PARTICLE_POSITION(pP,px,py,pz)   pP->position.x=px;pP->position.y=py;pP->position.z=pz                                                                                                
 #define                     B3L_SET_PARTICLE_DELTA(pP,dx,dy,dz)      pP->delta.x=dx;pP->delta.y=dy;pP->delta.z=dz                                                                                                
-extern void                 B3L_DefaultParticleDrawFunc(B3L_Particle_t *pParticle, screen4_t *pScreenVect,fBuff_t *pFBuff,zBuff_t *pZBuff);
-extern void                 B3L_DefaultParticleUpdFunc(u32 time,B3LParticleGenObj_t *pSelf,mat3_t *pMat,vect3_t *pTrans,render_t *pRender);
 #endif  //end of  B3L_USING_PARTICLE
 /*-----------------------------------------------------------------------------
 After effect functions
