@@ -26,7 +26,7 @@
 //config the ram position if necessary
 u32            B3L_seed = 0x31415926;
 screen3f_t     vectBuff[VECT_BUFF_SIZE]; //8KB
-__attribute__((section(".zbuff")))  zBuff_t  zBuff[Z_BUFF_LENTH];        //75KB we need a zbuff section after the framebuff
+__attribute__((section(".zbuff")))  zBuff_t  zBuff[Z_BUFF_LENTH];        //
 
 #ifdef B3L_USING_PARTICLE
 B3L_Particle_t  particleBuff[B3L_PARTICLE_BUFF_DEPTH];//18KB
@@ -674,20 +674,23 @@ f32 B3L_Vec2Length(vect2_t *pV){
 }
 
 void B3L_Vect2Normalize(vect2_t *pV){
-    f32 factor = FastInvertSqrt(pV->x*pV->x+pV->y*pV->y);
-    pV->x = (pV->x*factor);
-    pV->y = (pV->y*factor);
+    f32 x = pV->x;f32 y= pV->y;
+    f32 factor = FastInvertSqrt(x*x+y*y);
+    pV->x = (x*factor);
+    pV->y = (y*factor);
 }
 
 void B3L_Vect3Normalize(vect3_t *pV){
-    f32 factor = FastInvertSqrt(pV->x*pV->x+pV->y*pV->y+pV->z*pV->z);
-    pV->x = (pV->x*factor);
-    pV->y = (pV->y*factor);
-    pV->z = (pV->z*factor);
+    f32 x = pV->x;f32 y= pV->y;f32 z= pV->z;
+    f32 factor = FastInvertSqrt(x*x+y*y+z*z);
+    pV->x = (x*factor);
+    pV->y = (y*factor);
+    pV->z = (z*factor);
 }
 
 f32 B3L_Vect3Length(vect3_t *pV){
-    return B3L_Sqrtf(pV->x * pV->x + pV->y * pV->y + pV->z * pV->z);  
+    f32 x = pV->x;f32 y= pV->y;f32 z= pV->z;
+    return B3L_Sqrtf(x * x + y*y + z*z);  
 }
 
 void B3L_Vect3Add(vect3_t *pVa,vect3_t *pVb,vect3_t *pVc){
