@@ -19,12 +19,12 @@ controlled by the address given to the init function.
    |
    |
  y v
-using row vector, so v * mat -> new v
-z buff range use [0.~1.] for near/ far plane
+Always using row vector, so v * mat -> new v
+Z buff range used [0.~1.] for near/ far plane (directX style)
 
-Rotations use Euler angles in ZXY order
-Positive rotation about an axis rotates clock-wise when looking in the direction
-of the axis
+Rotations used quaternion internally in transform struct
+You could also set the rotation by euler angles in ZXY order, 
+Positive rotation about an axis follow left-hand method.
 
 light effect is done by setting the pixel alpha channel value and alpha blending
 with a given color background, so after the render(),we need to call DMA2D in 
@@ -406,8 +406,10 @@ B   camera track obj mode
 #define  B3L_PROJECT_MODE                    (1)
 #define  OTHROGRAPHIC_PROJECT                (1u<<B3L_PROJECT_MODE)
 #define  PERSPECTIVE_PROJECT                 (0u<<B3L_PROJECT_MODE)
-#define  CAM_NEED_QUAT_UPDATE                (24)
-#define  CAM_NEED_MATRIX_UPDATE              (25)
+//bit 24
+#define  CAM_NEED_QUAT_UPDATE                OBJ_NEED_QUAT_UPDATE            
+//bit 25
+#define  CAM_NEED_MATRIX_UPDATE              OBJ_NEED_MATRIX_UPDATE
 typedef struct{
     u32                 state;
     f32                 aspectRate;
@@ -477,10 +479,71 @@ typedef void (*B3L_DrawFunc_t)(B3L_Particle_t *, screen4_t *,fBuff_t *,zBuff_t *
 
 /*Function declear-----------------------------------------------------------*/
 /*-----------------------------------------------------------------------------
-Resolution helper functions
+Render functions
 -----------------------------------------------------------------------------*/
-extern fBuff_t *B3L_3dRenderAreaShiftCal(fBuff_t *startOfWholeFrameBuff, u32 x, u32 y);
-
+extern void     B3L_RenderInit(render_t *pRender,fBuff_t *pFrameBuff);
+extern void     B3L_RenderScence(render_t *pRender); //draw work 
+extern void     B3L_ResetScene(scene_t *pScene); //reset all the scene resource
+extern void     B3L_NewRenderStart(render_t *pRender,fBuff_t color); //clear buffs
+extern void     B3L_Update(render_t *pRender,u32 time); //update particles etc
+/*-----------------------------------------------------------------------------
+Render obj functions
+-----------------------------------------------------------------------------*/
+extern u32                  B3L_GetFreeObjNum(render_t *pRender);
+extern B3LObj_t             *B3L_GetFreeObj(render_t *pRender);
+extern B3LMeshObj_t         *B3L_GetFreeMeshObj(render_t *pRender);
+extern B3LMeshNoTexObj_t    *B3L_GetFreeMeshNoTexObj(render_t *pRender);
+extern B3LPolygonObj_t      *B3L_GetFreePolygonObj(render_t *pRender);
+#ifdef B3L_USING_PARTICLE
+extern B3LParticleGenObj_t  *B3L_GetFreeParticleGeneratorObj(render_t *pRender);
+#endif
+extern void                 B3L_AddObjToRenderList(B3LObj_t *pObj, render_t *pRender);
+extern void                 B3L_PopObjFromRenderList(B3LObj_t *pObj, render_t *pRender);
+extern void                 B3L_ReturnObjToInactiveList(B3LObj_t *pObj,  render_t *pRender);
+/*-----------------------------------------------------------------------------
+Target rotate control functions
+-----------------------------------------------------------------------------*/
+extern void     B3L_RotateObjInOX(quat4_t *pQuat,f32 angle);
+extern void     B3L_RotateObjInOY(quat4_t *pQuat,f32 angle);
+extern void     B3L_RotateObjInOZ(quat4_t *pQuat,f32 angle);
+extern void     B3L_RotateObjInWX(quat4_t *pQuat,f32 angle);
+extern void     B3L_RotateObjInWY(quat4_t *pQuat,f32 angle);
+extern void     B3L_RotateObjInWZ(quat4_t *pQuat,f32 angle);
+#define         SET_OBJ_ROTATE_BY_EULER(pObj,pEuler)          B3L_EulerToQuaternion(pEuler,&((pObj)->transform.quaternion);\
+                                                                        B3L_SET((pObj)->state,OBJ_NEED_MATRIX_UPDATE)
+#define         ROTATE_IN_BODY_X(pObj,angle)                  B3L_RotateObjInOX(&((pObj)->transform.quaternion),angle);\
+                                                                        B3L_SET((pObj)->state,OBJ_NEED_MATRIX_UPDATE)
+#define         ROTATE_IN_BODY_Y(pObj,angle)                  B3L_RotateObjInOY(&((pObj)->transform.quaternion),angle);\
+                                                                        B3L_SET((pObj)->state,OBJ_NEED_MATRIX_UPDATE)
+#define         ROTATE_IN_BODY_Z(pObj,angle)                  B3L_RotateObjInOZ(&((pObj)->transform.quaternion),angle);\
+                                                                        B3L_SET((pObj)->state,OBJ_NEED_MATRIX_UPDATE)
+#define         ROTATE_IN_WORLD_X(pObj,angle)                 B3L_RotateObjInWX(&((pObj)->transform.quaternion),angle);\
+                                                                        B3L_SET((pObj)->state,OBJ_NEED_MATRIX_UPDATE)
+#define         ROTATE_IN_WORLD_Y(pObj,angle)                 B3L_RotateObjInWY(&((pObj)->transform.quaternion),angle);\
+                                                                        B3L_SET((pObj)->state,OBJ_NEED_MATRIX_UPDATE)
+#define         ROTATE_IN_WORLD_Z(pObj,angle)                 B3L_RotateObjInWZ(&((pObj)->transform.quaternion),angle);\
+                                                                        B3L_SET((pObj)->state,OBJ_NEED_MATRIX_UPDATE)
+/*-----------------------------------------------------------------------------
+Camera functions
+-----------------------------------------------------------------------------*/
+// you could use obj rotate macros for camera also
+extern void     B3L_InitCamera(render_t *pRender);
+extern void     B3L_SetOrthographicProject(render_t *pRender);
+extern void     B3L_SetPerspectiveProject(render_t *pRender);//default mode
+//call after you reset the aspect ratio, focus length, near/far plane, project mode 
+extern void     B3L_UpdateClipMatrix(render_t *pRender);
+extern void     B3L_CameraMoveTo(vect3_t position,camera_t *pCam);
+extern void     B3L_CameraLookAt(camera_t *pCam, vect3_t *pAt,vect3_t *pUp);
+extern void     B3L_CamStopTrack(camera_t *pCam);
+extern void     B3L_CamStartTrack(camera_t *pCam);
+extern void     B3L_CamSetTrack(camera_t *pCam, B3LObj_t  *pTrackObj,f32 trackDistance, 
+                                 f32 trackAngleSpeed, f32 targetAX, f32 targetAY, f32 targetAZ);
+/*-----------------------------------------------------------------------------
+Light functions
+-----------------------------------------------------------------------------*/
+extern void     B3L_ResetLight(light_t *pLight);
+extern void     B3L_SetLightType(render_t *pRender,lightType_e type);
+extern void     B3L_SetLightVect(render_t *pRender, f32 x,f32 y,f32 z);
 /*-----------------------------------------------------------------------------
 Math functions
 -----------------------------------------------------------------------------*/
@@ -532,6 +595,20 @@ extern void     B3L_QuatCreateXRotate(quat4_t *pQ,f32 angle);
 extern void     B3L_QuatCreateYRotate(quat4_t *pQ,f32 angle);
 extern void     B3L_QuatCreateZRotate(quat4_t *pQ,f32 angle);
 extern void     B3L_QuaternionInterp(quat4_t *pQuat0,quat4_t *pQuat1,quat4_t *pResult, f32 t);
+
+/*-----------------------------------------------------------------------------
+Particle functions
+-----------------------------------------------------------------------------*/
+#ifdef B3L_USING_PARTICLE
+extern B3L_Particle_t       *B3L_GetFreeParticle(scene_t *pScene);
+extern u32                  B3L_GetFreeParticleNum(render_t *pRender);
+extern void                 B3L_ReturnParticleToPool(B3L_Particle_t *pParticle,scene_t *pScene);
+extern void                 B3L_AddParticleToGenerator(B3L_Particle_t *pParticle,B3LParticleGenObj_t  *pGenerator);
+extern void                 B3L_UpdateAllParticlesStatesInGen(render_t *pRender,B3LParticleGenObj_t *pGen,
+                                                              u32 deltaTime,vect3_t *pForce);
+#define                     B3L_SET_PARTICLE_POSITION(pP,px,py,pz)   pP->position.x=px;pP->position.y=py;pP->position.z=pz                                                                                                
+#define                     B3L_SET_PARTICLE_DELTA(pP,dx,dy,dz)      pP->delta.x=dx;pP->delta.y=dy;pP->delta.z=dz                                                                                                
+#endif  //end of  B3L_USING_PARTICLE
 /*-----------------------------------------------------------------------------
 Matrix functions
 -----------------------------------------------------------------------------*/
@@ -551,75 +628,9 @@ extern void     B3L_MakeO2CMatrix(mat3_t *pRMat,vect3_t *pScale,vect3_t *pTrans,
 extern void     B3L_Vect3MulMat3(vect3_t *pV, mat3_t *pMat, vect3_t *pResult);
 extern void     B3L_Point3MulMat4(vect3_t *pV, mat4_t *pMat, vect3_t *pResult);
 /*-----------------------------------------------------------------------------
-Obj control functions
+Resolution helper functions
 -----------------------------------------------------------------------------*/
-extern void     B3L_SetObjRotationByEuler(B3LObj_t *pObj,euler3_t *pEuler);
-extern void     B3L_RotateObjInOX(B3LObj_t *pObj,f32 angle);
-extern void     B3L_RotateObjInOY(B3LObj_t *pObj,f32 angle);
-extern void     B3L_RotateObjInOZ(B3LObj_t *pObj,f32 angle);
-extern void     B3L_RotateObjInWX(B3LObj_t *pObj,f32 angle);
-extern void     B3L_RotateObjInWY(B3LObj_t *pObj,f32 angle);
-extern void     B3L_RotateObjInWZ(B3LObj_t *pObj,f32 angle);
-
-
-/*-----------------------------------------------------------------------------
-Camera functions
------------------------------------------------------------------------------*/
-extern void     B3L_RotateCamInOX(camera_t *pCam,f32 angle);
-extern void     B3L_RotateCamInOY(camera_t *pCam,f32 angle);
-extern void     B3L_RotateCamInOZ(camera_t *pCam,f32 angle);
-extern void     B3L_InitCamera(render_t *pRender);
-extern void     B3L_SetOrthographicProject(render_t *pRender);
-extern void     B3L_SetPerspectiveProject(render_t *pRender);//default mode
-//call after you reset the aspect ratio, focus length, near/far plane, project mode 
-extern void     B3L_UpdateClipMatrix(render_t *pRender);
-extern void     B3L_CameraMoveTo(vect3_t position,camera_t *pCam);
-extern void     B3L_CameraLookAt(camera_t *pCam, vect3_t *pAt,vect3_t *pUp);
-extern void     B3L_CamStopTrack(camera_t *pCam);
-extern void     B3L_CamStartTrack(camera_t *pCam);
-extern void     B3L_CamSetTrack(camera_t *pCam, B3LObj_t  *pTrackObj,f32 trackDistance, f32 trackAngleSpeed, f32 targetAX, f32 targetAY, f32 targetAZ);
-
-/*-----------------------------------------------------------------------------
-Render functions
------------------------------------------------------------------------------*/
-extern void     B3L_RenderInit(render_t *pRender,fBuff_t *pFrameBuff);
-extern void     B3L_ResetScene(scene_t *pScene); //reset all the scene resource
-extern void     B3L_NewRenderStart(render_t *pRender,fBuff_t color); //clear buffs
-extern void     B3L_Update(render_t *pRender,u32 time); //update particles etc
-extern void     B3L_RenderScence(render_t *pRender); //draw work 
-/*-----------------------------------------------------------------------------
-Light functions
------------------------------------------------------------------------------*/
-extern void     B3L_ResetLight(light_t *pLight);
-extern void     B3L_SetLightType(render_t *pRender,lightType_e type);
-extern void     B3L_SetLightVect(render_t *pRender, f32 x,f32 y,f32 z);
-/*-----------------------------------------------------------------------------
-Render obj functions
------------------------------------------------------------------------------*/
-extern u32                  B3L_GetFreeObjNum(render_t *pRender);
-extern B3LObj_t             *B3L_GetFreeObj(render_t *pRender);
-extern B3LMeshObj_t         *B3L_GetFreeMeshObj(render_t *pRender);
-extern B3LMeshNoTexObj_t    *B3L_GetFreeMeshNoTexObj(render_t *pRender);
-extern B3LPolygonObj_t      *B3L_GetFreePolygonObj(render_t *pRender);
-#ifdef B3L_USING_PARTICLE
-extern B3LParticleGenObj_t  *B3L_GetFreeParticleGeneratorObj(render_t *pRender);
-#endif
-extern void                 B3L_AddObjToRenderList(B3LObj_t *pObj, render_t *pRender);
-extern void                 B3L_PopObjFromRenderList(B3LObj_t *pObj, render_t *pRender);
-extern void                 B3L_ReturnObjToInactiveList(B3LObj_t *pObj,  render_t *pRender);
-
-/*-----------------------------------------------------------------------------
-Particle functions
------------------------------------------------------------------------------*/
-#ifdef B3L_USING_PARTICLE
-extern B3L_Particle_t       *B3L_GetFreeParticle(scene_t *pScene);
-extern u32                  B3L_GetFreeParticleNum(render_t *pRender);
-extern void                 B3L_ReturnParticleToPool(B3L_Particle_t *pParticle,scene_t *pScene);
-extern void                 B3L_AddParticleToGenerator(B3L_Particle_t *pParticle,B3LParticleGenObj_t  *pGenerator);
-extern void                 B3L_UpdateAllParticlesStatesInGen(render_t *pRender,B3LParticleGenObj_t *pGen,                                                            u32 deltaTime,vect3_t *pForce);
-#define                     B3L_SET_PARTICLE_POSITION(pP,px,py,pz)   pP->position.x=px;pP->position.y=py;pP->position.z=pz                                                                                                
-#define                     B3L_SET_PARTICLE_DELTA(pP,dx,dy,dz)      pP->delta.x=dx;pP->delta.y=dy;pP->delta.z=dz                                                                                                
-#endif  //end of  B3L_USING_PARTICLE
+extern fBuff_t *B3L_3dRenderAreaShiftCal(fBuff_t *startOfWholeFrameBuff, u32 x, u32 y);
 /*-----------------------------------------------------------------------------
 After effect functions
 -----------------------------------------------------------------------------*/

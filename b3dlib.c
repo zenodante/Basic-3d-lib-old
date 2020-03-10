@@ -11,8 +11,6 @@
 #include <math.h>
 #include "b3dlib.h"
 
-
-
 #ifndef   __ASM
 #define   __ASM        __asm
 #endif
@@ -21,17 +19,13 @@
 #endif
 
 #pragma GCC optimize("-O3")
-
-
 //config the ram position if necessary
 u32            B3L_seed = 0x31415926;
 screen3f_t     vectBuff[VECT_BUFF_SIZE]; //8KB
 __attribute__((section(".zbuff")))  zBuff_t  zBuff[Z_BUFF_LENTH];        //
-
 #ifdef B3L_USING_PARTICLE
 B3L_Particle_t  particleBuff[B3L_PARTICLE_BUFF_DEPTH];//18KB
 #endif
-
 
 
 #if Z_BUFF_LEVEL == 2
@@ -58,7 +52,6 @@ Math functions
 #if  B3L_ARM == 1
 __attribute__((always_inline)) static  inline f32   B3L_Sqrtf(f32 in);
 __attribute__((always_inline)) static  inline f32   B3L_Absf(f32 in);
-
 #else
 #define B3L_Sqrtf   sqrtf
 #define B3L_Absf    fabsf
@@ -76,15 +69,12 @@ __attribute__((always_inline)) static  inline f32      Clamp_f(f32 v, f32 v1, f3
 /*-----------------------------------------------------------------------------
 Vector and matrix functions
 -----------------------------------------------------------------------------*/
-
 __attribute__((always_inline)) static  inline void     Vect3_Add(vect3_t *pV1,vect3_t *pV2,vect3_t *pResult);
 __attribute__((always_inline)) static  inline void     MakeClipMatrix(u32 state,f32 near_plane,f32 far_plane,f32 focalLength, f32 aspectRatio,mat4_t *mat);
 __attribute__((always_inline)) static  inline void     Vect3Xmat4(vect3_t *pV, mat4_t *pMat, vect4_t *pResult);
 __attribute__((always_inline)) static  inline void     Vect3Xmat4WithTestToScreen4(vect3_t *pV, mat4_t *pMat, screen4_t *pResult);
 __attribute__((always_inline)) static  inline void     Vect3Xmat4WithTest_f(vect3_t *pV, mat4_t *pMat, screen3f_t *pResult);
 __attribute__((always_inline)) static  inline bool     Vect4BoundTest(vect4_t *pV);
-__attribute__((always_inline)) static  inline void     CopyMat4(mat4_t *target, mat4_t *source);
-
 /*-----------------------------------------------------------------------------
 Z buff functions
 -----------------------------------------------------------------------------*/
@@ -135,7 +125,6 @@ __attribute__((always_inline)) static  inline void     DrawDepthLineClip(s32 Ax,
 Camera functions
 -----------------------------------------------------------------------------*/
 static void     UpdateCam(render_t *pRender);
-static void     CameraTweenPositionAngle(vect3_t  *pPrevPAngle,f32 tweenSpeed, vect3_t *pModifiTarget);
 static void     CameraTrackPoint(camera_t *pCam, vect3_t *pAt, vect3_t *paxisAngle, f32 distance);
 static void     GenerateW2CMatrix(camera_t *pCam);
  /*-----------------------------------------------------------------------------
@@ -272,8 +261,6 @@ __attribute__((always_inline)) static inline f32 Interp_f(f32 x1, f32 x2, f32 t)
     return x1 + (x2 - x1) * t;
 }
 
-
-
 __attribute__((always_inline)) static  inline void Vect3_Add(vect3_t *pV1,vect3_t *pV2,vect3_t *pResult){
     pResult->x = pV1->x + pV2->x;
     pResult->y = pV1->y + pV2->y;
@@ -316,92 +303,60 @@ void B3L_Mat3ZRotate(mat3_t *pMat,f32 angle){
 /*
     Rotate obj matrix in obj space by x axis
 */
-void B3L_RotateObjInOX(B3LObj_t *pObj,f32 angle){
+void B3L_RotateObjInOX(quat4_t *pQuat,f32 angle){
     quat4_t rqat;
     B3L_QuatCreateXRotate(&rqat,angle);
-    B3L_QuatMult(&(pObj->transform.quaternion),&rqat, &(pObj->transform.quaternion));
-    B3L_SET(pObj->state,OBJ_NEED_MATRIX_UPDATE);
+    B3L_QuatMult(pQuat,&rqat, pQuat);
 }
 
 /*
     Rotate obj matrix in obj space by y axis
 */
-void B3L_RotateObjInOY(B3LObj_t *pObj,f32 angle){
+void B3L_RotateObjInOY(quat4_t *pQuat,f32 angle){
     quat4_t rqat;
     B3L_QuatCreateYRotate(&rqat,angle);
-    B3L_QuatMult(&(pObj->transform.quaternion),&rqat, &(pObj->transform.quaternion));
-    B3L_SET(pObj->state,OBJ_NEED_MATRIX_UPDATE);
+    B3L_QuatMult(pQuat,&rqat, pQuat);
 }
 
 /*
     Rotate obj matrix in obj space by z axis
 */
-void B3L_RotateObjInOZ(B3LObj_t *pObj,f32 angle){
+void B3L_RotateObjInOZ(quat4_t *pQuat,f32 angle){
     quat4_t rqat;
     B3L_QuatCreateZRotate(&rqat,angle);
-    B3L_QuatMult(&(pObj->transform.quaternion),&rqat, &(pObj->transform.quaternion));
-    B3L_SET(pObj->state,OBJ_NEED_MATRIX_UPDATE);
+    B3L_QuatMult(pQuat,&rqat, pQuat);
 }
 
 /*
     Rotate obj matrix in world space by x axis
 */
-void B3L_RotateObjInWX(B3LObj_t *pObj,f32 angle){
+void B3L_RotateObjInWX(quat4_t *pQuat,f32 angle){
     quat4_t rqat;
     B3L_QuatCreateXRotate(&rqat,angle);
-    B3L_QuatMult(&rqat,&(pObj->transform.quaternion), &(pObj->transform.quaternion));
-    B3L_SET(pObj->state,OBJ_NEED_MATRIX_UPDATE);
+    B3L_QuatMult(&rqat, pQuat,pQuat);
 }
 
 /*
     Rotate obj matrix in world space by y axis
 */
-void B3L_RotateObjInWY(B3LObj_t *pObj,f32 angle){
+void B3L_RotateObjInWY(quat4_t *pQuat,f32 angle){
     quat4_t rqat;
     B3L_QuatCreateYRotate(&rqat,angle);
-    B3L_QuatMult(&rqat,&(pObj->transform.quaternion), &(pObj->transform.quaternion));
-    B3L_SET(pObj->state,OBJ_NEED_MATRIX_UPDATE);
+    B3L_QuatMult(&rqat, pQuat,pQuat);
 }
 
 /*
     Rotate obj matrix in world space by z axis ?? may should use matrix type ABA
 */
-void B3L_RotateObjInWZ(B3LObj_t *pObj,f32 angle){
+void B3L_RotateObjInWZ(quat4_t *pQuat,f32 angle){
     quat4_t rqat;
     B3L_QuatCreateZRotate(&rqat,angle);
-    B3L_QuatMult(&rqat,&(pObj->transform.quaternion), &(pObj->transform.quaternion));
-    B3L_SET(pObj->state,OBJ_NEED_MATRIX_UPDATE);
+    B3L_QuatMult(&rqat, pQuat,pQuat);
 
-}
-
-void B3L_RotateCamInOX(camera_t *pCam,f32 angle){
-    quat4_t rqat;
-    B3L_QuatCreateXRotate(&rqat,angle);
-    B3L_QuatMult(&(pCam->transform.quaternion),&rqat, &(pCam->transform.quaternion));
-    B3L_SET(pCam->state,CAM_NEED_MATRIX_UPDATE);
-
-}
-
-void B3L_RotateCamInOY(camera_t *pCam,f32 angle){
-    quat4_t rqat;
-    B3L_QuatCreateYRotate(&rqat,angle);
-    B3L_QuatMult(&(pCam->transform.quaternion),&rqat, &(pCam->transform.quaternion));
-    B3L_SET(pCam->state,CAM_NEED_MATRIX_UPDATE);
-}
-
-void B3L_RotateCamInOZ(camera_t *pCam,f32 angle){
-    quat4_t rqat;
-    B3L_QuatCreateZRotate(&rqat,angle);
-    B3L_QuatMult(&(pCam->transform.quaternion),&rqat, &(pCam->transform.quaternion));
-    B3L_SET(pCam->state,CAM_NEED_MATRIX_UPDATE);
 }
 
 __attribute__((always_inline)) static inline void Vect3Xmat4(vect3_t *pV, mat4_t *pMat, vect4_t *pResult){
-    f32 x,y,z;
-    x = pV->x;
-    y = pV->y;
-    z = pV->z;
-
+    f32 x = pV->x; f32 y = pV->y; f32 z = pV->z;
     #define dotCol(col)\
         ((x*(pMat->m##col##0)) +\
         (y*(pMat->m##col##1)) +\
@@ -413,13 +368,11 @@ __attribute__((always_inline)) static inline void Vect3Xmat4(vect3_t *pV, mat4_t
     pResult->z = dotCol(2);
     pResult->w = dotCol(3);
     #undef dotCol
-
 }
+
 __attribute__((always_inline)) static  inline void  Vect3Xmat4WithTest_f(vect3_t *pV, mat4_t *pMat, screen3f_t *pResult){
-    f32 x,y,z,rx,ry,rz,rw;
-    x = pV->x;
-    y = pV->y;
-    z = pV->z;
+    f32 x = pV->x; f32 y = pV->y; f32 z = pV->z;
+    f32 rx,ry,rz,rw;
     u32 testResult=0;
     #define dotCol(col)\
         ((x*(pMat->m##col##0)) +\
@@ -456,10 +409,8 @@ __attribute__((always_inline)) static  inline void  Vect3Xmat4WithTest_f(vect3_t
 }
 
 __attribute__((always_inline)) static  inline void  Vect3Xmat4WithTestToScreen4(vect3_t *pV, mat4_t *pMat, screen4_t *pResult){
-    f32 x,y,z,rx,ry,rz,rw;
-    x = pV->x;
-    y = pV->y;
-    z = pV->z;
+    f32 x = pV->x; f32 y = pV->y; f32 z = pV->z;
+    f32 rx,ry,rz,rw;
     u32 testResult=0;
     #define dotCol(col)\
         ((x*(pMat->m##col##0)) +\
@@ -497,10 +448,8 @@ __attribute__((always_inline)) static  inline void  Vect3Xmat4WithTestToScreen4(
 }
 
 void     B3L_Vect3MulMat3(vect3_t *pV, mat3_t *pMat, vect3_t *pResult){
-    f32 x,y,z,rx,ry,rz;
-    x = pV->x;
-    y = pV->y;
-    z = pV->z;
+    f32 x = pV->x; f32 y = pV->y; f32 z = pV->z;
+    f32 rx,ry,rz;
 
     #define dotCol(col)\
         (x*(pMat->m##col##0)) +\
@@ -518,10 +467,8 @@ void     B3L_Vect3MulMat3(vect3_t *pV, mat3_t *pMat, vect3_t *pResult){
 }
 
 void     B3L_Point3MulMat4(vect3_t *pV, mat4_t *pMat, vect3_t *pResult){
-    f32 x,y,z,rx,ry,rz;
-    x = pV->x;
-    y = pV->y;
-    z = pV->z;
+    f32 x = pV->x; f32 y = pV->y; f32 z = pV->z;
+    f32 rx,ry,rz;
 
     #define dotCol(col)\
         (x*(pMat->m##col##0)) +\
@@ -540,12 +487,7 @@ void     B3L_Point3MulMat4(vect3_t *pV, mat4_t *pMat, vect3_t *pResult){
 }
 
 __attribute__((always_inline)) static  inline bool Vect4BoundTest(vect4_t *pV){
-    f32 x,y,z,w;
-
-    x=pV->x;
-    y=pV->y;
-    z=pV->z;
-    w=pV->w;
+    f32 x=pV->x;f32 y=pV->y;f32 z=pV->z;f32 w=pV->w;
     if((x<=w)&&(x>=-w)&&(y<=w)&&(y>=-w)&&(z>=0)&&(z<=w)){
         return true;
     }else{
@@ -553,30 +495,6 @@ __attribute__((always_inline)) static  inline bool Vect4BoundTest(vect4_t *pV){
     }
 
 }
-
-__attribute__((always_inline)) static  inline void     CopyMat4(mat4_t *target, mat4_t *source){
-    target->m00 =   source->m00;
-    target->m01 =   source->m01;
-    target->m02 =   source->m02;
-    target->m03 =   source->m03;
-
-    target->m10 =   source->m10;
-    target->m11 =   source->m11;
-    target->m12 =   source->m12;
-    target->m13 =   source->m13;
-
-    target->m20 =   source->m20;
-    target->m21 =   source->m21;
-    target->m22 =   source->m22;
-    target->m23 =   source->m23;
-
-    target->m30 =   source->m30;
-    target->m31 =   source->m31;
-    target->m32 =   source->m32;
-    target->m33 =   source->m33;
-    
-}
-
 
 /*-----------------------------------------------------------------------------
     Math functions
@@ -1072,24 +990,15 @@ void B3L_UpdateClipMatrix(render_t *pRender){
 static void GenerateW2CMatrix(camera_t *pCam){
     mat3_t *pMat3 = &(pCam->mat);
     mat4_t *pW2CMat = &(pCam->camW2CMat);
-    f32 x = -1.0f*(pCam->transform.translation.x);
-    f32 y = -1.0f*(pCam->transform.translation.y);
-    f32 z = -1.0f*(pCam->transform.translation.z);
+    f32 x = -(pCam->transform.translation.x);
+    f32 y = -(pCam->transform.translation.y);
+    f32 z = -(pCam->transform.translation.z);
     //get the shift by translation
-
-    pW2CMat->m33 = 1.0f;
-    pW2CMat->m30 = 0.0f;
-    pW2CMat->m31 = 0.0f;
-    pW2CMat->m32 = 0.0f;
-    pW2CMat->m00 = pMat3->m00;
-    pW2CMat->m01 = pMat3->m10;
-    pW2CMat->m02 = pMat3->m20;
-    pW2CMat->m10 = pMat3->m01;
-    pW2CMat->m11 = pMat3->m11;
-    pW2CMat->m12 = pMat3->m21;
-    pW2CMat->m20 = pMat3->m02;
-    pW2CMat->m21 = pMat3->m12;
-    pW2CMat->m22 = pMat3->m22;
+    f32 zero = 0.0f;
+    pW2CMat->m33 = 1.0f;pW2CMat->m30 = zero;pW2CMat->m31 = zero;pW2CMat->m32 = zero;
+    pW2CMat->m00 = pMat3->m00;pW2CMat->m01 = pMat3->m10;pW2CMat->m02 = pMat3->m20;
+    pW2CMat->m10 = pMat3->m01;pW2CMat->m11 = pMat3->m11;pW2CMat->m12 = pMat3->m21;
+    pW2CMat->m20 = pMat3->m02;pW2CMat->m21 = pMat3->m12;pW2CMat->m22 = pMat3->m22;
     pW2CMat->m03 = x*pW2CMat->m00 + y*pW2CMat->m01 + z*pW2CMat->m02;
     pW2CMat->m13 = x*pW2CMat->m10 + y*pW2CMat->m11 + z*pW2CMat->m12;
     pW2CMat->m23 = x*pW2CMat->m20 + y*pW2CMat->m21 + z*pW2CMat->m22;
@@ -1121,22 +1030,16 @@ void B3L_CamSetTrack(camera_t *pCam, B3LObj_t  *pTrackObj,f32 trackDistance, f32
 
 }
 
-static void   CameraTweenPositionAngle(vect3_t  *pPrevPAngle,f32 tweenSpeed, vect3_t *pModifiTarget){
-
-}
-
 static void   CameraTrackPoint(camera_t *pCam, vect3_t *pAt, vect3_t *paxisAngle, f32 distance){
 
 }
 
 static void  UpdateCam(render_t *pRender){
-
     camera_t *pCam = &(pRender->camera);
     if(B3L_TEST(pCam->state,CAM_NEED_MATRIX_UPDATE)){
         B3L_QuaternionToMatrix(&(pCam->transform.quaternion), &(pCam->mat));
         B3L_CLR(pCam->state,CAM_NEED_MATRIX_UPDATE);
     }
-    
     GenerateW2CMatrix(&(pRender->camera));
     B3L_Mat4XMat4(&(pCam->camW2CMat),&(pCam->clipMat),&(pCam->camW2CMat));  
 }
@@ -1148,7 +1051,6 @@ static void UpdateParticleObjs(render_t *pRender, u32 time){
     B3LObj_t  *pCurrentObj =(pRender->scene.pActiveParticleGenObjs);
     u32 state;
     while(pCurrentObj != (B3LObj_t  *)NULL){
-
         state = pCurrentObj->state;
         //only update those active particle generater
         if (B3L_TEST(state ,OBJ_PARTICLE_ACTIVE)==0){  //obj active is fail
@@ -1236,7 +1138,6 @@ void B3L_UpdateAllParticlesStatesInGen(render_t *pRender,B3LParticleGenObj_t *pG
 
 #endif
 static void RenderMeshObjs(render_t *pRender){
-    
     mat4_t mat; //64 byte
     vect4_t boundBoxBuffVec; //128 byte
     int32_t i;
@@ -1249,11 +1150,9 @@ static void RenderMeshObjs(render_t *pRender){
 //printf("start draw obj\n");
     f32 lvl0Distance = pRender->lvl0Distance;
     f32 lvl1Distance = pRender->lvl1Distance;
-    while(pCurrentObj != (B3LObj_t *)NULL){
-      
+    while(pCurrentObj != (B3LObj_t *)NULL){ 
         state = pCurrentObj->state;
         if (B3L_TEST(state ,OBJ_VISUALIZABLE)==0){  //obj visual is false
-
             pCurrentObj = pCurrentObj->next;
             continue;
         }
@@ -1264,7 +1163,6 @@ static void RenderMeshObjs(render_t *pRender){
         }
         B3L_MakeO2CMatrix(&(pCurrentObj->mat),&(pCurrentObj->transform.scale),
                           &(pCurrentObj->transform.translation),&(pRender->camera.camW2CMat), &mat);
- 
         //calculate the bound box position in the clip space
         inClipSpace = false;
         //test 0,0,0 point of obj if it is in the space
@@ -1272,7 +1170,6 @@ static void RenderMeshObjs(render_t *pRender){
         boundBoxBuffVec.y =mat.m13;
         boundBoxBuffVec.z =mat.m23;
         boundBoxBuffVec.w =mat.m33;
-
         if (Vect4BoundTest( &boundBoxBuffVec)){
             inClipSpace = true;    
         }else{
@@ -1310,7 +1207,6 @@ static void RenderMeshObjs(render_t *pRender){
                 renderLevel = 2;
             }            
         }
-        
         switch(state & OBJ_TYPE_MASK){
             case (1<<MESH_OBJ):
                 RenderTexMesh((B3LMeshObj_t *)pCurrentObj,pRender,&mat,renderLevel);
@@ -1332,7 +1228,6 @@ void B3L_RenderScence(render_t *pRender){
     //from camera's rotation matrix to create world -> clip space matrix
     UpdateCam(pRender);
     RenderMeshObjs(pRender);
-
 #ifdef B3L_USING_PARTICLE
     RenderParticleObjs(pRender);
 #endif
@@ -1345,16 +1240,13 @@ void B3L_Update(render_t *pRender,u32 time){
       oldTime = time;
     }
     u32 deltaTime = time - oldTime;
-    
     if (deltaTime >= B3L_UPDATE_CYCLE){//if the time is longer than the limit for update
 #ifdef B3L_USING_PARTICLE
         UpdateParticleObjs(pRender, time);
 #endif
-
         oldTime = time;//update oldTime only it is run the update codes
     }
     //TODO: Add particle update and other hook here
-
 }
 
 void B3L_NewRenderStart(render_t *pRender,fBuff_t color){
@@ -1404,6 +1296,7 @@ static void ResetParticleList(B3L_Particle_t *pPool,B3L_Particle_t **pStart,u32 
     pPool[(num-1)].next = (B3L_Particle_t *)NULL;
 
 }
+
 void B3L_ReturnParticleToPool(B3L_Particle_t *pParticle,scene_t *pScene){
     
     B3L_Particle_t *temp=pScene->pfreeParticles;
@@ -1438,17 +1331,15 @@ static void AddObjToTwoWayList(B3LObj_t *pObj, B3LObj_t **pStart){
     *pStart = pObj;
     pObj->privous = pObj;
     if (pObj->next != (B3LObj_t *)NULL){
-        pObj->next->privous = pObj;
-        
-    }
-    
+        pObj->next->privous = pObj;       
+    }   
 }
 
-u32      B3L_GetFreeObjNum(render_t *pRender){
+u32 B3L_GetFreeObjNum(render_t *pRender){
     return pRender->scene.freeObjNum;
 }
 
-u32      B3L_GetFreeParticleNum(render_t *pRender){
+u32 B3L_GetFreeParticleNum(render_t *pRender){
     #ifdef  B3L_USING_PARTICLE 
     return pRender->scene.freeParticleNum;
     #else
@@ -1528,8 +1419,7 @@ void B3L_AddObjToRenderList(B3LObj_t *pObj, render_t *pRender){
     if (type == (1<<PARTICLE_GEN_OBJ)){
         AddObjToTwoWayList(pObj, &(pRender->scene.pActiveParticleGenObjs)); 
     }
-    #endif
-    
+    #endif  
 }
 
 void B3L_PopObjFromRenderList(B3LObj_t *pObj, render_t *pRender){
@@ -1553,17 +1443,13 @@ void B3L_PopObjFromRenderList(B3LObj_t *pObj, render_t *pRender){
                 pObj->next->privous = pRender->scene.pActiveParticleGenObjs;
             }
         }
-        #endif
-        
-    }
-    
+        #endif       
+    }   
     pObj->next = (B3LObj_t *)NULL;
     pObj->privous = (B3LObj_t *)NULL;
 }
 
 void B3L_ReturnObjToInactiveList(B3LObj_t *pObj,  render_t *pRender){
-    
-    
     if (pObj->privous != (B3LObj_t *)NULL){ //it is now in the active list
         B3L_PopObjFromRenderList(pObj,  pRender);
     }
@@ -1585,9 +1471,7 @@ void B3L_RenderInit(render_t *pRender,fBuff_t *pFrameBuff){
     B3L_ResetScene(&(pRender->scene));
     B3L_InitCamera(pRender);
     B3L_ResetLight(&(pRender->light));
-
 }
-
 /*-----------------------------------------------------------------------------
 Draw functions
 -----------------------------------------------------------------------------*/
@@ -1617,7 +1501,6 @@ __attribute__((always_inline)) static  inline void     DrawPixel(fBuff_t color,s
             *pCurrentPixelZ = compZ;
             *pixel =color;           
         }
-
 }
 
 __attribute__((always_inline)) static  inline void     DrawPixelWithTest(fBuff_t color,s32 x,s32 y,f32 z,
@@ -1632,7 +1515,6 @@ __attribute__((always_inline)) static  inline void     DrawPixelWithTest(fBuff_t
             *pCurrentPixelZ = compZ;
             *pixel =color;           
         }
-
 }
 
 static void ClearFrameBuff(fBuff_t *pFramebuff,fBuff_t value,u32 lineNum,u32 lineLength,u32 lineSkip){
@@ -1753,14 +1635,8 @@ static void RenderNoTexMesh(B3LMeshNoTexObj_t *pObj,render_t *pRender, mat4_t *p
         lightFactor0 = pRender->light.factor_0;
         lightFactor1 = pRender->light.factor_1;
     }               
-            
-
     u16 *pTriIdx = pMesh->pTri;
-
-
     u32 cullingState = ((pObj->state)&OBJ_CULLING_MASK)>>OBJ_CULLING_SHIFT;
-
-    
     u32 vect0Idx,vect1Idx,vect2Idx;
     vect3_t normalVect;
     f32   normalDotLight;
@@ -1786,16 +1662,13 @@ static void RenderNoTexMesh(B3LMeshNoTexObj_t *pObj,render_t *pRender, mat4_t *p
         f32 y1 = pVectTarget[vect1Idx].y;
         f32 x2 = pVectTarget[vect2Idx].x;
         f32 y2 = pVectTarget[vect2Idx].y;
-
         bool backFaceCullingResult = TriangleFaceToViewer_f(x0, y0, x1, y1, x2, y2);
 #if B3L_DEBUG  == 1
         printf("backFaceCullingResult = %d\n",backFaceCullingResult);
-#endif
-            
+#endif   
         if (((cullingState==1) && backFaceCullingResult)||((cullingState==2) && (!backFaceCullingResult))){    
             continue;
         }
-
         if (renderLevel==0){
             //Norm3Xmat4Normalize(pVectSource+i, pMat, &normalVect); 
             B3L_Vect3MulMat3(pVectSource+i, &(pObj->mat),&normalVect);
@@ -1817,9 +1690,7 @@ static void RenderNoTexMesh(B3LMeshNoTexObj_t *pObj,render_t *pRender, mat4_t *p
             x2,y2,pVectTarget[vect2Idx].z,
             renderLevel,lightValue,color,
             pFrameBuff,pZBuff);
-
-    }      
-    
+    }        
 }
 
 static void RenderPolygon(B3LPolygonObj_t *pObj,render_t *pRender, mat4_t *pMat){
@@ -1837,8 +1708,7 @@ static void RenderPolygon(B3LPolygonObj_t *pObj,render_t *pRender, mat4_t *pMat)
     u8 *pLine = pPoly->pLine;
     u8 lineIdxA,lineIdxB;
     u32 testA, testB;
-    for (i=pPoly->lineNum -1;i>=0;i--){
-        
+    for (i=pPoly->lineNum -1;i>=0;i--){    
         //draw every line
         lineIdxA = pLine[i*2];
         lineIdxB = pLine[i*2+1];
@@ -1848,7 +1718,6 @@ static void RenderPolygon(B3LPolygonObj_t *pObj,render_t *pRender, mat4_t *pMat)
             B3L_TEST(testB,B3L_NEAR_PLANE_CLIP)){
                 continue;
         }
-
         s32 Ax = B3L_RoundingToS(pVectTarget[lineIdxA].x);
         s32 Ay = B3L_RoundingToS(pVectTarget[lineIdxA].y);
         f32 Az = pVectTarget[lineIdxA].z;
@@ -1857,15 +1726,11 @@ static void RenderPolygon(B3LPolygonObj_t *pObj,render_t *pRender, mat4_t *pMat)
         f32 Bz = pVectTarget[lineIdxB].z;
         if (B3L_TEST(testA,B3L_IN_SPACE )&&
             B3L_TEST(testB,B3L_IN_SPACE )){
-
             DrawDepthLineNoClip(Ax,Ay,Az,Bx,By,Bz,color,pFrameBuff,pZBuff);
         }else{
             DrawDepthLineClip(Ax,Ay,Az,Bx,By,Bz,color,pFrameBuff,pZBuff);
         }
-
     }
-
-
 }
 
 
@@ -1889,9 +1754,7 @@ printf("Draw a mesh");
     f32 normalFact;
     f32   lightFactor0;
     f32   lightFactor1;
-    
-    if (renderLevel==0){//light calculation is needed, so normalized the normal
-        
+    if (renderLevel==0){//light calculation is needed, so normalized the normal  
         pVectSource = ((vect3_t *)(pMesh->pNormal));// now the vectsource point to the normal vect
         //calculate the Light vect in clip space;      
         if(B3L_TEST(pRender->light.state,LIGHT_TYPE_BIT) == POINT_LIGHT){  
@@ -1904,23 +1767,17 @@ printf("Draw a mesh");
             lightX = lightX * normalFact;
             lightY = lightY * normalFact;
             lightZ = lightZ * normalFact;
-
         }else{
             //parallel light, the point to light vect is already in camera space
             lightX = pRender->light.lightVect.x;
             lightY = pRender->light.lightVect.y;
             lightZ = pRender->light.lightVect.z;
-        }
-        
+        }      
         lightFactor0 = pRender->light.factor_0;
         lightFactor1 = pRender->light.factor_1;
     }               
-
     u16 *pTriIdx = pMesh->pTri;
-
-
     u32 cullingState = ((pObj->state)&OBJ_CULLING_MASK)>>OBJ_CULLING_SHIFT;
-
     u32 vect0Idx,vect1Idx,vect2Idx;
     vect3_t normalVect;
     f32   normalDotLight;
@@ -1945,13 +1802,10 @@ printf("Draw a mesh");
         f32 y1 = pVectTarget[vect1Idx].y;
         f32 x2 = pVectTarget[vect2Idx].x;
         f32 y2 = pVectTarget[vect2Idx].y;
-
-        bool backFaceCullingResult = TriangleFaceToViewer_f(x0, y0, x1, y1, x2, y2);
-           
+        bool backFaceCullingResult = TriangleFaceToViewer_f(x0, y0, x1, y1, x2, y2);     
         if (((cullingState==1) && backFaceCullingResult)||((cullingState==2) && (!backFaceCullingResult))){    
             continue;
         }
-
         if (renderLevel==0){
             //Norm3Xmat4Normalize(pVectSource+i, pMat, &normalVect); 
             B3L_Vect3MulMat3(pVectSource+i, &(pObj->mat),&normalVect);
@@ -1960,16 +1814,13 @@ printf("Draw a mesh");
             //normalDotLight is in the range -1.0f to 1.0f
             lightValue = CalLightFactor(normalDotLight,lightFactor0,lightFactor1);
         }
-
         DrawTriTexture(
             x0,y0,(f32)(pUV[i*6]),(f32)(pUV[i*6+1]),pVectTarget[vect0Idx].z,
             x1,y1,(f32)(pUV[i*6+2]),(f32)(pUV[i*6+3]),pVectTarget[vect1Idx].z,
             x2,y2,(f32)(pUV[i*6+4]),(f32)(pUV[i*6+5]),pVectTarget[vect2Idx].z,
             renderLevel,lightValue,pTexture,
             pFrameBuff,pZBuff);
-
-    }      
-    
+    }        
 }
 
 __attribute__((always_inline)) static inline void DrawDepthLineNoClip(s32 Ax,s32 Ay,f32 Az,s32 Bx,s32 By,f32 Bz, 
@@ -1998,7 +1849,6 @@ __attribute__((always_inline)) static inline void DrawDepthLineNoClip(s32 Ax,s32
     } else {
         ystep = -1;
     }
-
     for (; Ax <= Bx; Ax++) {
     if (steep) {
         DrawPixel(color,Ay,Ax,Az,pFrameBuff,pZbuff);
@@ -2012,7 +1862,6 @@ __attribute__((always_inline)) static inline void DrawDepthLineNoClip(s32 Ax,s32
         err += dx;
     }
   }
-
 }
 
 __attribute__((always_inline)) static inline void DrawDepthLineClip(s32 Ax,s32 Ay,f32 Az,s32 Bx,s32 By,f32 Bz, 
@@ -2042,20 +1891,19 @@ __attribute__((always_inline)) static inline void DrawDepthLineClip(s32 Ax,s32 A
     } else {
         ystep = -1;
     }
-
     for (; Ax <= Bx; Ax++) {
-    if (steep) {
-        DrawPixelWithTest(color,Ay,Ax,Az,pFrameBuff,pZbuff);
-    } else {
-        DrawPixelWithTest(color,Ax,Ay,Az,pFrameBuff,pZbuff);
+        if (steep) {
+            DrawPixelWithTest(color,Ay,Ax,Az,pFrameBuff,pZbuff);
+        } else {
+            DrawPixelWithTest(color,Ax,Ay,Az,pFrameBuff,pZbuff);
+        }
+        Az = Az + dz;
+        err -= dy;
+        if (err < 0) {
+            Ay += ystep;
+            err += dx;
+        }
     }
-    Az = Az + dz;
-    err -= dy;
-    if (err < 0) {
-        Ay += ystep;
-        err += dx;
-    }
-  }
 }
 
 
@@ -2070,29 +1918,21 @@ __attribute__((always_inline)) static inline void DrawColorHLine(f32 x,s32 y,f32
         return;
     }
     f32 dZ = (bZ - aZ)*invlength;
-    //printf("du %.3f, dv %.3f\n",du,dv);
-    //s32 sU = du;
-    //s32 sV = dv;
     f32 skip;
     //u32 intu,intv;
     if (intx< clipL){
         skip = (f32)(clipL -intx);
         intx = clipL;
         aZ += (skip)*dZ;
-
     }
     if (intb>=clipR){
         intb = clipR-1;
     }
     s32 i = intb-intx;
-
     u32 shift = inty*RENDER_RESOLUTION_X  + intx;
     zBuff_t  *pCurrentPixelZ = pZbuff + shift;  
     shift = inty*RENDER_X_SHIFT  + intx;
     fBuff_t *pixel = pFrameBuff +shift;
-    
-    
-
     zBuff_t compZ;
     for (;i>=0;i--){ //don't draw the most right pixel, so the b has already -1
         compZ = CalZbuffValue(aZ);
@@ -2103,11 +1943,9 @@ __attribute__((always_inline)) static inline void DrawColorHLine(f32 x,s32 y,f32
         aZ = aZ + dZ;
         pCurrentPixelZ ++;
         pixel++;
-
-    }
-    
-    
+    }    
 }
+
 __attribute__((always_inline)) static inline void DrawTexHLine(f32 x,s32 y,f32 b, f32 aZ, f32 bZ,
 f32 aU,f32 aV,f32 bU,f32 bV, u32 lightFactor, fBuff_t *pFrameBuff,zBuff_t *pZbuff, B3L_texture_t *pTexture) {
     //printf("auv%.2f,%.2f,buv%.2f,%.2f\n",aU,aV,bU,bV);
@@ -2118,17 +1956,12 @@ f32 aU,f32 aV,f32 bU,f32 bV, u32 lightFactor, fBuff_t *pFrameBuff,zBuff_t *pZbuf
     s32 clipR = RENDER_RESOLUTION_X ;
     f32 invlength = 1.0f/((f32)(intb-intx));
     intb = intb - 1;
-    //printf("invlength %.3f\n",invlength);
-
     if ((intx>=clipR)||(b<clipL)){
         return;
     }
     f32 dZ = (bZ - aZ)*invlength;
     f32 du = (bU - aU)*invlength;
     f32 dv = (bV - aV)*invlength; 
-    //printf("du %.3f, dv %.3f\n",du,dv);
-    //s32 sU = du;
-    //s32 sV = dv;
     f32 skip;
     u32 intu,intv;
     if (intx< clipL){
@@ -2137,27 +1970,18 @@ f32 aU,f32 aV,f32 bU,f32 bV, u32 lightFactor, fBuff_t *pFrameBuff,zBuff_t *pZbuf
         u += (skip)*du;
         v += (skip)*dv; 
         aZ += (skip)*dZ;
-
     }
-
     if (intb>=clipR){
         intb = clipR-1;
-
     }
-
-
     s32 i = intb-intx;
-
     u32 shift = inty*RENDER_RESOLUTION_X  + intx;
     zBuff_t  *pCurrentPixelZ = pZbuff + shift;  
     shift = inty*RENDER_X_SHIFT  + intx;
-    fBuff_t *pixel = pFrameBuff +shift;
-    
+    fBuff_t *pixel = pFrameBuff +shift; 
     u32 uvSize = pTexture->uvSize;
     u8  *uvData = pTexture->pData;
     texLUT_t *lut = pTexture->pLUT;
-
-
     u8  colorIdx = 0;
     //fBuff_t color;
     u8 transColorIdx = pTexture->transColorIdx;
@@ -2208,9 +2032,7 @@ f32 aU,f32 aV,f32 bU,f32 bV, u32 lightFactor, fBuff_t *pFrameBuff,zBuff_t *pZbuf
             pixel++;
         }
         break;
-    }
-    
-    
+    } 
 }
 
 __attribute__((always_inline)) static  inline void  DrawTriTexture(
@@ -2269,15 +2091,8 @@ __attribute__((always_inline)) static  inline void  DrawTriTexture(
     f32 dz02 = (z2 - z0)*dy02;
     f32 dz12 = (z2 - z1)*dy12;
 
-
-    f32  aZ=z0;
-    f32  bZ=z0;
-    f32  a=x0;
-    f32  b=x0;
-    f32  aU=u0;
-    f32  bU=u0;
-    f32  aV=v0;
-    f32  bV=v0;
+    f32  aZ=z0;f32  bZ=z0;f32  a=x0;f32  b=x0;
+    f32  aU=u0;f32  bU=u0;f32  aV=v0;f32  bV=v0;
     /*
     if(inty1 == inty2) last = inty1;   // Include y1 scanline
     else last = inty1-1; // Skip it
@@ -2290,8 +2105,7 @@ __attribute__((always_inline)) static  inline void  DrawTriTexture(
     for(y=inty0; y<=last; y++) {
         if ((aZ>1.0f) && (bZ>1.0f)){
             continue;
-        }
-        
+        }  
         if(!((y<0)||((B3L_RoundingToS(a))==(B3L_RoundingToS(b))))){
         //include a, and b how many pixel
             if(a > b){
@@ -2302,7 +2116,6 @@ __attribute__((always_inline)) static  inline void  DrawTriTexture(
         }
         a   += dx01;
         b   += dx02;
-
         aU +=du01;
         aV +=dv01;
         bU +=du02;
@@ -2315,7 +2128,6 @@ __attribute__((always_inline)) static  inline void  DrawTriTexture(
     s32 deltaY0 = y-inty0;
     a = x1;
     b = x0 + dx02*deltaY0;
-
     aZ = z1;
     aU = u1;
     aV = v1;
@@ -2325,12 +2137,10 @@ __attribute__((always_inline)) static  inline void  DrawTriTexture(
     if (inty2>=RENDER_RESOLUTION_Y){
         inty2= RENDER_RESOLUTION_Y -1;
     }
-    
     for(; y<=inty2; y++) {
         if ((aZ>1.0f) && (bZ>1.0f)){
             continue;
         }
-
         if(!((y<0)||((B3L_RoundingToS(a))==(B3L_RoundingToS(b))))){
         //include a, and b how many pixel
             if(a > b){
@@ -2373,7 +2183,6 @@ __attribute__((always_inline)) static  inline void  DrawTriColor(
 
     fBuff_t finalColor = GetFinalColor(color,lightFactor);
     s32 y,last;
-    
     if(y0 > y1){
         _swap_f32_t(y0,y1);
         _swap_f32_t(x0,x1);
@@ -2399,15 +2208,12 @@ __attribute__((always_inline)) static  inline void  DrawTriColor(
     f32 dy01 = 1.0f/(inty1 - inty0);
     f32 dy02 = 1.0f/(inty2 - inty0);
     f32 dy12 = 1.0f/(inty2 - inty1);
-
     f32 dx01 = (x1 - x0)*dy01;
     f32 dx02 = (x2 - x0)*dy02;
     f32 dx12 = (x2 - x1)*dy12;
-
     f32 dz01 = (z1 - z0)*dy01;
     f32 dz02 = (z2 - z0)*dy02;
     f32 dz12 = (z2 - z1)*dy12;
-
     f32  aZ=z0;
     f32  bZ=z0;
     f32  a=x0;
@@ -2424,8 +2230,7 @@ __attribute__((always_inline)) static  inline void  DrawTriColor(
     for(y=inty0; y<=last; y++) {
         if ((aZ>1.0f) && (bZ>1.0f)){
             continue;
-        }
-        
+        } 
         if(!((y<0)||((B3L_RoundingToS(a))==(B3L_RoundingToS(b))))){
         //include a, and b how many pixel
             if(a > b){
@@ -2445,7 +2250,6 @@ __attribute__((always_inline)) static  inline void  DrawTriColor(
     a = x1;
     b = x0 + dx02*deltaY0;
     aZ = z1;
-
     if (inty2>=RENDER_RESOLUTION_Y){
         inty2= RENDER_RESOLUTION_Y -1;
     }
@@ -2567,7 +2371,6 @@ void B3L_MatrixToQuaternion(mat3_t *pMat, quat4_t *pQuat){
             pQuat->y = (pMat->m21 + pMat->m12)*mult;
         break;
     }
-
 }
 
 void B3L_EulerToQuaternion(euler3_t *pEuler,quat4_t *pQuat){
@@ -2593,7 +2396,6 @@ void B3L_QuaternionToEuler(quat4_t *pQuat,euler3_t *pEuler){
         pEuler->y = B3L_atan2(x*z+w*y,0.5f-x*x-y*y);
         pEuler->z = B3L_atan2(x*y+w*z,0.5f-x*x-z*z);
     }
-
 }
 
 /*-----------------------------------------------------------------------------
@@ -2646,11 +2448,8 @@ void B3L_CreateQuaternionByAxisAngle(vect3_t *pAxis, f32 angle, quat4_t *pResult
 //create a quaternion that rotates vector a to vector b
 void B3L_QuaternionGetRotationTo(vect3_t *pA, vect3_t *pB, vect3_t *pUp, quat4_t *pResult){
     B3L_Vect3Normalize(pA);
-
     B3L_Vect3Normalize(pB); 
-
     B3L_Vect3Normalize(pUp);  
-
     f32 dot = B3L_Vect3Dot(pA,pB);
     if (dot < -0.99999f){
         B3L_CreateQuaternionByAxisAngle(pUp,0.5f,pResult);
@@ -2664,35 +2463,32 @@ void B3L_QuaternionGetRotationTo(vect3_t *pA, vect3_t *pB, vect3_t *pUp, quat4_t
     B3L_Vect3Cross(pA,pB,&ortAxis);
     B3L_Vect3Normalize(&ortAxis);
     B3L_CreateQuaternionByAxisAngle(&ortAxis,rotAngle,pResult);
-
 }
 
-void  B3L_CreateLookAtQuaternion(vect3_t *pFrom, vect3_t *pAt, vect3_t *pUp, quat4_t *pResult){
+void B3L_CreateLookAtQuaternion(vect3_t *pFrom, vect3_t *pAt, vect3_t *pUp, quat4_t *pResult){
     vect3_t toObj;
     B3L_Vect3Sub(pAt,pFrom,&toObj);
     vect3_t zAxis = {0.0f,0.0f,1.0f};
     B3L_QuaternionGetRotationTo(&zAxis,&toObj, pUp, pResult);
 }
 
-void     B3L_QuatCreateXRotate(quat4_t *pQ,f32 angle){
+void B3L_QuatCreateXRotate(quat4_t *pQ,f32 angle){
     f32 halfAngle = 0.5f*angle;
     f32 cosh = B3L_cos(halfAngle);f32 sinh = B3L_sin(halfAngle);
     pQ->w = cosh;pQ->x = sinh;pQ->y = 0.0f;pQ->z = 0.0f;
 }
 
-void     B3L_QuatCreateYRotate(quat4_t *pQ,f32 angle){
+void B3L_QuatCreateYRotate(quat4_t *pQ,f32 angle){
     f32 halfAngle = 0.5f*angle;
     f32 cosh = B3L_cos(halfAngle);f32 sinh = B3L_sin(halfAngle);
     pQ->w = cosh;pQ->x = 0.0f;pQ->y = sinh;pQ->z = 0.0f;
 }
 
-void     B3L_QuatCreateZRotate(quat4_t *pQ,f32 angle){
+void B3L_QuatCreateZRotate(quat4_t *pQ,f32 angle){
     f32 halfAngle = 0.5f*angle;
     f32 cosh = B3L_cos(halfAngle);f32 sinh = B3L_sin(halfAngle);
     pQ->w = cosh;pQ->x = 0.0f;pQ->y = 0.0f;pQ->z = sinh;
 }
-
-
 
 fBuff_t *B3L_3dRenderAreaShiftCal(fBuff_t *startOfWholeFrameBuff,u32 x, u32 y){
     startOfWholeFrameBuff += y*WHOLE_FRAME_BUFF_WIDTH+x;
@@ -2721,7 +2517,6 @@ void  B3L_AppliedLightFromAlpha(render_t *pRender){
     u32 j = RENDER_RESOLUTION_Y;
     u32 lineDiv16Left = (RENDER_RESOLUTION_X)&0x0000000F;
     fBuff_t *pFBuff = pRender->pFrameBuff;
-    
     uint32_t backColor = pRender->light.color;
     u8 r =  (backColor&(0x00FF0000))>>16;
     u8 g =  (backColor &(0x0000FF00))>>8;
@@ -2747,43 +2542,27 @@ void  B3L_AppliedLightFromAlpha(render_t *pRender){
             *pFBuff = LightBlend(*pFBuff, r, g, b);pFBuff++;
         }
         switch(lineDiv16Left){
-            case 15:
-                *pFBuff = LightBlend(*pFBuff, r, g, b);pFBuff++;
-            case 14:
-                *pFBuff = LightBlend(*pFBuff, r, g, b);pFBuff++;
-            case 13:
-                *pFBuff = LightBlend(*pFBuff, r, g, b);pFBuff++;
-            case 12:
-                *pFBuff = LightBlend(*pFBuff, r, g, b);pFBuff++;
-            case 11:
-                *pFBuff = LightBlend(*pFBuff, r, g, b);pFBuff++;
-            case 10:
-                *pFBuff = LightBlend(*pFBuff, r, g, b);pFBuff++;
-            case 9:
-                *pFBuff = LightBlend(*pFBuff, r, g, b);pFBuff++;
-            case 8:
-                *pFBuff = LightBlend(*pFBuff, r, g, b);pFBuff++;
-            case 7:
-                *pFBuff = LightBlend(*pFBuff, r, g, b);pFBuff++;
-            case 6:
-                *pFBuff = LightBlend(*pFBuff, r, g, b);pFBuff++;
-            case 5:
-                *pFBuff = LightBlend(*pFBuff, r, g, b);pFBuff++;
-            case 4:
-                *pFBuff = LightBlend(*pFBuff, r, g, b);pFBuff++;
-            case 3:
-                *pFBuff = LightBlend(*pFBuff, r, g, b);pFBuff++;
-            case 2:
-                *pFBuff = LightBlend(*pFBuff, r, g, b);pFBuff++;    
-            case 1:
-                *pFBuff = LightBlend(*pFBuff, r, g, b);pFBuff++; 
-            case 0:
-                break;
+            case 15:*pFBuff = LightBlend(*pFBuff, r, g, b);pFBuff++;               
+            case 14:*pFBuff = LightBlend(*pFBuff, r, g, b);pFBuff++;               
+            case 13:*pFBuff = LightBlend(*pFBuff, r, g, b);pFBuff++;               
+            case 12:*pFBuff = LightBlend(*pFBuff, r, g, b);pFBuff++;               
+            case 11:*pFBuff = LightBlend(*pFBuff, r, g, b);pFBuff++;               
+            case 10:*pFBuff = LightBlend(*pFBuff, r, g, b);pFBuff++;               
+            case 9:*pFBuff = LightBlend(*pFBuff, r, g, b);pFBuff++;                
+            case 8:*pFBuff = LightBlend(*pFBuff, r, g, b);pFBuff++;               
+            case 7:*pFBuff = LightBlend(*pFBuff, r, g, b);pFBuff++;    
+            case 6:*pFBuff = LightBlend(*pFBuff, r, g, b);pFBuff++;    
+            case 5:*pFBuff = LightBlend(*pFBuff, r, g, b);pFBuff++;     
+            case 4:*pFBuff = LightBlend(*pFBuff, r, g, b);pFBuff++;    
+            case 3:*pFBuff = LightBlend(*pFBuff, r, g, b);pFBuff++;     
+            case 2:*pFBuff = LightBlend(*pFBuff, r, g, b);pFBuff++;           
+            case 1:*pFBuff = LightBlend(*pFBuff, r, g, b);pFBuff++;         
+            case 0:break;        
         }
         pFBuff+= RENDER_LINE_SKIP;
     }
-
 }
+
 __attribute__((always_inline)) static  inline u32  LightBlend4(u16 inputPixel, u8 r, u8 g, u8 b){
     u8 s_r = ((inputPixel>>8)&0x0F)<<4;
     u8 s_g = ((inputPixel>>4)&0x0F)<<4;
@@ -2793,6 +2572,7 @@ __attribute__((always_inline)) static  inline u32  LightBlend4(u16 inputPixel, u
     return (0xFF000000)|(r<<16)|(g<<8)|(b<<0);
     //return (0xFF000000)|(s_r<<16)|(s_g<<8)|(s_b<<0);
 }
+
 void  B3L_AppliedLightFromAlpha4444To8888(render_t *pRender,u32 *pTgetBuff){
 u32 j = RENDER_RESOLUTION_Y;
     u32 lineDiv16Left = (RENDER_RESOLUTION_X)&0x0000000F;
@@ -2823,43 +2603,26 @@ u32 j = RENDER_RESOLUTION_Y;
             *pTgetBuff = LightBlend4(*pFBuff, r, g, b);pTgetBuff++;pFBuff++;
         }
         switch(lineDiv16Left){
-            case 15:
-                *pTgetBuff = LightBlend4(*pFBuff, r, g, b);pTgetBuff++;pFBuff++;
-            case 14:
-                *pTgetBuff = LightBlend4(*pFBuff, r, g, b);pTgetBuff++;pFBuff++;
-            case 13:
-                *pTgetBuff = LightBlend4(*pFBuff, r, g, b);pTgetBuff++;pFBuff++;
-            case 12:
-                *pTgetBuff = LightBlend4(*pFBuff, r, g, b);pTgetBuff++;pFBuff++;
-            case 11:
-                *pTgetBuff = LightBlend4(*pFBuff, r, g, b);pTgetBuff++;pFBuff++;
-            case 10:
-                *pTgetBuff = LightBlend4(*pFBuff, r, g, b);pTgetBuff++;pFBuff++;
-            case 9:
-                *pTgetBuff = LightBlend4(*pFBuff, r, g, b);pTgetBuff++;pFBuff++;
-            case 8:
-                *pTgetBuff = LightBlend4(*pFBuff, r, g, b);pTgetBuff++;pFBuff++;
-            case 7:
-                *pTgetBuff = LightBlend4(*pFBuff, r, g, b);pTgetBuff++;pFBuff++;
-            case 6:
-                *pTgetBuff = LightBlend4(*pFBuff, r, g, b);pTgetBuff++;pFBuff++;
-            case 5:
-                *pTgetBuff = LightBlend4(*pFBuff, r, g, b);pTgetBuff++;pFBuff++;
-            case 4:
-                *pTgetBuff = LightBlend4(*pFBuff, r, g, b);pTgetBuff++;pFBuff++;
-            case 3:
-                *pTgetBuff = LightBlend4(*pFBuff, r, g, b);pTgetBuff++;pFBuff++;
-            case 2:
-                *pTgetBuff = LightBlend4(*pFBuff, r, g, b);pTgetBuff++;pFBuff++;    
-            case 1:
-                *pTgetBuff = LightBlend4(*pFBuff, r, g, b);pTgetBuff++;pFBuff++; 
-            case 0:
-                break;
+            case 15:*pTgetBuff = LightBlend4(*pFBuff, r, g, b);pTgetBuff++;pFBuff++;               
+            case 14:*pTgetBuff = LightBlend4(*pFBuff, r, g, b);pTgetBuff++;pFBuff++;               
+            case 13:*pTgetBuff = LightBlend4(*pFBuff, r, g, b);pTgetBuff++;pFBuff++;               
+            case 12:*pTgetBuff = LightBlend4(*pFBuff, r, g, b);pTgetBuff++;pFBuff++;               
+            case 11:*pTgetBuff = LightBlend4(*pFBuff, r, g, b);pTgetBuff++;pFBuff++;               
+            case 10:*pTgetBuff = LightBlend4(*pFBuff, r, g, b);pTgetBuff++;pFBuff++;             
+            case 9:*pTgetBuff = LightBlend4(*pFBuff, r, g, b);pTgetBuff++;pFBuff++;                
+            case 8:*pTgetBuff = LightBlend4(*pFBuff, r, g, b);pTgetBuff++;pFBuff++;               
+            case 7:*pTgetBuff = LightBlend4(*pFBuff, r, g, b);pTgetBuff++;pFBuff++;               
+            case 6:*pTgetBuff = LightBlend4(*pFBuff, r, g, b);pTgetBuff++;pFBuff++;               
+            case 5:*pTgetBuff = LightBlend4(*pFBuff, r, g, b);pTgetBuff++;pFBuff++;                
+            case 4:*pTgetBuff = LightBlend4(*pFBuff, r, g, b);pTgetBuff++;pFBuff++;               
+            case 3:*pTgetBuff = LightBlend4(*pFBuff, r, g, b);pTgetBuff++;pFBuff++;               
+            case 2:*pTgetBuff = LightBlend4(*pFBuff, r, g, b);pTgetBuff++;pFBuff++;                   
+            case 1:*pTgetBuff = LightBlend4(*pFBuff, r, g, b);pTgetBuff++;pFBuff++;                 
+            case 0:break;      
         }
         pFBuff+= RENDER_LINE_SKIP;
         pTgetBuff+= RENDER_LINE_SKIP;
     }
-
 }
 
 #if  B3L_DMA2D  == 1
@@ -2895,7 +2658,6 @@ void B3L_DMA2D_Init(void){
     SET_BIT(DMA2D->CR, DMA2D_CR_TCIE|DMA2D_CR_TEIE|DMA2D_CR_CEIE);
     pDMA2DIRQCallback = DMA2DDefaultCallback;
 }
-
 
 void DMA2D_IRQHandler(void){
 //clear the flag
@@ -3008,7 +2770,6 @@ static void Apply_Zoom_ColorTrans_Callback(void){
     MODIFY_REG(DMA2D->OOR, DMA2D_OOR_LO,0); 
     pDMA2DIRQCallback = DMA2DDefaultCallback; 
     break;
-    
   }
   DMACallbackCounter++;
   //start the next dma2d process

@@ -1,5 +1,10 @@
 
 #include "b3dTestObj.h"
+
+#ifdef WIN32 
+#define __attribute__(A)
+#endif
+
 const u8 B3L_polygonIdx[24] = {
     0,1,0,2,1,3,2,3,0,4,1,5,2,6,3,7,4,5,4,6,5,7,6,7
 };
@@ -218,6 +223,13 @@ void B3L_InitBoxObjPolygon(B3LPolygonObj_t *pObj,f32 size){
 
     //B3L_SET(pObj->state,OBJ_BACK_CULLING_CLOCK);
 
+}
+
+__attribute__((always_inline)) static  inline void Vect3_Scale(vect3_t *pSource,f32 factor,vect3_t *pResult){
+    f32 x = pSource->x; f32 y = pSource->y; f32 z = pSource->z;
+    pResult->x = x*factor;
+    pResult->y = y*factor;
+    pResult->z = z*factor;
 }
 #ifdef B3L_USING_PARTICLE
 void     B3L_InitDemoParticleGenObj(B3LParticleGenObj_t  *pParticleGen){
