@@ -396,13 +396,16 @@ typedef struct{
 camera_t state
    31     2423     1615      87
    ------------------------------------
-31|      ZY|        |        |       A|0
+31|      ZY|        |        |      BA|0
   ------------------------------------
 A   ueed update the world to camera matrix
 B   camera track obj mode
   Y-- need update euler angle
 */
-#define  B3L_CAMERA_TRACK_OBJ_MODEL          (0)
+#define  B3L_CAMERA_TRACK_OBJ_MODE           (0)
+#define  B3L_PROJECT_MODE                    (1)
+#define  OTHROGRAPHIC_PROJECT                (1u<<B3L_PROJECT_MODE)
+#define  PERSPECTIVE_PROJECT                 (0u<<B3L_PROJECT_MODE)
 #define  CAM_NEED_QUAT_UPDATE                (24)
 #define  CAM_NEED_MATRIX_UPDATE              (25)
 typedef struct{
@@ -566,7 +569,9 @@ extern void     B3L_RotateCamInOX(camera_t *pCam,f32 angle);
 extern void     B3L_RotateCamInOY(camera_t *pCam,f32 angle);
 extern void     B3L_RotateCamInOZ(camera_t *pCam,f32 angle);
 extern void     B3L_InitCamera(render_t *pRender);
-//call after you reset the aspect ratio, focus length, near/far plane 
+extern void     B3L_SetOrthographicProject(render_t *pRender);
+extern void     B3L_SetPerspectiveProject(render_t *pRender);//default mode
+//call after you reset the aspect ratio, focus length, near/far plane, project mode 
 extern void     B3L_UpdateClipMatrix(render_t *pRender);
 extern void     B3L_CameraMoveTo(vect3_t position,camera_t *pCam);
 extern void     B3L_CameraLookAt(camera_t *pCam, vect3_t *pAt,vect3_t *pUp);

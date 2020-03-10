@@ -137,7 +137,6 @@ Camera functions
 static void     UpdateCam(render_t *pRender);
 static void     CameraTweenPositionAngle(vect3_t  *pPrevPAngle,f32 tweenSpeed, vect3_t *pModifiTarget);
 static void     CameraTrackPoint(camera_t *pCam, vect3_t *pAt, vect3_t *paxisAngle, f32 distance);
-//static void     CalTargetPositonAngle(vect3_t *pTgtRotate, vect3_t *pTgtPositionAngle,vect3_t *pResult);
 static void     GenerateW2CMatrix(camera_t *pCam);
  /*-----------------------------------------------------------------------------
 Obj list functions
@@ -749,11 +748,22 @@ void B3L_CreateO2WMat(mat3_t *pRMat, vect3_t *pTranslation, vect3_t *pScale, mat
 __attribute__((always_inline)) static inline void MakeClipMatrix(render_t *pRender,f32 focalLength, f32 aspectRatio,mat4_t *mat){
     f32 far_plane =pRender->farPlane;
     f32 near_plane =pRender->nearPlane;
+    u32 state = pRender->camera.state;
+    f32 zero = 0.0f;
+    f32 one = 1.0f;
     #define M(x,y) (mat)->m##x##y
-    M(0,0) = focalLength; M(1,0) = 0.0f;   M(2,0) = 0.0f;   M(3,0) = 0.0f; 
-    M(0,1) = 0.0f;   M(1,1) = focalLength*aspectRatio; M(2,1) = 0.0f;   M(3,1) = 0.0f; 
-    M(0,2) = 0.0f;   M(1,2) = 0.0f;   M(2,2) = far_plane/(far_plane-near_plane); M(3,2) = 1.0f; 
-    M(0,3) = 0.0f;   M(1,3) = 0.0f;   M(2,3) =-1.0f*near_plane*far_plane/(far_plane-near_plane);   M(3,3) = 0.0f; 
+    if(B3L_TEST(state,B3L_PROJECT_MODE)==PERSPECTIVE_PROJECT){
+        M(0,0) = focalLength; M(1,0) = zero;   M(2,0) = zero;   M(3,0) = zero; 
+        M(0,1) = zero;   M(1,1) = focalLength*aspectRatio; M(2,1) = zero;   M(3,1) = zero; 
+        M(0,2) = zero;   M(1,2) = zero;   M(2,2) = far_plane/(far_plane-near_plane); M(3,2) = one; 
+        M(0,3) = zero;   M(1,3) = zero;   M(2,3) =-1.0f*near_plane*far_plane/(far_plane-near_plane);   M(3,3) = zero; 
+    }else{
+        M(0,0) = focalLength; M(1,0) = zero;   M(2,0) = zero;   M(3,0) = zero; 
+        M(0,1) = zero;   M(1,1) = focalLength*aspectRatio; M(2,1) = zero;   M(3,1) = zero; 
+        M(0,2) = zero;   M(1,2) = zero;   M(2,2) = one/(far_plane-near_plane); M(3,2) = zero; 
+        M(0,3) = zero;   M(1,3) = zero;   M(2,3) =near_plane/(far_plane-near_plane);   M(3,3) = one; 
+    }
+    
     #undef M
 }
 
@@ -1043,7 +1053,17 @@ void B3L_InitCamera(render_t *pRender){
     pCam->trackDistance = 0.0f;
     pCam->trackTweenSpeed = 0.0f;
     MakeClipMatrix(pRender,pCam->focalLength,pCam->aspectRate,&(pCam->clipMat));
-    pCam->state = 0;
+    pCam->state = 0; //default is PERSPECTIVE_PROJECT
+}
+
+void B3L_SetOrthographicProject(render_t *pRender){
+    B3L_SET(pRender->camera.state,B3L_PROJECT_MODE);
+    B3L_UpdateClipMatrix(pRender);
+}
+
+void B3L_SetPerspectiveProject(render_t *pRender){
+    B3L_CLR(pRender->camera.state,B3L_PROJECT_MODE);
+    B3L_UpdateClipMatrix(pRender);
 }
 
 void B3L_UpdateClipMatrix(render_t *pRender){
@@ -1092,11 +1112,11 @@ void B3L_CameraLookAt(camera_t *pCam, vect3_t *pAt,vect3_t *pUp){
 }
 
 void B3L_CamStopTrack(camera_t *pCam){
-    B3L_CLR(pCam->state,B3L_CAMERA_TRACK_OBJ_MODEL);
+    B3L_CLR(pCam->state,B3L_CAMERA_TRACK_OBJ_MODE);
 }
 
 void B3L_CamStartTrack(camera_t *pCam){
-    B3L_SET(pCam->state,B3L_CAMERA_TRACK_OBJ_MODEL);
+    B3L_SET(pCam->state,B3L_CAMERA_TRACK_OBJ_MODE);
 }
 
 void B3L_CamSetTrack(camera_t *pCam, B3LObj_t  *pTrackObj,f32 trackDistance, f32 trackAngleSpeed, f32 targetAX, f32 targetAY, f32 targetAZ){
