@@ -382,12 +382,12 @@ A-- 1, point light
     0, parallel light
 */
 #define LIGHT_TYPE_BIT         (0)
-//POINT_LIGHT            (1)
-//PARALLEL_LIGHT         (0)
+#define POINT_LIGHT         (1u<<LIGHT_TYPE_BIT)
+#define PARALLEL_LIGHT      (0u<<LIGHT_TYPE_BIT)
 typedef struct{
     u32                 state;
     vect3_t             lightVect;
-    vect4_t             pointLightVectInCamSpaceBuff;
+    //vect4_t             pointLightVectInCamSpaceBuff;
     u32                 color;
     f32                 factor_0;
     f32                 factor_1;

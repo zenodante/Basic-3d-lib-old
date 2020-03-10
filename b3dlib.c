@@ -1244,12 +1244,7 @@ __attribute__((always_inline)) static inline u32 CalLightFactor(f32 normalDotLig
 }
 
 __attribute__((always_inline)) static  inline void  UpdateLightVect(render_t *pRender){
-    //if it is a point light type, then we need to calculate the current light position in camera space 
-    if (B3L_TEST((pRender->light.state),LIGHT_TYPE_BIT)){
-        Vect3Xmat4(&(pRender->light.lightVect), &(pRender->camera.camW2CMat), &(pRender->light.pointLightVectInCamSpaceBuff));
-    }else{
-        Norm3Xmat4Normalize(&(pRender->light.lightVect), &(pRender->camera.camW2CMat) , (vect3_t *)&(pRender->light.pointLightVectInCamSpaceBuff)); 
-    }
+    
 }
 
 void B3L_SetLightType(render_t *pRender,lightType_e type){
@@ -1262,6 +1257,13 @@ void B3L_SetLightType(render_t *pRender,lightType_e type){
 }
 
 void B3L_SetLightVect(render_t *pRender, f32 x,f32 y,f32 z){
+    if (B3L_TEST(pRender->light.state,LIGHT_TYPE_BIT) == PARALLEL_LIGHT){//parallel light
+        //normalized the vector
+        f32 invSqrt = FastInvertSqrt(x*x+y*y+z*z);
+        x = x*invSqrt;
+        y = y*invSqrt;
+        z = z*invSqrt;
+    }
     pRender->light.lightVect.x = x;
     pRender->light.lightVect.y = y;
     pRender->light.lightVect.z = z;
@@ -2181,26 +2183,31 @@ static void RenderNoTexMesh(B3LMeshNoTexObj_t *pObj,render_t *pRender, mat4_t *p
     f32   lightFactor0;
     f32   lightFactor1;
     if (renderLevel==0){//light calculation is needed, so normalized the normal
-
+        
         pVectSource = ((vect3_t *)(pMesh->pNormal));// now the vectsource point to the normal vect
         //calculate the Light vect in clip space;      
-        if(B3L_TEST(pRender->light.state,LIGHT_TYPE_BIT)){
-            lightX = pRender->light.pointLightVectInCamSpaceBuff.x - pMat->m03;
-            lightY = pRender->light.pointLightVectInCamSpaceBuff.y - pMat->m13;
-            lightZ = pRender->light.pointLightVectInCamSpaceBuff.z - pMat->m23;
+        if(B3L_TEST(pRender->light.state,LIGHT_TYPE_BIT) == POINT_LIGHT){  
+             //dot light, calculate the vect point  to light from obj (both already in camera space)
+            vect3_t *translation = &(pObj->transform.translation);
+            lightX = pRender->light.lightVect.x - translation->x;
+            lightY = pRender->light.lightVect.y - translation->y;
+            lightZ = pRender->light.lightVect.z - translation->z;
             normalFact = FastInvertSqrt(lightX*lightX+lightY*lightY+lightZ*lightZ);
             lightX = lightX * normalFact;
             lightY = lightY * normalFact;
             lightZ = lightZ * normalFact;
+
         }else{
-            lightX = pRender->light.pointLightVectInCamSpaceBuff.x;
-            lightY = pRender->light.pointLightVectInCamSpaceBuff.y;
-            lightZ = pRender->light.pointLightVectInCamSpaceBuff.z;
+            //parallel light, the point to light vect is already in camera space
+            lightX = pRender->light.lightVect.x;
+            lightY = pRender->light.lightVect.y;
+            lightZ = pRender->light.lightVect.z;
         }
         
         lightFactor0 = pRender->light.factor_0;
         lightFactor1 = pRender->light.factor_1;
     }               
+            
 
     u16 *pTriIdx = pMesh->pTri;
 
@@ -2335,24 +2342,27 @@ printf("Draw a mesh");
     f32 normalFact;
     f32   lightFactor0;
     f32   lightFactor1;
+    
     if (renderLevel==0){//light calculation is needed, so normalized the normal
-
+        
         pVectSource = ((vect3_t *)(pMesh->pNormal));// now the vectsource point to the normal vect
         //calculate the Light vect in clip space;      
-        if(B3L_TEST(pRender->light.state,LIGHT_TYPE_BIT)){  
+        if(B3L_TEST(pRender->light.state,LIGHT_TYPE_BIT) == POINT_LIGHT){  
              //dot light, calculate the vect point  to light from obj (both already in camera space)
-            lightX = pRender->light.pointLightVectInCamSpaceBuff.x - pMat->m03;
-            lightY = pRender->light.pointLightVectInCamSpaceBuff.y - pMat->m13;
-            lightZ = pRender->light.pointLightVectInCamSpaceBuff.z - pMat->m23;
+            vect3_t *translation = &(pObj->transform.translation);
+            lightX = pRender->light.lightVect.x - translation->x;
+            lightY = pRender->light.lightVect.y - translation->y;
+            lightZ = pRender->light.lightVect.z - translation->z;
             normalFact = FastInvertSqrt(lightX*lightX+lightY*lightY+lightZ*lightZ);
             lightX = lightX * normalFact;
             lightY = lightY * normalFact;
             lightZ = lightZ * normalFact;
+
         }else{
             //parallel light, the point to light vect is already in camera space
-            lightX = pRender->light.pointLightVectInCamSpaceBuff.x;
-            lightY = pRender->light.pointLightVectInCamSpaceBuff.y;
-            lightZ = pRender->light.pointLightVectInCamSpaceBuff.z;
+            lightX = pRender->light.lightVect.x;
+            lightY = pRender->light.lightVect.y;
+            lightZ = pRender->light.lightVect.z;
         }
         
         lightFactor0 = pRender->light.factor_0;
@@ -2398,7 +2408,8 @@ printf("Draw a mesh");
         //    continue;
         //}
         if (renderLevel==0){
-            Norm3Xmat4Normalize(pVectSource+i, pMat, &normalVect); 
+            //Norm3Xmat4Normalize(pVectSource+i, pMat, &normalVect); 
+            B3L_Vect3MulMat3(pVectSource+i, &(pObj->mat),&normalVect);
             //dot multi light and normalvect to get the light factor
             normalDotLight = normalVect.x*lightX + normalVect.y*lightY + normalVect.z*lightZ;
             //normalDotLight is in the range -1.0f to 1.0f
