@@ -93,7 +93,6 @@ __attribute__((always_inline)) static  inline zBuff_t  CalZbuffValue(f32 z);
 Light functions
 -----------------------------------------------------------------------------*/
 __attribute__((always_inline)) static  inline fBuff_t  LightBlend(u32 inputPixel, u8 r, u8 g, u8 b);
-__attribute__((always_inline)) static  inline void     UpdateLightVect(render_t *pRender);
 __attribute__((always_inline)) static  inline u32      CalLightFactor(f32 normalDotLight, f32 lightFactor0,f32 lightFactor1);
  /*-----------------------------------------------------------------------------
 Triangle testing functions
@@ -989,9 +988,7 @@ light functions
 -----------------------------------------------------------------------------*/
 void B3L_ResetLight(light_t *pLight){
     B3L_CLR(pLight->state,LIGHT_TYPE_BIT); //parallel light
-    pLight->lightVect.x = 0.0f;
-    pLight->lightVect.y = 1.0f;
-    pLight->lightVect.z = 0.0f;
+    B3L_VECT3_SET(pLight->lightVect,0.0f,1.0f,0.0f);
     pLight->color = 0xFF000000;
     pLight->factor_0 = 1.01f; //make sure it is larger than 0, now the range is 0.01~2.01
     pLight->factor_1 =126.7f;
@@ -1007,10 +1004,6 @@ __attribute__((always_inline)) static inline u32 CalLightFactor(f32 normalDotLig
     lightValue = lightValue>>4; //only use high 4 bit
 #endif
     return lightValue;
-}
-
-__attribute__((always_inline)) static  inline void  UpdateLightVect(render_t *pRender){
-    
 }
 
 void B3L_SetLightType(render_t *pRender,lightType_e type){
@@ -1030,35 +1023,29 @@ void B3L_SetLightVect(render_t *pRender, f32 x,f32 y,f32 z){
         y = y*invSqrt;
         z = z*invSqrt;
     }
-    pRender->light.lightVect.x = x;
-    pRender->light.lightVect.y = y;
-    pRender->light.lightVect.z = z;
+    B3L_VECT3_SET(pRender->light.lightVect,x,y,z);
 }
 /*-----------------------------------------------------------------------------
 Camera functions
 -----------------------------------------------------------------------------*/
-void B3L_InitCamera(camera_t *pCam){
+void B3L_InitCamera(render_t *pRender){
+    camera_t *pCam = &(pRender->camera);
     pCam->aspectRate = DEFAULT_ASPECT_RATIO;
     pCam->focalLength = DEFAULT_FOCUS_LENGTH;
-    pCam->transform.scale.x = 1.0f;
-    pCam->transform.scale.y = 1.0f;
-    pCam->transform.scale.z = 1.0f;
-    pCam->transform.translation.x = 0.0f;
-    pCam->transform.translation.y = 0.0f;
-    pCam->transform.translation.z = 0.0f;
+    B3L_VECT3_SET(pCam->transform.scale,1.0f,1.0f,1.0f);
+    B3L_VECT3_SET(pCam->transform.translation,0.0f,0.0f,0.0f);
     B3L_InitUnitMat3(&(pCam->mat));
-    pCam->transform.quaternion.x = 0.0f;
-    pCam->transform.quaternion.y = 0.0f;
-    pCam->transform.quaternion.z = 0.0f;
-    pCam->transform.quaternion.w = 1.0f;
-
+    B3L_VECT4_SET(pCam->transform.quaternion,0.0f,0.0f,0.0f,1.0f);
     pCam->pTrackObj = (B3LObj_t *)NULL;
     pCam->trackDistance = 0.0f;
     pCam->trackTweenSpeed = 0.0f;
-
+    MakeClipMatrix(pRender,pCam->focalLength,pCam->aspectRate,&(pCam->clipMat));
     pCam->state = 0;
+}
 
-    //B3L_SetCameraMatrixByTransform(pCam,&(pCam->camW2CMat));
+void B3L_UpdateClipMatrix(render_t *pRender){
+    camera_t *pCam = &(pRender->camera);
+    MakeClipMatrix(pRender,pCam->focalLength,pCam->aspectRate,&(pCam->clipMat));
 }
 
 static void GenerateW2CMatrix(camera_t *pCam){
@@ -1128,15 +1115,9 @@ static void  UpdateCam(render_t *pRender){
         B3L_QuaternionToMatrix(&(pCam->transform.quaternion), &(pCam->mat));
         B3L_CLR(pCam->state,CAM_NEED_MATRIX_UPDATE);
     }
-    mat4_t temp;
-    GenerateW2CMatrix(&(pRender->camera));
-    MakeClipMatrix(pRender,pRender->camera.focalLength,pRender->camera.aspectRate,&temp);
-    B3L_Mat4XMat4(&(pRender->camera.camW2CMat),&temp,&(pRender->camera.camW2CMat));  
     
-    //printf("start render\n");
-    //if not use customer matrix set, generate camera matrix from camera transform
-
-
+    GenerateW2CMatrix(&(pRender->camera));
+    B3L_Mat4XMat4(&(pCam->camW2CMat),&(pCam->clipMat),&(pCam->camW2CMat));  
 }
 /*-----------------------------------------------------------------------------
 obj functions
@@ -1176,7 +1157,6 @@ static void RenderParticleObjs(render_t *pRender) {
     fBuff_t *pFBuff = pRender->pFrameBuff;
     zBuff_t *pZBuff = pRender->pZBuff;
 
-    
     while(pCurrentObj != (B3LObj_t  *)NULL){
         B3L_DrawFunc_t DrawFunc = ((B3LParticleGenObj_t *)pCurrentObj)->DrawFunc;
         state = pCurrentObj->state;
@@ -1280,8 +1260,7 @@ static void RenderMeshObjs(render_t *pRender){
                 if (Vect4BoundTest( &boundBoxBuffVec)){
                     inClipSpace = true;
                     break;
-                }
-                
+                }            
             }
         }
         //test boundBoxTestFactor to check if the obj out of clip range
@@ -1311,7 +1290,6 @@ static void RenderMeshObjs(render_t *pRender){
             }            
         }
         
-
         switch(state & OBJ_TYPE_MASK){
             case (1<<MESH_OBJ):
                 RenderTexMesh((B3LMeshObj_t *)pCurrentObj,pRender,&mat,renderLevel);
@@ -1332,9 +1310,6 @@ static void RenderMeshObjs(render_t *pRender){
 void B3L_RenderScence(render_t *pRender){
     //from camera's rotation matrix to create world -> clip space matrix
     UpdateCam(pRender);
-
-    UpdateLightVect(pRender);
-
     RenderMeshObjs(pRender);
 
 #ifdef B3L_USING_PARTICLE
@@ -1581,14 +1556,15 @@ void B3L_RenderInit(render_t *pRender,fBuff_t *pFrameBuff){
     pRender->pFrameBuff = pFrameBuff;
     pRender->pZBuff = zBuff;
     pRender->pVectBuff = vectBuff;
-    B3L_ResetScene(&(pRender->scene));
-    B3L_InitCamera(&(pRender->camera));
-    B3L_ResetLight(&(pRender->light));
     pRender->lvl0Distance = LEVEL_0_DEFAULT_DISTANCE;
     pRender->lvl1Distance = LEVEL_1_DEFAULT_DISTANCE;
     pRender->lvl1Light = LEVEL_1_DEFAULT_LIGHT;
     pRender->farPlane = DEFAULT_FAR_PLANE;
     pRender->nearPlane = DEFAULT_NEAR_PLANE;
+    B3L_ResetScene(&(pRender->scene));
+    B3L_InitCamera(pRender);
+    B3L_ResetLight(&(pRender->light));
+
 }
 
 /*-----------------------------------------------------------------------------

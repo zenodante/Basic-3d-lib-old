@@ -411,6 +411,7 @@ typedef struct{
     f32                 focalLength;
     mat3_t              mat;
     transform3D_t       transform; 
+    mat4_t              clipMat;
     mat4_t              camW2CMat;
     f32                 trackDistance;
     f32                 trackTweenSpeed;
@@ -549,8 +550,10 @@ extern void     B3L_MakeO2CMatrix(mat3_t *pRMat,vect3_t *pScale,vect3_t *pTrans,
 extern void     B3L_Vect3MulMat3(vect3_t *pV, mat3_t *pMat, vect3_t *pResult);
 extern void     B3L_Point3MulMat4(vect3_t *pV, mat4_t *pMat, vect3_t *pResult);
 
-
-
+/*-----------------------------------------------------------------------------
+Obj control functions
+-----------------------------------------------------------------------------*/
+extern void     B3L_SetObjRotationByEuler(B3LObj_t *pObj,euler3_t *pEuler);
 extern void     B3L_RotateObjInOX(B3LObj_t *pObj,f32 angle);
 extern void     B3L_RotateObjInOY(B3LObj_t *pObj,f32 angle);
 extern void     B3L_RotateObjInOZ(B3LObj_t *pObj,f32 angle);
@@ -565,12 +568,11 @@ Camera functions
 extern void     B3L_RotateCamInOX(camera_t *pCam,f32 angle);
 extern void     B3L_RotateCamInOY(camera_t *pCam,f32 angle);
 extern void     B3L_RotateCamInOZ(camera_t *pCam,f32 angle);
-extern void     B3L_InitCamera(camera_t *pCam);
+extern void     B3L_InitCamera(render_t *pRender);
+//call after you reset the aspect ratio, focus length, near/far plane 
+extern void     B3L_UpdateClipMatrix(render_t *pRender);
 extern void     B3L_CameraMoveTo(vect3_t position,camera_t *pCam);
 extern void     B3L_CameraLookAt(camera_t *pCam, vect3_t *pAt,vect3_t *pUp);
-//extern void     B3L_SetCameraMatrixByTransform(camera_t *pCam, mat4_t *pMat);
-//extern void     B3L_SetCameraUpDirection(camera_t *pCam, vect3_t *pUp);
-
 extern void     B3L_CamStopTrack(camera_t *pCam);
 extern void     B3L_CamStartTrack(camera_t *pCam);
 extern void     B3L_CamSetTrack(camera_t *pCam, B3LObj_t  *pTrackObj,f32 trackDistance, f32 trackAngleSpeed, f32 targetAX, f32 targetAY, f32 targetAZ);
