@@ -78,7 +78,7 @@ Vector and matrix functions
 -----------------------------------------------------------------------------*/
 
 __attribute__((always_inline)) static  inline void     Vect3_Add(vect3_t *pV1,vect3_t *pV2,vect3_t *pResult);
-__attribute__((always_inline)) static  inline void     MakeClipMatrix(render_t *pRender,f32 focalLength, f32 aspectRatio,mat4_t *mat);
+__attribute__((always_inline)) static  inline void     MakeClipMatrix(u32 state,f32 near_plane,f32 far_plane,f32 focalLength, f32 aspectRatio,mat4_t *mat);
 __attribute__((always_inline)) static  inline void     Vect3Xmat4(vect3_t *pV, mat4_t *pMat, vect4_t *pResult);
 __attribute__((always_inline)) static  inline void     Vect3Xmat4WithTestToScreen4(vect3_t *pV, mat4_t *pMat, screen4_t *pResult);
 __attribute__((always_inline)) static  inline void     Vect3Xmat4WithTest_f(vect3_t *pV, mat4_t *pMat, screen3f_t *pResult);
@@ -745,10 +745,8 @@ void B3L_CreateO2WMat(mat3_t *pRMat, vect3_t *pTranslation, vect3_t *pScale, mat
     pResult->m30 = 0.0f; pResult->m31 = 0.0f; pResult->m32 = 0.0f; pResult->m33 = 1.0f;
 }
 
-__attribute__((always_inline)) static inline void MakeClipMatrix(render_t *pRender,f32 focalLength, f32 aspectRatio,mat4_t *mat){
-    f32 far_plane =pRender->farPlane;
-    f32 near_plane =pRender->nearPlane;
-    u32 state = pRender->camera.state;
+__attribute__((always_inline)) static inline void MakeClipMatrix(u32 state,f32 near_plane,f32 far_plane,
+                                                                 f32 focalLength, f32 aspectRatio,mat4_t *mat){
     f32 zero = 0.0f;
     f32 one = 1.0f;
     #define M(x,y) (mat)->m##x##y
@@ -1052,7 +1050,7 @@ void B3L_InitCamera(render_t *pRender){
     pCam->pTrackObj = (B3LObj_t *)NULL;
     pCam->trackDistance = 0.0f;
     pCam->trackTweenSpeed = 0.0f;
-    MakeClipMatrix(pRender,pCam->focalLength,pCam->aspectRate,&(pCam->clipMat));
+    MakeClipMatrix(pCam->state,pRender->nearPlane,pRender->farPlane,pCam->focalLength,pCam->aspectRate,&(pCam->clipMat));
     pCam->state = 0; //default is PERSPECTIVE_PROJECT
 }
 
@@ -1068,7 +1066,7 @@ void B3L_SetPerspectiveProject(render_t *pRender){
 
 void B3L_UpdateClipMatrix(render_t *pRender){
     camera_t *pCam = &(pRender->camera);
-    MakeClipMatrix(pRender,pCam->focalLength,pCam->aspectRate,&(pCam->clipMat));
+    MakeClipMatrix(pCam->state,pRender->nearPlane,pRender->farPlane,pCam->focalLength,pCam->aspectRate,&(pCam->clipMat));
 }
 
 static void GenerateW2CMatrix(camera_t *pCam){
