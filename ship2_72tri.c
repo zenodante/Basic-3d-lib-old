@@ -161,15 +161,9 @@ const B3L_Mesh_t ship2_72tri_mesh={
 	.pUv = (uint8_t *)ship2_72tri_uv,
 	.pNormal = (float *)ship2_72tri_normal,
 };
-const float ship2_72tribound[24]={
+const float ship2_72tribound[6]={
 	4.099203f, 0.621245f, 2.51588f,
 	-4.099203f, -1.062081f, -4.47831f,
-	4.099203f, 0.621245f, -4.47831f,
-	4.099203f, -1.062081f, -4.47831f,
-	-4.099203f, 0.621245f, 2.51588f,
-	-4.099203f, 0.621245f, -4.47831f,
-	-4.099203f, -1.062081f, 2.51588f,
-	4.099203f, -1.062081f, 2.51588f,
 };
 
 const uint32_t ship2_lut[16]={

@@ -85,8 +85,10 @@ Light functions
 __attribute__((always_inline)) static  inline fBuff_t  LightBlend(u32 inputPixel, u8 r, u8 g, u8 b);
 __attribute__((always_inline)) static  inline u32      CalLightFactor(f32 normalDotLight, f32 lightFactor0,f32 lightFactor1);
  /*-----------------------------------------------------------------------------
-Triangle testing functions
+Testing functions
 -----------------------------------------------------------------------------*/
+static bool Vect3InClipSpace(vect3_t *pV, mat4_t *pMat);
+static bool BoundBoxTest(f32 *pMaxMin,mat4_t *pMat);
 __attribute__((always_inline)) static  inline bool     TriangleFaceToViewer_f(f32 x0, f32 y0, f32 x1, f32 y1, f32 x2, f32 y2);
 __attribute__((always_inline)) static  inline bool     TriVisable(u32 r0,u32 r1,u32 r2);
  /*-----------------------------------------------------------------------------
@@ -1137,11 +1139,39 @@ void B3L_UpdateAllParticlesStatesInGen(render_t *pRender,B3LParticleGenObj_t *pG
 
 
 #endif
+
+static bool Vect3InClipSpace(vect3_t *pV, mat4_t *pMat){
+    vect4_t output;
+    Vect3Xmat4(pV, pMat, &output);
+    return Vect4BoundTest( &output);
+}
+
+static bool BoundBoxTest(f32 *pMaxMin,mat4_t *pMat){
+    bool result;
+    f32 maxX = pMaxMin[0];f32 maxY = pMaxMin[1];f32 maxZ = pMaxMin[2];
+    f32 minX = pMaxMin[3];f32 minY = pMaxMin[4];f32 minZ = pMaxMin[5];
+    //test 8 point
+    vect3_t testV;
+    B3L_VECT3_SET(testV,maxX,maxY,maxZ);result = Vect3InClipSpace(&testV,pMat);
+    if (result == true){return true;}
+    B3L_VECT3_SET(testV,maxX,maxY,minZ);result = Vect3InClipSpace(&testV,pMat);
+    if (result == true){return true;}
+    B3L_VECT3_SET(testV,maxX,minY,minZ);result = Vect3InClipSpace(&testV,pMat);
+    if (result == true){return true;}
+    B3L_VECT3_SET(testV,minX,minY,minZ);result = Vect3InClipSpace(&testV,pMat);
+    if (result == true){return true;}
+    B3L_VECT3_SET(testV,minX,minY,maxZ);result = Vect3InClipSpace(&testV,pMat);
+    if (result == true){return true;}
+    B3L_VECT3_SET(testV,minX,maxY,maxZ);result = Vect3InClipSpace(&testV,pMat);
+    if (result == true){return true;}
+    B3L_VECT3_SET(testV,maxX,minY,maxZ);result = Vect3InClipSpace(&testV,pMat);
+    if (result == true){return true;}
+    B3L_VECT3_SET(testV,minX,maxY,minZ);result = Vect3InClipSpace(&testV,pMat);
+    return result;
+}
+
 static void RenderMeshObjs(render_t *pRender){
     mat4_t mat; //64 byte
-    vect4_t boundBoxBuffVec; //128 byte
-    int32_t i;
-    bool inClipSpace;
     u32 state;
     u32 renderLevel;
     f32 distance;
@@ -1163,26 +1193,8 @@ static void RenderMeshObjs(render_t *pRender){
         }
         B3L_MakeO2CMatrix(&(pCurrentObj->mat),&(pCurrentObj->transform.scale),
                           &(pCurrentObj->transform.translation),&(pRender->camera.camW2CMat), &mat);
-        //calculate the bound box position in the clip space
-        inClipSpace = false;
-        //test 0,0,0 point of obj if it is in the space
-        boundBoxBuffVec.x =mat.m03;
-        boundBoxBuffVec.y =mat.m13;
-        boundBoxBuffVec.z =mat.m23;
-        boundBoxBuffVec.w =mat.m33;
-        if (Vect4BoundTest( &boundBoxBuffVec)){
-            inClipSpace = true;    
-        }else{
-            for (i=7;i>=0;i--){
-                Vect3Xmat4((vect3_t *)&(pCurrentObj->pBoundBox[i*3]), &mat, &(boundBoxBuffVec));
-                if (Vect4BoundTest( &boundBoxBuffVec)){
-                    inClipSpace = true;
-                    break;
-                }            
-            }
-        }
         //test boundBoxTestFactor to check if the obj out of clip range
-        if (inClipSpace != true){  //all points outside the clip range
+        if (BoundBoxTest(pCurrentObj->pBoundBox,&mat)!= true){  //all points outside the clip range
             pCurrentObj = pCurrentObj->next;
             continue;
         }
@@ -1191,11 +1203,7 @@ static void RenderMeshObjs(render_t *pRender){
         f32 y = mat.m13;
         f32 z = mat.m23;
         distance = B3L_Sqrtf(x*x+y*y+z*z);
-        //#else
-        //distance = sqrtf(x*x+y*y+z*z);
-       // #endif
-        //decide render level info
-        
+        //decide render level info        
         if (B3L_TEST(state ,OBJ_IGNORE_RENDER_LEVEL)){
             renderLevel = (state & OBJ_RENDER_LEVEL_MASK)>>OBJ_FIX_RENDER_LEVEL_SHIFT;
         }else{

@@ -68,6 +68,11 @@ const u8 B3L_boxUV[72]={
 };
 #undef m
 
+const f32 B3L_boxBound[6]={
+    1.0f,1.0f,1.0f,
+    -1.0f,-1.0f,-1.0f,
+};
+
 const f32 B3L_boxNormal[36]={
     0.0f,0.0f,-1.0f,
     0.0f,0.0f,-1.0f,
@@ -169,7 +174,7 @@ void B3L_InitBoxObj(B3LMeshObj_t *pObj,f32 size){
     pObj->pTexture = (B3L_texture_t *)&B3L_boxTexture;
     B3L_VECT3_SET(pObj->transform.translation,0.0f,0.0f,0.0f);
     B3L_VECT3_SET(pObj->transform.scale,size,size,size);
-    pObj->pBoundBox = B3L_box.pVect;
+    pObj->pBoundBox = (f32 *)B3L_boxBound;
 
     B3L_SET(pObj->state,MESH_OBJ); 
     B3L_SET(pObj->state,OBJ_VISUALIZABLE);
@@ -184,7 +189,7 @@ void B3L_InitBoxObjNoTexture(B3LMeshNoTexObj_t *pObj,f32 size){
     pObj->pMesh = (B3L_Mesh_NoTex_t *)&B3L_box_noTex;
     B3L_VECT3_SET(pObj->transform.translation,0.0f,0.0f,0.0f);
     B3L_VECT3_SET(pObj->transform.scale,size,size,size);
-    pObj->pBoundBox = B3L_box.pVect;
+    pObj->pBoundBox = (f32 *)B3L_boxBound;
     #if FRAME_BUFF_COLOR_TYPE == 0
     pObj->pLUT =  (texLUT_t *)B3L_boxLUT32bit;
     #endif
@@ -208,7 +213,7 @@ void B3L_InitBoxObjPolygon(B3LPolygonObj_t *pObj,f32 size){
     pObj->pPolygon = (B3L_Polygon_t *)&B3L_box_Polygon;
     B3L_VECT3_SET(pObj->transform.translation,0.0f,0.0f,0.0f);
     B3L_VECT3_SET(pObj->transform.scale,size,size,size);
-    pObj->pBoundBox = B3L_box.pVect;
+    pObj->pBoundBox = (f32 *)B3L_boxBound;
     #if FRAME_BUFF_COLOR_TYPE == 0
     pObj->color = 0xFF00FF00;
     #endif
