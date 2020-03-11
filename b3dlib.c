@@ -127,8 +127,10 @@ __attribute__((always_inline)) static  inline void     DrawDepthLineClip(s32 Ax,
 Camera functions
 -----------------------------------------------------------------------------*/
 static void     UpdateCam(render_t *pRender);
-static void     CameraTrackPoint(camera_t *pCam, vect3_t *pAt, vect3_t *paxisAngle, f32 distance);
 static void     GenerateW2CMatrix(camera_t *pCam);
+
+static void     CamCalNewTrackPosition(camera_t *pCam);
+static void     CamCalNewTrackQuaternion(camera_t *pCam);
  /*-----------------------------------------------------------------------------
 Obj list functions
 -----------------------------------------------------------------------------*/
@@ -968,8 +970,7 @@ void B3L_InitCamera(render_t *pRender){
     B3L_InitUnitMat3(&(pCam->mat));
     B3L_VECT4_SET(pCam->transform.quaternion,0.0f,0.0f,0.0f,1.0f);
     pCam->pTrackObj = (B3LObj_t *)NULL;
-    pCam->trackDistance = 0.0f;
-    pCam->trackTweenSpeed = 0.0f;
+    
     MakeClipMatrix(pCam->state,pRender->nearPlane,pRender->farPlane,pCam->focalLength,pCam->aspectRate,&(pCam->clipMat));
     pCam->state = 0; //default is PERSPECTIVE_PROJECT
 }
@@ -1028,13 +1029,47 @@ void B3L_CamStartTrack(camera_t *pCam){
     B3L_SET(pCam->state,B3L_CAMERA_TRACK_OBJ_MODE);
 }
 
-void B3L_CamSetTrack(camera_t *pCam, B3LObj_t  *pTrackObj,f32 trackDistance, f32 trackAngleSpeed, f32 targetAX, f32 targetAY, f32 targetAZ){
 
+void B3L_CamInitTrack(camera_t *pCam,B3LObj_t *pObj,f32 camX,f32 camY,f32 camZ,f32 lookAtX,f32 lookAtY,f32 lookAtZ){
+    //B3L_SET(pCam->state,B3L_CAMERA_TRACK_OBJ_MODE);
+    pCam->pTrackObj = pObj;
+    pCam->targetPosition.x = camX;
+    pCam->targetPosition.x = camY;
+    pCam->targetPosition.x = camZ;
+    vect3_t from = {camX,camY,camZ};
+    vect3_t at = {lookAtX,lookAtY,lookAtZ};
+    vect3_t up = {0.0f,1.0f,0.0f};
+    B3L_CreateLookAtQuaternion(&from, &at, &up, &(pCam->targetQuat));
 }
 
-static void   CameraTrackPoint(camera_t *pCam, vect3_t *pAt, vect3_t *paxisAngle, f32 distance){
-
+static void CamCalNewTrackPosition(camera_t *pCam){
+    B3LObj_t *pObj = pCam->pTrackObj;
+    if (B3L_TEST(pObj->state,OBJ_NEED_MATRIX_UPDATE)){
+        //update it's matrix and clear the flag
+        B3L_QuaternionToMatrix(&(pObj->transform.quaternion), &(pObj->mat));
+        B3L_CLR(pObj->state,OBJ_NEED_MATRIX_UPDATE);
+    }
+    vect3_t result;
+    B3L_Vect3MulMat3(&(pCam->targetPosition), &(pObj->mat), &result);
+    B3L_Vect3Add(&result,&(pObj->transform.translation),&(pCam->transform.translation));
 }
+
+static void CamCalNewTrackQuaternion(camera_t *pCam){
+    quat4_t targetQuat;
+    B3LObj_t *pObj = pCam->pTrackObj;
+    if(B3L_TEST(pObj->state,OBJ_NEED_QUAT_UPDATE)){
+        //update it's matrix and clear the flag
+        B3L_MatrixToQuaternion( &(pObj->mat),&(pObj->transform.quaternion));
+        B3L_CLR(pObj->state,OBJ_NEED_QUAT_UPDATE);
+    }
+    B3L_QuatMult(&(pObj->transform.quaternion),&(pCam->targetQuat), &targetQuat);
+    //now the targetQuat in world space
+    f32 cosHalfAngel = B3L_QuatDot(&targetQuat,&(pCam->transform.quaternion));
+    f32 t = (1.0f - B3L_Absf(cosHalfAngel))*0.5f;
+    B3L_QuaternionInterp(&(pCam->transform.quaternion), &targetQuat ,&(pCam->transform.quaternion), t);
+    B3L_SET(pCam->state,CAM_NEED_MATRIX_UPDATE);
+}
+
 
 static void  UpdateCam(render_t *pRender){
     camera_t *pCam = &(pRender->camera);
@@ -2441,6 +2476,10 @@ void B3L_QuatMult(quat4_t *pL,quat4_t *pR, quat4_t *pResult){
     pResult->y = w1*y2+y1*w2+z1*x2-x1*z2;
     pResult->z = w1*z2+z1*w2+x1*y2-y1*x2;
     pResult->w = w1*w2-x1*x2-y1*y2-z1*z2;
+}
+
+f32  B3L_QuatDot(quat4_t *pL,quat4_t *pR){
+    return pL->w*pR->w + pL->x*pR->x + pL->y*pR->y +pL->z*pR->z ;
 }
 
 void B3L_CreateQuaternionByAxisAngle(vect3_t *pAxis, f32 angle, quat4_t *pResult){

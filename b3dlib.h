@@ -418,8 +418,8 @@ typedef struct{
     transform3D_t       transform; 
     mat4_t              clipMat;
     mat4_t              camW2CMat;
-    f32                 trackDistance;
-    f32                 trackTweenSpeed;
+    vect3_t             targetPosition;
+    quat4_t             targetQuat;
     B3LObj_t           *pTrackObj;
 }camera_t;
 
@@ -536,8 +536,7 @@ extern void     B3L_CameraMoveTo(vect3_t position,camera_t *pCam);
 extern void     B3L_CameraLookAt(camera_t *pCam, vect3_t *pAt,vect3_t *pUp);
 extern void     B3L_CamStopTrack(camera_t *pCam);
 extern void     B3L_CamStartTrack(camera_t *pCam);
-extern void     B3L_CamSetTrack(camera_t *pCam, B3LObj_t  *pTrackObj,f32 trackDistance, 
-                                 f32 trackAngleSpeed, f32 targetAX, f32 targetAY, f32 targetAZ);
+extern void     B3L_CamInitTrack(camera_t *pCam,B3LObj_t *pObj,f32 camX,f32 camY,f32 camZ,f32 lookAtX,f32 lookAtY,f32 lookAtZ);
 /*-----------------------------------------------------------------------------
 Light functions
 -----------------------------------------------------------------------------*/
@@ -588,6 +587,7 @@ Quaternion functions
 -----------------------------------------------------------------------------*/
 #define         SET_IDENTITY_P_QUAT(a)       (a)->x=0.0f;(a)->y=0.0f;(a)->z=0.0f;(a)->w=1.0f
 extern void     B3L_QuatMult(quat4_t *pL,quat4_t *pR, quat4_t *pResult);
+extern f32      B3L_QuatDot(quat4_t *pL,quat4_t *pR);
 extern void     B3L_CreateQuaternionByAxisAngle(vect3_t *pAxis, f32 angle, quat4_t *pResult);
 extern void     B3L_QuaternionGetRotationTo(vect3_t *pA, vect3_t *pB, vect3_t *pUp, quat4_t *pResult);
 extern void     B3L_CreateLookAtQuaternion(vect3_t *pFrom, vect3_t *pAt, vect3_t *pUp, quat4_t *pResult);

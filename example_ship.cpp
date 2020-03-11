@@ -112,11 +112,11 @@ void update(uint32_t time){
         //B3L_RotateCamInOY(&(B3Lrender.camera),0.002f);
     }
     if (pressed(A)){
-        B3Lrender.camera.trackDistance += 1.0f;
+        //B3Lrender.camera.trackDistance += 1.0f;
         //distance += 1.0f;
     }
     if (pressed(B)){
-        B3Lrender.camera.trackDistance -= 1.0f;
+        //B3Lrender.camera.trackDistance -= 1.0f;
         //distance -= 1.0f;
     }
     /*
