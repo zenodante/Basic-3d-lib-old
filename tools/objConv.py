@@ -171,24 +171,6 @@ class objConvert:
         self.bound.append(self.vxMin)
         self.bound.append(self.vyMin)
         self.bound.append(self.vzMin)
-        self.bound.append(self.vxMax)
-        self.bound.append(self.vyMax)
-        self.bound.append(self.vzMin)
-        self.bound.append(self.vxMax)
-        self.bound.append(self.vyMin)
-        self.bound.append(self.vzMin)
-        self.bound.append(self.vxMin)
-        self.bound.append(self.vyMax)
-        self.bound.append(self.vzMax)
-        self.bound.append(self.vxMin)
-        self.bound.append(self.vyMax)
-        self.bound.append(self.vzMin)
-        self.bound.append(self.vxMin)
-        self.bound.append(self.vyMin)
-        self.bound.append(self.vzMax)
-        self.bound.append(self.vxMax)
-        self.bound.append(self.vyMin)
-        self.bound.append(self.vzMax)
         
     def GenerateSeperate(self):
         nameId =self.fileName.split("/")[-1][:-4]
@@ -277,17 +259,11 @@ class objConvert:
 
                 #reference point is in the middle of the model
                 
-                outFile.write("const float "+nameId+"bound[24]={\n")
+                outFile.write("const float "+nameId+"bound[6]={\n")
                 outFile.write("\t"+str(self.vxMax)+"f, "+str(self.vyMax)+"f, "+str(self.vzMax)+"f,\n")
                 outFile.write("\t"+str(self.vxMin)+"f, "+str(self.vyMin)+"f, "+str(self.vzMin)+"f,\n")
-                outFile.write("\t"+str(self.vxMax)+"f, "+str(self.vyMax)+"f, "+str(self.vzMin)+"f,\n")
-                outFile.write("\t"+str(self.vxMax)+"f, "+str(self.vyMin)+"f, "+str(self.vzMin)+"f,\n")
-                outFile.write("\t"+str(self.vxMin)+"f, "+str(self.vyMax)+"f, "+str(self.vzMax)+"f,\n")
-                outFile.write("\t"+str(self.vxMin)+"f, "+str(self.vyMax)+"f, "+str(self.vzMin)+"f,\n")
-                outFile.write("\t"+str(self.vxMin)+"f, "+str(self.vyMin)+"f, "+str(self.vzMax)+"f,\n")
-                outFile.write("\t"+str(self.vxMax)+"f, "+str(self.vyMin)+"f, "+str(self.vzMax)+"f,\n")
                 outFile.write("};\n")
-                outHFile.write("extern const float "+nameId+"bound[24];\n")
+                outHFile.write("extern const float "+nameId+"bound[6];\n")
                 outHFile.write("#endif \n")
 
     def GenerateByteArray(self):
