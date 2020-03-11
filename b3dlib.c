@@ -1034,12 +1034,14 @@ void B3L_CamInitTrack(camera_t *pCam,B3LObj_t *pObj,f32 camX,f32 camY,f32 camZ,f
     //B3L_SET(pCam->state,B3L_CAMERA_TRACK_OBJ_MODE);
     pCam->pTrackObj = pObj;
     pCam->targetPosition.x = camX;
-    pCam->targetPosition.x = camY;
-    pCam->targetPosition.x = camZ;
+    pCam->targetPosition.y = camY;
+    pCam->targetPosition.z = camZ;
     vect3_t from = {camX,camY,camZ};
     vect3_t at = {lookAtX,lookAtY,lookAtZ};
     vect3_t up = {0.0f,1.0f,0.0f};
     B3L_CreateLookAtQuaternion(&from, &at, &up, &(pCam->targetQuat));
+    //printf("target quat:");
+    //B3L_logVec4(pCam->targetQuat);
 }
 
 static void CamCalNewTrackPosition(camera_t *pCam){
@@ -1051,6 +1053,7 @@ static void CamCalNewTrackPosition(camera_t *pCam){
     }
     vect3_t result;
     B3L_Vect3MulMat3(&(pCam->targetPosition), &(pObj->mat), &result);
+
     B3L_Vect3Add(&result,&(pObj->transform.translation),&(pCam->transform.translation));
 }
 
@@ -1065,14 +1068,22 @@ static void CamCalNewTrackQuaternion(camera_t *pCam){
     B3L_QuatMult(&(pObj->transform.quaternion),&(pCam->targetQuat), &targetQuat);
     //now the targetQuat in world space
     f32 cosHalfAngel = B3L_QuatDot(&targetQuat,&(pCam->transform.quaternion));
-    f32 t = (1.0f - B3L_Absf(cosHalfAngel))*0.5f;
+    f32 t = (1.0f - B3L_Absf(cosHalfAngel))*8.0f;
     B3L_QuaternionInterp(&(pCam->transform.quaternion), &targetQuat ,&(pCam->transform.quaternion), t);
     B3L_SET(pCam->state,CAM_NEED_MATRIX_UPDATE);
+    //printf("new quat:");
+    //B3L_logVec4(pCam->transform.quaternion);
 }
 
 
 static void  UpdateCam(render_t *pRender){
     camera_t *pCam = &(pRender->camera);
+    if(B3L_TEST(pCam->state,B3L_CAMERA_TRACK_OBJ_MODE)){
+        CamCalNewTrackPosition(pCam);
+        CamCalNewTrackQuaternion(pCam);
+        //printf("current camera position:");
+        //B3L_logVec3(pCam->transform.translation);
+    }
     if(B3L_TEST(pCam->state,CAM_NEED_MATRIX_UPDATE)){
         B3L_QuaternionToMatrix(&(pCam->transform.quaternion), &(pCam->mat));
         B3L_CLR(pCam->state,CAM_NEED_MATRIX_UPDATE);

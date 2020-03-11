@@ -52,12 +52,13 @@ void init() {
     
     B3Lrender.camera.transform.translation = {0.0f,0.0f,-200.0f};
     //B3L_SetOrthographicProject(&(B3Lrender));
-    B3L_CameraLookAt(&(B3Lrender.camera), &at,&up);
+    //B3L_CameraLookAt(&(B3Lrender.camera), &at,&up);
     
     B3L_TweenStart(&tCatZ,0);
 
     //printf("obj %d,particle %d\n",sizeof(B3LObj_t),sizeof(B3LParticleGenObj_t));
-    
+    B3L_CamInitTrack(&(B3Lrender.camera),(B3LObj_t *)pShip,0.0f,50.0f,-200.0f,0.0f,0.0f,50.0f);
+    B3L_CamStartTrack(&(B3Lrender.camera));
 }
 
 void update(uint32_t time){
@@ -99,7 +100,7 @@ void update(uint32_t time){
         //pShip->transform.rotation.z -=0.002f;
         //pShip->transform.rotation.y -= (f32)((s32)(pShip->transform.rotation.y));   
         //B3Lrender.camera.transform.rotation.z -= 0.002f;
-        ROTATE_IN_BODY_Y(pShip,-0.002f);
+        ROTATE_IN_BODY_Z(pShip,-0.002f);
         //B3L_RotateCamInOY(&(B3Lrender.camera),-0.002f);
     }
     if (pressed(DPAD_RIGHT)){
@@ -108,7 +109,7 @@ void update(uint32_t time){
          //pShip->transform.rotation.z +=0.002f;
         //pShip->transform.rotation.y -= (f32)((s32)(pShip->transform.rotation.y));
         //B3Lrender.camera.transform.rotation.z += 0.002f;
-        ROTATE_IN_BODY_Y(pShip,0.002f);
+        ROTATE_IN_BODY_Z(pShip,0.002f);
         //B3L_RotateCamInOY(&(B3Lrender.camera),0.002f);
     }
     if (pressed(A)){
