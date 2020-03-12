@@ -6,6 +6,7 @@ extern "C" {
 #include "b3dTestObj.h"
 #include "cat.h"
 #include "ship2_72tri.h"
+#include "b3dDust.h"
 }
 using namespace blit;
 
@@ -32,11 +33,11 @@ void init() {
     fBuff_t *renderBuff=B3L_3dRenderAreaShiftCal(((fBuff_t *)frame4),0, 0);   
     B3L_RenderInit(&B3Lrender,renderBuff);
     //init particle generator
-    pParticleGen = B3L_GetFreeParticleGeneratorObj(&B3Lrender);
-    B3L_InitDemoParticleGenObj(pParticleGen);
-    pParticleGen->transform.translation.x = 0.0f;
-    pParticleGen->transform.translation.y = 0.0f;
-    B3L_AddObjToRenderList((B3LObj_t *)pParticleGen, &B3Lrender);
+    //pParticleGen = B3L_GetFreeParticleGeneratorObj(&B3Lrender);
+    //B3L_InitDemoParticleGenObj(pParticleGen);
+    //pParticleGen->transform.translation.x = 0.0f;
+    //pParticleGen->transform.translation.y = 0.0f;
+    //B3L_AddObjToRenderList((B3LObj_t *)pParticleGen, &B3Lrender);
     //init light
     B3L_SetLightType(&B3Lrender,parallelLight);
     //B3L_SetLightVect();
@@ -54,11 +55,15 @@ void init() {
     //B3L_SetOrthographicProject(&(B3Lrender));
     //B3L_CameraLookAt(&(B3Lrender.camera), &at,&up);
     
+    //vect3_t eulerAngle;
+
     B3L_TweenStart(&tCatZ,0);
 
     //printf("obj %d,particle %d\n",sizeof(B3LObj_t),sizeof(B3LParticleGenObj_t));
     B3L_CamInitTrack(&(B3Lrender.camera),(B3LObj_t *)pShip,0.0f,50.0f,-200.0f,0.0f,0.0f,50.0f);
     B3L_CamStartTrack(&(B3Lrender.camera));
+
+    DustInit();
 }
 
 void update(uint32_t time){
@@ -79,8 +84,11 @@ void update(uint32_t time){
         //pShip->transform.rotation.x -= (f32)((s32)(pShip->transform.rotation.x));
         //B3Lrender.camera.transform.rotation.x += 0.002f;
         //B3L_RotateObjInOX((B3LObj_t *)pShip,-0.002f);
-        ROTATE_IN_BODY_X(pShip,-0.002f);
+        //ROTATE_IN_BODY_X(pShip,-0.002f);
         //B3L_RotateCamInOX(&(B3Lrender.camera),-0.002f);
+        //ROTATE_IN_BODY_X(&(B3Lrender.camera),-0.002f);
+        pShip->transform.translation.z +=20.0f;
+        //B3Lrender.camera.transform.translation.y +=1.0f;
     }
     if (pressed(DPAD_DOWN)){
         //pShip->transform.rotation.y -=0.002f;
@@ -91,8 +99,11 @@ void update(uint32_t time){
         //pShip->transform.rotation.x += B3L_cos(0.5f-pShip->transform.rotation.z)*0.002f;
         //pShip->transform.rotation.x -= (f32)((s32)(pShip->transform.rotation.x)); 
         //B3Lrender.camera.transform.rotation.x -= 0.002f;
-        ROTATE_IN_BODY_X(pShip,0.002f);
+        //ROTATE_IN_BODY_X(pShip,0.002f);
         //B3L_RotateCamInOX(&(B3Lrender.camera),0.002f);
+        //ROTATE_IN_BODY_X(&(B3Lrender.camera),0.002f);
+        //B3Lrender.camera.transform.translation.y -=1.0f;
+        pShip->transform.translation.z -=20.0f;
     }
     if (pressed(DPAD_LEFT)){
         //angle.y +=0.002f;
@@ -100,8 +111,10 @@ void update(uint32_t time){
         //pShip->transform.rotation.z -=0.002f;
         //pShip->transform.rotation.y -= (f32)((s32)(pShip->transform.rotation.y));   
         //B3Lrender.camera.transform.rotation.z -= 0.002f;
-        ROTATE_IN_BODY_Z(pShip,-0.002f);
+        //ROTATE_IN_BODY_Z(pShip,-0.002f);
         //B3L_RotateCamInOY(&(B3Lrender.camera),-0.002f);
+        //ROTATE_IN_BODY_Y(&(B3Lrender.camera),-0.002f);
+        //B3Lrender.camera.transform.translation.x -=1.0f;
     }
     if (pressed(DPAD_RIGHT)){
          //angle.y -=0.002f;  
@@ -109,8 +122,10 @@ void update(uint32_t time){
          //pShip->transform.rotation.z +=0.002f;
         //pShip->transform.rotation.y -= (f32)((s32)(pShip->transform.rotation.y));
         //B3Lrender.camera.transform.rotation.z += 0.002f;
-        ROTATE_IN_BODY_Z(pShip,0.002f);
+        //ROTATE_IN_BODY_Z(pShip,0.002f);
         //B3L_RotateCamInOY(&(B3Lrender.camera),0.002f);
+        //ROTATE_IN_BODY_Y(&(B3Lrender.camera),0.002f);
+        //B3Lrender.camera.transform.translation.x +=1.0f;
     }
     if (pressed(A)){
         //B3Lrender.camera.trackDistance += 1.0f;
@@ -131,12 +146,10 @@ void update(uint32_t time){
     */
     //CameraTrackPoint(&(B3Lrender.camera), &at, &angle, distance);
 
-
-    //CameraTrackPoint(&(B3Lrender.camera), &at, &angle, distance);
-    //B3L_CameraLookAt(&(B3Lrender.camera), &at);
     //vect3_t up ={2.0f,3.0f,0.0f};
     //B3L_SetCameraUpDirection(&(B3Lrender.camera),&up);
-
+    //B3L_CameraLookAt(&(B3Lrender.camera), &at,&up);
+    
 }
 
 
@@ -145,6 +158,7 @@ void render(uint32_t time) {
     B3L_NewRenderStart( &B3Lrender,0xF111);
     B3L_RenderScence(&B3Lrender);
     //B3L_AppliedLightFromAlpha(&B3Lrender);
+    DustUpdateAndRender(&B3Lrender,(B3LObj_t *)pShip,time);
     B3L_AppliedLightFromAlpha4444To8888(&B3Lrender,(u32 *)screen.data);
 
 

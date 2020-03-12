@@ -652,8 +652,9 @@ extern bool                 B3L_DMA2DOcupied(void);
 extern void                 DMA2D_IRQHandler(void);
 #endif
 /*-----------------------------------------------------------------------------
-2d overlay draw functions
+Draw functions
 -----------------------------------------------------------------------------*/
+extern void B3L_DrawPixel_ZCheck(render_t *pRender,fBuff_t color,s32 x,s32 y,f32 z);
 //extern void     B3L_SetFont();
 //extern void     B3L_SetFrontColor();
 //extern void     B3L_SetBackColor();

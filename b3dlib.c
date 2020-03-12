@@ -603,7 +603,8 @@ void B3L_Vect2Normalize(vect2_t *pV){
 
 void B3L_Vect3Normalize(vect3_t *pV){
     f32 x = pV->x;f32 y= pV->y;f32 z= pV->z;
-    f32 factor = FastInvertSqrt(x*x+y*y+z*z);
+    //f32 factor = FastInvertSqrt(x*x+y*y+z*z);
+    f32 factor = 1.0f/B3L_Sqrtf(x*x+y*y+z*z);
     pV->x = (x*factor);
     pV->y = (y*factor);
     pV->z = (z*factor);
@@ -2509,13 +2510,17 @@ void B3L_QuaternionGetRotationTo(vect3_t *pA, vect3_t *pB, vect3_t *pUp, quat4_t
     B3L_Vect3Normalize(pB); 
     B3L_Vect3Normalize(pUp);  
     f32 dot = B3L_Vect3Dot(pA,pB);
-    if (dot < -0.99999f){
+    
+    if (dot < -0.9999f){
+        //printf("less than -0.99f\n");
         B3L_CreateQuaternionByAxisAngle(pUp,0.5f,pResult);
         return;
-    }else if(dot > 0.99999f){
+    }else if(dot > 0.9999f){
+        //printf("> than 0.99f\n");
         SET_IDENTITY_P_QUAT(pResult);
         return;
     }
+
     f32 rotAngle = 0.25f-B3L_asin(dot);
     vect3_t ortAxis;
     B3L_Vect3Cross(pA,pB,&ortAxis);
@@ -2904,5 +2909,23 @@ void B3L_DMA2DAppliedLightTo565(u32 *addr,u32 wholeWidth,u32 wholeheight,u32 inv
 bool  B3L_DMA2DOcupied(void){
     return DMA2DOccupied;
 }
-
 #endif
+
+
+//public draw functions
+void B3L_DrawPixel_ZCheck(render_t *pRender,fBuff_t color,s32 x,s32 y,f32 z){
+    zBuff_t *pZbuff = pRender->pZBuff;
+    fBuff_t *pFrameBuff = pRender->pFrameBuff;
+    zBuff_t *pCurrentPixelZ = pZbuff + (y*RENDER_RESOLUTION_X) + x;
+    fBuff_t *pixel= pFrameBuff + (y*RENDER_X_SHIFT) + x; 
+    zBuff_t compZ = CalZbuffValue(z);
+    if (compZ< *pCurrentPixelZ){          
+        *pCurrentPixelZ = compZ;
+        *pixel =color;           
+    }
+}
+
+
+
+
+
