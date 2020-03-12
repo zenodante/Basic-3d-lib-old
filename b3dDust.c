@@ -112,7 +112,7 @@ void DustUpdateAndRender(render_t *pRender,B3LObj_t *pObj,u32 time){
             randomNum = B3L_Random();
             pCurtDust->position.z = (f32)(randomNum>>16)*INV65535*DUSTRANGE_DOUBLE - DUSTRANGE + pObjPosition->z;
             randomNum = B3L_Random();
-            pCurtDust->life = randomNum>>LIFE_SHIFT;
+            pCurtDust->life = LIFE_BASE + (randomNum>>20);
         }
         
 
@@ -124,7 +124,11 @@ void DustUpdateAndRender(render_t *pRender,B3LObj_t *pObj,u32 time){
         u32 test = positionInScreen.test;
         if (B3L_TEST(test,B3L_IN_SPACE)){
             //decide current draw color
-            color = SatToU8((pCurtDust->life)>>2);
+            s32 life = pCurtDust->life;
+            if (life>LIFE_BASE){
+                life -=LIFE_BASE;
+            }
+            color = SatToU8((life)>>2);
 #if (FRAME_BUFF_COLOR_TYPE  == 1)
             color= color>>4;
             color = 0xF<<12|color<<8|color<<4|color;

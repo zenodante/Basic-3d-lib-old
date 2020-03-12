@@ -3,7 +3,7 @@
 
 #include "b3dlib.h"
 
-#define LIFE_SHIFT              18
+#define LIFE_BASE               4000
 #define DUSTNUM                 128
 #define DUSTRANGE               300.0f
 #define DUSTRANGE_DOUBLE        600.0f
