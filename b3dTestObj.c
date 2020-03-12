@@ -302,6 +302,26 @@ void    B3L_DefaultParticleUpdFunc(u32 time,B3LParticleGenObj_t *pSelf,mat3_t *p
 #ifdef WIN32 
 #define __attribute__(A)
 #endif
+__attribute__((always_inline)) static  inline s32   B3L_RoundingToU(f32 in){
+    return (u32)roundf(in); 
+}
+__attribute__((always_inline)) static  inline u32   SatToU16(u32 in){
+    const uint32_t max = ((1U << 16) - 1U);
+    if (in > max){
+        return max;
+    }else{
+        return in;
+    }
+}
+
+__attribute__((always_inline)) static  inline u32   SatToU8(u32 in){
+    const uint32_t max = ((1U << 8) - 1U);
+    if (in > max){
+        return max;
+    }else{
+        return in;
+    }
+}
 __attribute__((always_inline)) static  inline zBuff_t CalZbuffValue(f32 z){
              #if  (Z_BUFF_LEVEL == 0) 
             u32 tempZ = B3L_RoundingToU(z*255.0f);

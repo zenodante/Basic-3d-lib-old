@@ -17,6 +17,7 @@ fBuff_t *renderBuff;
 B3L_timeTweenCtl_t ttCtl;
 B3L_tween_t tCatZ;
 B3LMeshObj_t *pShip;
+B3LMeshObj_t *pBox;
 vect3_t at={0.0f,0.0f,0.0f};
 vect3_t up ={0.0f,1.0f,0.0f};
 f32 distance = 200.0f;
@@ -33,6 +34,10 @@ void init() {
     fBuff_t *renderBuff=B3L_3dRenderAreaShiftCal(((fBuff_t *)frame4),0, 0);   
     B3L_RenderInit(&B3Lrender,renderBuff);
     //init particle generator
+    pBox = B3L_GetFreeMeshObj(&B3Lrender);
+    B3L_InitBoxObj(pBox,50.0f);
+    B3L_AddObjToRenderList((B3LObj_t *)pBox, &B3Lrender);
+    pBox->transform.translation.z = -100.0f;
     //pParticleGen = B3L_GetFreeParticleGeneratorObj(&B3Lrender);
     //B3L_InitDemoParticleGenObj(pParticleGen);
     //pParticleGen->transform.translation.x = 0.0f;
@@ -87,7 +92,7 @@ void update(uint32_t time){
         //ROTATE_IN_BODY_X(pShip,-0.002f);
         //B3L_RotateCamInOX(&(B3Lrender.camera),-0.002f);
         //ROTATE_IN_BODY_X(&(B3Lrender.camera),-0.002f);
-        pShip->transform.translation.z +=20.0f;
+        pShip->transform.translation.z +=5.0f;
         //B3Lrender.camera.transform.translation.y +=1.0f;
     }
     if (pressed(DPAD_DOWN)){
@@ -103,7 +108,7 @@ void update(uint32_t time){
         //B3L_RotateCamInOX(&(B3Lrender.camera),0.002f);
         //ROTATE_IN_BODY_X(&(B3Lrender.camera),0.002f);
         //B3Lrender.camera.transform.translation.y -=1.0f;
-        pShip->transform.translation.z -=20.0f;
+        pShip->transform.translation.z -=5.0f;
     }
     if (pressed(DPAD_LEFT)){
         //angle.y +=0.002f;
@@ -111,7 +116,7 @@ void update(uint32_t time){
         //pShip->transform.rotation.z -=0.002f;
         //pShip->transform.rotation.y -= (f32)((s32)(pShip->transform.rotation.y));   
         //B3Lrender.camera.transform.rotation.z -= 0.002f;
-        //ROTATE_IN_BODY_Z(pShip,-0.002f);
+        ROTATE_IN_BODY_Y(pShip,-0.002f);
         //B3L_RotateCamInOY(&(B3Lrender.camera),-0.002f);
         //ROTATE_IN_BODY_Y(&(B3Lrender.camera),-0.002f);
         //B3Lrender.camera.transform.translation.x -=1.0f;
@@ -122,7 +127,7 @@ void update(uint32_t time){
          //pShip->transform.rotation.z +=0.002f;
         //pShip->transform.rotation.y -= (f32)((s32)(pShip->transform.rotation.y));
         //B3Lrender.camera.transform.rotation.z += 0.002f;
-        //ROTATE_IN_BODY_Z(pShip,0.002f);
+        ROTATE_IN_BODY_Y(pShip,0.002f);
         //B3L_RotateCamInOY(&(B3Lrender.camera),0.002f);
         //ROTATE_IN_BODY_Y(&(B3Lrender.camera),0.002f);
         //B3Lrender.camera.transform.translation.x +=1.0f;
@@ -159,8 +164,22 @@ void render(uint32_t time) {
     B3L_RenderScence(&B3Lrender);
     //B3L_AppliedLightFromAlpha(&B3Lrender);
     DustUpdateAndRender(&B3Lrender,(B3LObj_t *)pShip,time);
-    B3L_AppliedLightFromAlpha4444To8888(&B3Lrender,(u32 *)screen.data);
-
+    B3L_AppliedLightFromAlpha4444To8888(&B3Lrender,(u32 *)(screen.data));
+    /*
+    zBuff_t *pB = B3Lrender.pZBuff;
+    u32 *pS = (u32 *)(screen.data);
+    u32 i;
+    u16 min=65535;
+    for (i = 0 ;i<320*240;i++){
+        u16 zV = pB[i];
+        if (zV<min){
+            min = zV;
+        }
+        zV = zV&0xff;
+        pS[i] = 0xFF<<24|zV<<16|zV<<8|zV;
+    }
+    */
+    //printf("%d\n",min);
 
 /*
     uint8_t *buff = (uint8_t *)(((fBuff_t *)screen.data)+160*15);

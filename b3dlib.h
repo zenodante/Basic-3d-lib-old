@@ -56,7 +56,7 @@ hardware or by software to apply the alpha blending.
 //obj buff size limited the max objs in a scene 
 #define OBJ_BUFF_SIZE           64
 //Zbuffer level 2: f32, 1:u16, 0: u8  //may a half float 16bit would be better?
-#define Z_BUFF_LEVEL            2
+#define Z_BUFF_LEVEL            1
 /*
 Type 0: 32bit 8:8:8:8 ARGB  
 type 1: 16bit 4:4:4:4 ARGB
@@ -552,6 +552,7 @@ extern f32      B3L_asin(f32 in);
 extern f32      B3L_atan2(f32 y,f32 x);
 extern void     B3L_SetSeed(u32 seed);
 extern u32      B3L_Random(void); 
+extern u32      B3L_Rnd(u32 range);
 #define         B3L_MIN(a,b)      ((a) >= (b) ? (b) : (a))
 #define         B3L_MAX(a,b)      ((a) >= (b) ? (a) : (b))
 /*-----------------------------------------------------------------------------

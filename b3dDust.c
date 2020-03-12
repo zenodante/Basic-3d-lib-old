@@ -1,5 +1,5 @@
 #include "b3dDust.h"
-
+#include <stdlib.h>
 #ifdef WIN32 
 #define __attribute__(A)
 #endif
@@ -105,14 +105,14 @@ void DustUpdateAndRender(render_t *pRender,B3LObj_t *pObj,u32 time){
         //if((pCurtDust->life <=0)){
         if((pCurtDust->life <=0)||(distanceSq >DUSTRESETDISTANCE_SQ )){
             //relocate it to a new position and new life longth
+            randomNum = B3L_Rnd((u32)DUSTRANGE_DOUBLE);
+            pCurtDust->position.x = (f32)(randomNum)  - DUSTRANGE + pObjPosition->x;
+            randomNum = B3L_Rnd((u32)DUSTRANGE_DOUBLE);
+            pCurtDust->position.y = (f32)(randomNum)  - DUSTRANGE + pObjPosition->y;
+            randomNum = B3L_Rnd((u32)DUSTRANGE_DOUBLE);
+            pCurtDust->position.z = (f32)(randomNum)  - DUSTRANGE + pObjPosition->z;
             randomNum = B3L_Random();
-            pCurtDust->position.x = (f32)(randomNum>>16)*INV65535*DUSTRANGE_DOUBLE - DUSTRANGE + pObjPosition->x;
-            randomNum = B3L_Random();
-            pCurtDust->position.y = (f32)(randomNum>>16)*INV65535*DUSTRANGE_DOUBLE - DUSTRANGE + pObjPosition->y;
-            randomNum = B3L_Random();
-            pCurtDust->position.z = (f32)(randomNum>>16)*INV65535*DUSTRANGE_DOUBLE - DUSTRANGE + pObjPosition->z;
-            randomNum = B3L_Random();
-            pCurtDust->life = LIFE_BASE + (randomNum>>20);
+            pCurtDust->life = B3L_Rnd( LIFE_BASE) ;
         }
         
 
@@ -125,10 +125,11 @@ void DustUpdateAndRender(render_t *pRender,B3LObj_t *pObj,u32 time){
         if (B3L_TEST(test,B3L_IN_SPACE)){
             //decide current draw color
             s32 life = pCurtDust->life;
-            if (life>LIFE_BASE){
-                life -=LIFE_BASE;
-            }
             color = SatToU8((life)>>2);
+
+            u32 zcolor = 0xFF&((u32)((positionInScreen.z)*65535.0f));
+            //printf("%.3f\n",positionInScreen.z);
+            color = B3L_MIN(color,zcolor);
 #if (FRAME_BUFF_COLOR_TYPE  == 1)
             color= color>>4;
             color = 0xF<<12|color<<8|color<<4|color;

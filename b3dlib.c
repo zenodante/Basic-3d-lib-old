@@ -562,15 +562,19 @@ f32  B3L_atan2(f32 y,f32 x){
 }
 
 //random function
-void   B3L_SetSeed(u32 seed){
+void B3L_SetSeed(u32 seed){
     B3L_seed = seed|1;
 }
 //using rand xorshift algorithm from george marsaglia's paper
-u32    B3L_Random(void){
+u32 B3L_Random(void){
     B3L_seed ^=(B3L_seed<<13);
     B3L_seed ^=(B3L_seed>>17);
     B3L_seed ^=(B3L_seed<<5);
     return B3L_seed;
+}
+
+u32  B3L_Rnd(u32 range){
+    return B3L_Random()%range;
 }
 /*-----------------------------------------------------------------------------
 Vector functions
@@ -973,6 +977,8 @@ void B3L_InitCamera(render_t *pRender){
     pCam->pTrackObj = (B3LObj_t *)NULL;
     
     MakeClipMatrix(pCam->state,pRender->nearPlane,pRender->farPlane,pCam->focalLength,pCam->aspectRate,&(pCam->clipMat));
+    //printf("after init clip matrix:\n");
+    //B3L_logMat4(pCam->clipMat);
     pCam->state = 0; //default is PERSPECTIVE_PROJECT
 }
 
@@ -1091,6 +1097,10 @@ static void  UpdateCam(render_t *pRender){
     }
     GenerateW2CMatrix(&(pRender->camera));
     B3L_Mat4XMat4(&(pCam->camW2CMat),&(pCam->clipMat),&(pCam->camW2CMat));  
+    //printf("clip mat:");
+    //B3L_logMat4(pCam->clipMat);
+    //printf("W2C mat:");
+    //B3L_logMat4(pCam->camW2CMat);
 }
 /*-----------------------------------------------------------------------------
 obj functions
