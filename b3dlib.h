@@ -20,7 +20,10 @@ controlled by the address given to the init function.
    |
  y v
 Always using row vector, so v * mat -> new v
-Z buff range used [0.~1.] for near/ far plane (directX style)
+Z buff range used [1.~0.] 1/z for near/ far plane (invert directX style), this kind of set could
+help to get better resolution for floating point type z buff. For a small area rendering, could 
+change the near plane to 0.1f. In a open space, 4.0f near plane could provide a resonable range 
+to 400.0f.
 
 Rotations used quaternion internally in transform struct
 You could also set the rotation by euler angles in ZXY order, 
