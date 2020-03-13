@@ -35,9 +35,9 @@ void init() {
     B3L_RenderInit(&B3Lrender,renderBuff);
     //init particle generator
     pBox = B3L_GetFreeMeshObj(&B3Lrender);
-    B3L_InitBoxObj(pBox,50.0f);
+    B3L_InitBoxObj(pBox,5.0f);
     B3L_AddObjToRenderList((B3LObj_t *)pBox, &B3Lrender);
-    pBox->transform.translation.z = -100.0f;
+    pBox->transform.translation.z = -10.0f;
     //pParticleGen = B3L_GetFreeParticleGeneratorObj(&B3Lrender);
     //B3L_InitDemoParticleGenObj(pParticleGen);
     //pParticleGen->transform.translation.x = 0.0f;
@@ -50,13 +50,13 @@ void init() {
     //init ship
     pShip = (B3LMeshObj_t *)B3L_GetFreeMeshObj(&B3Lrender);
     
-    InitShipObj(pShip,15.0f);
+    InitShipObj(pShip,1.0f);
     //pShip->transform.translation.z = 200.0f;
     //pShip->transform.rotation.y=0.5f;
     B3L_AddObjToRenderList((B3LObj_t *)pShip, &B3Lrender);
     //init the camera
     
-    B3Lrender.camera.transform.translation = {0.0f,0.0f,-200.0f};
+    B3Lrender.camera.transform.translation = {0.0f,0.0f,-20.0f};
     //B3L_SetOrthographicProject(&(B3Lrender));
     //B3L_CameraLookAt(&(B3Lrender.camera), &at,&up);
     
@@ -65,7 +65,7 @@ void init() {
     B3L_TweenStart(&tCatZ,0);
 
     //printf("obj %d,particle %d\n",sizeof(B3LObj_t),sizeof(B3LParticleGenObj_t));
-    B3L_CamInitTrack(&(B3Lrender.camera),(B3LObj_t *)pShip,0.0f,50.0f,-200.0f,0.0f,0.0f,50.0f);
+    B3L_CamInitTrack(&(B3Lrender.camera),(B3LObj_t *)pShip,0.0f,5.0f,-20.0f,0.0f,0.0f,50.0f);
     B3L_CamStartTrack(&(B3Lrender.camera));
 
     DustInit();
@@ -92,7 +92,7 @@ void update(uint32_t time){
         //ROTATE_IN_BODY_X(pShip,-0.002f);
         //B3L_RotateCamInOX(&(B3Lrender.camera),-0.002f);
         //ROTATE_IN_BODY_X(&(B3Lrender.camera),-0.002f);
-        pShip->transform.translation.z +=5.0f;
+        pShip->transform.translation.z +=0.5f;
         //B3Lrender.camera.transform.translation.y +=1.0f;
     }
     if (pressed(DPAD_DOWN)){
@@ -108,7 +108,7 @@ void update(uint32_t time){
         //B3L_RotateCamInOX(&(B3Lrender.camera),0.002f);
         //ROTATE_IN_BODY_X(&(B3Lrender.camera),0.002f);
         //B3Lrender.camera.transform.translation.y -=1.0f;
-        pShip->transform.translation.z -=5.0f;
+        pShip->transform.translation.z -=0.5f;
     }
     if (pressed(DPAD_LEFT)){
         //angle.y +=0.002f;
@@ -165,7 +165,7 @@ void render(uint32_t time) {
     //B3L_AppliedLightFromAlpha(&B3Lrender);
     DustUpdateAndRender(&B3Lrender,(B3LObj_t *)pShip,time);
     B3L_AppliedLightFromAlpha4444To8888(&B3Lrender,(u32 *)(screen.data));
-    /*
+   /* 
     zBuff_t *pB = B3Lrender.pZBuff;
     u32 *pS = (u32 *)(screen.data);
     u32 i;
