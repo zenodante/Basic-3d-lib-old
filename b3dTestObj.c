@@ -346,7 +346,7 @@ void B3L_DefaultParticleDrawFunc(B3L_Particle_t *pParticle, screen4_t *pScreenVe
     pZBuff = (pZBuff+shift);
     shift = RENDER_X_SHIFT *intY + intX;
     pFBuff = (pFBuff+shift);
-    if (compZ<= *pZBuff){
+    if (compZ> *pZBuff){
         *pZBuff = compZ;
         *pFBuff = 0XFFFFFFFF;
     }

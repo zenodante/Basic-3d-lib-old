@@ -169,18 +169,18 @@ void render(uint32_t time) {
     zBuff_t *pB = B3Lrender.pZBuff;
     u32 *pS = (u32 *)(screen.data);
     u32 i;
-    u16 min=65535;
+    u16 max=0;
     for (i = 0 ;i<320*240;i++){
         u16 zV = pB[i];
-        if (zV<min){
-            min = zV;
+        if (zV>max){
+            max = zV;
         }
-        zV = zV&0xff;
+        zV = zV>>8;
         pS[i] = 0xFF<<24|zV<<16|zV<<8|zV;
     }
-    */
-    //printf("%d\n",min);
-
+    
+    printf("%d\n",max);
+*/
 /*
     uint8_t *buff = (uint8_t *)(((fBuff_t *)screen.data)+160*15);
     //uint32_t *u4buff = (uint32_t *)screen.data;
