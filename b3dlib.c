@@ -680,8 +680,8 @@ __attribute__((always_inline)) static inline void MakeClipMatrix(u32 state,f32 n
     if(B3L_TEST(state,B3L_PROJECT_MODE)==PERSPECTIVE_PROJECT){
         M(0,0) = focalLength; M(1,0) = zero;   M(2,0) = zero;   M(3,0) = zero; 
         M(0,1) = zero;   M(1,1) = focalLength*aspectRatio; M(2,1) = zero;   M(3,1) = zero; 
-        M(0,2) = zero;   M(1,2) = zero;   M(2,2) = 1.0f/(near_plane-far_plane); M(3,2) = one; 
-        M(0,3) = zero;   M(1,3) = zero;   M(2,3) =-far_plane/(near_plane-far_plane);   M(3,3) = zero; 
+        M(0,2) = zero;   M(1,2) = zero;   M(2,2) = near_plane/(near_plane-far_plane); M(3,2) = one; 
+        M(0,3) = zero;   M(1,3) = zero;   M(2,3) =-near_plane*far_plane/(near_plane-far_plane);   M(3,3) = zero; 
     }else{
         M(0,0) = focalLength; M(1,0) = zero;   M(2,0) = zero;   M(3,0) = zero; 
         M(0,1) = zero;   M(1,1) = focalLength*aspectRatio; M(2,1) = zero;   M(3,1) = zero; 
