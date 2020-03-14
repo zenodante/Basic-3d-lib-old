@@ -465,6 +465,12 @@ extern void     B3L_RotateObjInWZ(quat4_t *pQuat,f32 angle);
                                                                         B3L_SET((pObj)->state,OBJ_NEED_MATRIX_UPDATE)
 #define         ROTATE_IN_WORLD_Z(pObj,angle)                 B3L_RotateObjInWZ(&((pObj)->transform.quaternion),angle);\
                                                                         B3L_SET((pObj)->state,OBJ_NEED_MATRIX_UPDATE)
+#define         SYNC_ROTATION_STATE_NOW(pObj)                 if(B3L_TEST((pObj)->state,OBJ_NEED_QUAT_UPDATE)){\
+                                                                   B3L_MatrixToQuaternion(&((pObj)->mat),&((pObj)->transform.quaternion));\
+                                                                   B3L_CLR((pObj)->state,OBJ_NEED_QUAT_UPDATE);}\
+                                                              else if(B3L_TEST((pObj)->state,OBJ_NEED_MATRIX_UPDATE)){\
+                                                                   B3L_QuaternionToMatrix(&((pObj)->transform.quaternion),&((pObj)->mat));\
+                                                                   B3L_CLR((pObj)->state,OBJ_NEED_MATRIX_UPDATE);}
 /*-----------------------------------------------------------------------------
 Camera functions
 -----------------------------------------------------------------------------*/

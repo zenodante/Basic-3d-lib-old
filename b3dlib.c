@@ -1800,9 +1800,6 @@ static void RenderPolygon(B3LPolygonObj_t *pObj,render_t *pRender, mat4_t *pMat)
 
 
 static void RenderTexMesh(B3LMeshObj_t *pObj,render_t *pRender, mat4_t *pMat,u32 renderLevel){
-#if  B3L_DEBUG == 1
-printf("Draw a mesh");
-#endif
     int32_t i;
     B3L_Mesh_t *pMesh= pObj->pMesh;
     vect3_t *pVectSource = ((vect3_t *)(pMesh->pVect));
@@ -1846,7 +1843,7 @@ printf("Draw a mesh");
     u32 vect0Idx,vect1Idx,vect2Idx;
     vect3_t normalVect;
     f32   normalDotLight;
-    //if the render level is not zero, then the lightValue would fix at 0xff
+    //if the render level is not zero, then the lightValue would fix at lvl1Light
     u32 lightValue=pRender->lvl1Light;
 //draw tri loop
     for (i=pMesh->triNum -1;i>=0;i--){

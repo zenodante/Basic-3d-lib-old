@@ -89,10 +89,10 @@ void update(uint32_t time){
         //pShip->transform.rotation.x -= (f32)((s32)(pShip->transform.rotation.x));
         //B3Lrender.camera.transform.rotation.x += 0.002f;
         //B3L_RotateObjInOX((B3LObj_t *)pShip,-0.002f);
-        //ROTATE_IN_BODY_X(pShip,-0.002f);
+        ROTATE_IN_BODY_X(pShip,-0.002f);
         //B3L_RotateCamInOX(&(B3Lrender.camera),-0.002f);
         //ROTATE_IN_BODY_X(&(B3Lrender.camera),-0.002f);
-        pShip->transform.translation.z +=0.5f;
+        //pShip->transform.translation.z +=0.5f;
         //B3Lrender.camera.transform.translation.y +=1.0f;
     }
     if (pressed(DPAD_DOWN)){
@@ -104,11 +104,11 @@ void update(uint32_t time){
         //pShip->transform.rotation.x += B3L_cos(0.5f-pShip->transform.rotation.z)*0.002f;
         //pShip->transform.rotation.x -= (f32)((s32)(pShip->transform.rotation.x)); 
         //B3Lrender.camera.transform.rotation.x -= 0.002f;
-        //ROTATE_IN_BODY_X(pShip,0.002f);
+        ROTATE_IN_BODY_X(pShip,0.002f);
         //B3L_RotateCamInOX(&(B3Lrender.camera),0.002f);
         //ROTATE_IN_BODY_X(&(B3Lrender.camera),0.002f);
         //B3Lrender.camera.transform.translation.y -=1.0f;
-        pShip->transform.translation.z -=0.5f;
+        //pShip->transform.translation.z -=0.5f;
     }
     if (pressed(DPAD_LEFT)){
         //angle.y +=0.002f;
@@ -135,13 +135,20 @@ void update(uint32_t time){
     if (pressed(A)){
         //B3Lrender.camera.trackDistance += 1.0f;
         //distance += 1.0f;
-        ROTATE_IN_BODY_Z(pShip,0.002f);
+        ROTATE_IN_BODY_Z(pShip,-0.002f);
     }
     if (pressed(B)){
         //B3Lrender.camera.trackDistance -= 1.0f;
         //distance -= 1.0f;
-        ROTATE_IN_BODY_Z(pShip,-0.002f);
+        ROTATE_IN_BODY_Z(pShip,0.002f);
     }
+    SYNC_ROTATION_STATE_NOW(pShip);
+    vect3_t frontDirect;
+    frontDirect.x = pShip->mat.m02*0.1f;
+    frontDirect.y = pShip->mat.m12*0.1f;
+    frontDirect.z = pShip->mat.m22*0.1f;
+    B3L_Vect3Add(&(pShip->transform.translation),&frontDirect,&(pShip->transform.translation));
+
     /*
     vect3_t result;
     
