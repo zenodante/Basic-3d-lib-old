@@ -208,7 +208,7 @@ typedef struct{
 B3LObj_t state
    31     2423     1615      87
    ------------------------------------
-31|      ZY|      RQ|  NMLKJI|   EDCBA|0
+31|$$$$$$$$|      RQ|PONMLKJI|***EDCBA|0
   ------------------------------------
   A-- mesh obj with texture
   B-- polygon obj
@@ -219,11 +219,14 @@ B3LObj_t state
   J-- Back face culling clock wise
   K-- Back face culling anti-clock wise
   L-- fix render level switch
-  M-- use customerize matrix
-  N-- Particle generator acitve state
+  M-- Particle generator acitve state
+  N-- need update euler angle
+  O-- need update matrix
+  P-- special light value
   QR-- fix render level number
-  Y-- need update euler angle
-  Z-- need update matrix
+  
+  $-- the 8 bit special light value defined by P
+
 */
 #define OBJ_TYPE_MASK            0x000000FF
 #define MESH_OBJ                            (0)
@@ -240,14 +243,17 @@ B3LObj_t state
 #define OBJ_CULLING_SHIFT             (9)
 
 #define OBJ_IGNORE_RENDER_LEVEL            (11)
-#define OBJ_USING_CUSTOMERIZE_MAT          (12)
-#define OBJ_PARTICLE_ACTIVE                (13)
+#define OBJ_PARTICLE_ACTIVE                (12)
+#define OBJ_NEED_QUAT_UPDATE               (13)
+#define OBJ_NEED_MATRIX_UPDATE             (14)
+#define OBJ_SPECIAL_LIGHT_VALUE            (15)
 //render stage information
 #define OBJ_RENDER_LEVEL_MASK        0x00030000
 #define OBJ_FIX_RENDER_LEVEL_SHIFT   (16)
 
-#define OBJ_NEED_QUAT_UPDATE               (24)
-#define OBJ_NEED_MATRIX_UPDATE             (25)
+#define OBJ_SPECIAL_LIGHT_MASK       0xFF000000
+#define OBJ_SPECIAL_LIGHT_SHIFT      (24)
+
 //all different obj types's size is <= sizeof(B3LObj_t)
 typedef struct B3LOBJ{
     struct B3LOBJ       *privous;//8 4
@@ -338,11 +344,13 @@ typedef struct{
 camera_t state
    31     2423     1615      87
    ------------------------------------
-31|      ZY|        |        |      BA|0
+31|        |        |*ON*****|******BA|0
   ------------------------------------
-A   ueed update the world to camera matrix
-B   camera track obj mode
-  Y-- need update euler angle
+
+A-- camera track obj mode
+B-- Project mode
+N-- need update euler angle
+O-- need update matrix
 */
 #define  B3L_CAMERA_TRACK_OBJ_MODE           (0)
 #define  B3L_PROJECT_MODE                    (1)

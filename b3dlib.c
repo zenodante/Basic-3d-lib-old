@@ -1542,18 +1542,8 @@ Draw functions
 -----------------------------------------------------------------------------*/
 __attribute__((always_inline)) static  inline fBuff_t     GetColorValue(texLUT_t *lut,u8 colorIdx,u32 lightFactor){
     fBuff_t color;
-    #if FRAME_BUFF_COLOR_TYPE == 0
     color = lut[colorIdx];
-    color = (color&0x00FFFFFF)|((lightFactor)<<24);
-    #endif
-    #if FRAME_BUFF_COLOR_TYPE == 1
-    color = lut[colorIdx];
-    color = (color&0x0FFF)|(((u16)lightFactor)<<12);
-    #endif
-    #if FRAME_BUFF_COLOR_TYPE == 2
-    color = lut[colorIdx];
-    color = ((u16)color)|(((u16)lightFactor)<<8);
-    #endif
+    color = GetFinalColor(color,lightFactor);
     return color;
 }
 
@@ -1837,14 +1827,21 @@ static void RenderTexMesh(B3LMeshObj_t *pObj,render_t *pRender, mat4_t *pMat,u32
         }      
         lightFactor0 = pRender->light.factor_0;
         lightFactor1 = pRender->light.factor_1;
-    }               
+    }         
+    u32 state = pObj->state;     
     u16 *pTriIdx = pMesh->pTri;
-    u32 cullingState = ((pObj->state)&OBJ_CULLING_MASK)>>OBJ_CULLING_SHIFT;
+    u32 cullingState = ((state)&OBJ_CULLING_MASK)>>OBJ_CULLING_SHIFT;
     u32 vect0Idx,vect1Idx,vect2Idx;
     vect3_t normalVect;
     f32   normalDotLight;
+    u32 lightValue;
+   
     //if the render level is not zero, then the lightValue would fix at lvl1Light
-    u32 lightValue=pRender->lvl1Light;
+    if (B3L_TEST(state,OBJ_SPECIAL_LIGHT_VALUE)){
+        lightValue= (state &OBJ_SPECIAL_LIGHT_MASK )>>OBJ_SPECIAL_LIGHT_SHIFT;
+    }else{
+        lightValue=pRender->lvl1Light;
+    }  
 //draw tri loop
     for (i=pMesh->triNum -1;i>=0;i--){
         //pTriRenderState[i]=0;
@@ -2223,15 +2220,31 @@ __attribute__((always_inline)) static  inline void  DrawTriTexture(
 }
 
 __attribute__((always_inline)) static  inline fBuff_t GetFinalColor(fBuff_t color,u32 lightFactor){
+#if B3L_IN_SITU_LIGHT_CAL == 0    
     #if FRAME_BUFF_COLOR_TYPE == 0               
-            fBuff_t  finalColor = (color&0x00FFFFFF)|(((u32)lightFactor)<<24);
+        fBuff_t  finalColor = (color&0x00FFFFFF)|(((u32)lightFactor)<<24);
     #endif
     #if FRAME_BUFF_COLOR_TYPE == 1
-            fBuff_t  finalColor  = (color&0x0FFF)|(((u16)lightFactor)<<12);
+        fBuff_t  finalColor  = (color&0x0FFF)|(((u16)lightFactor)<<12);
     #endif
     #if FRAME_BUFF_COLOR_TYPE == 2
-            fBuff_t  finalColor  = (color&0x00FF)|(((u16)lightFactor)<<8);
+        fBuff_t  finalColor  = (color&0x00FF)|(((u16)lightFactor)<<8);
     #endif
+#endif
+#if B3L_IN_SITU_LIGHT_CAL == 1   
+    #if FRAME_BUFF_COLOR_TYPE == 0 
+        u32 red = ((color&0x00FF0000)*lightFactor)>>8;
+        u32 green = ((color&0x0000FF00)*lightFactor)>>8;
+        u32 blue = ((color&0x000000FF)*lightFactor)>>8;
+        fBuff_t finalColor = 0xFF000000|(red<<16)|(green<<8)|blue;
+    #endif
+    #if FRAME_BUFF_COLOR_TYPE == 1
+        u16 red =  ((color&0x0F00)*lightFactor)>>4;
+        u16 green =  ((color&0x00F0)*lightFactor)>>4;
+        u16 blue = ((color&0x000F)*lightFactor)>>4;
+        fBuff_t finalColor = 0xF000|(red<<8)|(green<<4)|blue;
+    #endif 
+#endif
     return finalColor;
 }
 
