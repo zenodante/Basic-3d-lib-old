@@ -50,8 +50,8 @@ void init() {
     //init ship
     pShip = (B3LMeshObj_t *)B3L_GetFreeMeshObj(&B3Lrender);
     
-    InitShipObj(pShip,1.0f);
-    //pShip->transform.translation.z = 200.0f;
+    InitShipObj(pShip,1.5f);
+    //pShip->transform.translation.z = 20.0f;
     //pShip->transform.rotation.y=0.5f;
     B3L_AddObjToRenderList((B3LObj_t *)pShip, &B3Lrender);
     //init the camera
@@ -65,7 +65,7 @@ void init() {
     B3L_TweenStart(&tCatZ,0);
 
     //printf("obj %d,particle %d\n",sizeof(B3LObj_t),sizeof(B3LParticleGenObj_t));
-    B3L_CamInitTrack(&(B3Lrender.camera),(B3LObj_t *)pShip,0.0f,5.0f,-20.0f,0.0f,0.0f,50.0f);
+    B3L_CamInitTrack(&(B3Lrender.camera),(B3LObj_t *)pShip,0.0f,10.0f,-20.0f,0.0f,0.0f,20.0f);
     B3L_CamStartTrack(&(B3Lrender.camera));
 
     DustInit();
@@ -135,10 +135,12 @@ void update(uint32_t time){
     if (pressed(A)){
         //B3Lrender.camera.trackDistance += 1.0f;
         //distance += 1.0f;
+        ROTATE_IN_BODY_Z(pShip,0.002f);
     }
     if (pressed(B)){
         //B3Lrender.camera.trackDistance -= 1.0f;
         //distance -= 1.0f;
+        ROTATE_IN_BODY_Z(pShip,-0.002f);
     }
     /*
     vect3_t result;
