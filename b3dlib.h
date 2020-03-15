@@ -208,7 +208,7 @@ typedef struct{
 B3LObj_t state
    31     2423     1615      87
    ------------------------------------
-31|$$$$$$$$|      RQ|PONMLKJI|***EDCBA|0
+31|$$$$$$$$|******RQ|PONMLKJI|***EDCBA|0
   ------------------------------------
   A-- mesh obj with texture
   B-- polygon obj
@@ -224,7 +224,6 @@ B3LObj_t state
   O-- need update matrix
   P-- special light value
   QR-- fix render level number
-  
   $-- the 8 bit special light value defined by P
 
 */
@@ -344,7 +343,7 @@ typedef struct{
 camera_t state
    31     2423     1615      87
    ------------------------------------
-31|        |        |*ON*****|******BA|0
+31|********|********|*ON*****|******BA|0
   ------------------------------------
 
 A-- camera track obj mode
@@ -406,7 +405,7 @@ typedef void (*B3L_DrawFunc_t)(B3L_Particle_t *, screen4_t *,fBuff_t *,zBuff_t *
 /*Useful macros--------------------------------------------------------------*/
 #define B3L_SET(PIN,N)  (PIN |=  (1u<<N))
 #define B3L_CLR(PIN,N)  (PIN &= ~(1u<<N))
-#define B3L_TEST(PIN,N) (PIN & (1u<<N))
+#define B3L_TEST(PIN,N) (PIN &   (1u<<N))
 
 #define B3L_logVec2(v)\
   printf("Vector 2: %.3f %.3f\n",((v).x),((v).y))
@@ -521,14 +520,14 @@ extern vect4_t  B3L_Vect4(f32 x,f32 y,f32 z,f32 w);
 #define         B3L_VECT3_SET(v,vx,vy,vz)      v.x=vx;v.y=vy;v.z=vz
 #define         B3L_VECT4_SET(v,vx,vy,vz,vw)   v.x=vx;v.y=vy;v.z=vz;v.w=vw
 extern f32      B3L_Vec2Length(vect2_t *pV);
-extern void     B3L_Vect2Normalize(vect2_t *pV);
+extern void     B3L_Vect2Normalize(vect2_t *pV, vect2_t *pResult);
 extern f32      B3L_Vect3Length(vect3_t *pV);
-extern void     B3L_Vect3Normalize(vect3_t *pV);
-extern void     B3L_Vect3Add(vect3_t *pVa,vect3_t *pVb,vect3_t *pVc);
-extern void     B3L_Vect3Sub(vect3_t *pVa,vect3_t *pVb,vect3_t *pVc);
+extern void     B3L_Vect3Normalize(vect3_t *pV,vect3_t *pResult);
+extern void     B3L_Vect3Add(vect3_t *pVa,vect3_t *pVb,vect3_t *pResult);
+extern void     B3L_Vect3Sub(vect3_t *pVa,vect3_t *pVb,vect3_t *pResult);
 extern f32      B3L_Vect3Dot(vect3_t *pA, vect3_t *pB);
 extern void     B3L_Vect3Cross(vect3_t *pA, vect3_t *pB, vect3_t *pResult);
-extern void     B3L_Vect3Interp(vect3_t *pVa,vect3_t *pVb,vect3_t *pVc,f32 t);
+extern void     B3L_Vect3Interp(vect3_t *pVa,vect3_t *pVb,vect3_t *pResult,f32 t);
 extern void     B3L_Vect3Scale(vect3_t *pV,f32 scale,vect3_t *pResult);
 /*-----------------------------------------------------------------------------
 Rotation convert functions
@@ -546,12 +545,13 @@ Quaternion functions
 extern void     B3L_QuatMult(quat4_t *pL,quat4_t *pR, quat4_t *pResult);
 extern f32      B3L_QuatDot(quat4_t *pL,quat4_t *pR);
 extern void     B3L_CreateQuaternionByAxisAngle(vect3_t *pAxis, f32 angle, quat4_t *pResult);
-extern void     B3L_QuaternionGetRotationTo(vect3_t *pA, vect3_t *pB, vect3_t *pUp, quat4_t *pResult);
+extern void     B3L_FromToRotation(vect3_t *pFrom, vect3_t *pTo,quat4_t *pResult);
+extern void     B3L_LookRotation(vect3_t *pA, vect3_t *pB, vect3_t *pUp, quat4_t *pResult);
 extern void     B3L_CreateLookAtQuaternion(vect3_t *pFrom, vect3_t *pAt, vect3_t *pUp, quat4_t *pResult);
 extern void     B3L_QuatCreateXRotate(quat4_t *pQ,f32 angle);
 extern void     B3L_QuatCreateYRotate(quat4_t *pQ,f32 angle);
 extern void     B3L_QuatCreateZRotate(quat4_t *pQ,f32 angle);
-extern void     B3L_QuaternionInterp(quat4_t *pQuat0,quat4_t *pQuat1,quat4_t *pResult, f32 t);
+extern void     B3L_QuaternionInterp(quat4_t *pFrom,quat4_t *pTo,quat4_t *pResult, f32 t);
 
 /*-----------------------------------------------------------------------------
 Particle functions

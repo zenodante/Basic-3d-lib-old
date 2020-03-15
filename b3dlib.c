@@ -50,8 +50,8 @@ B3L_Particle_t  particleBuff[B3L_PARTICLE_BUFF_DEPTH];//18KB
 Math functions
 -----------------------------------------------------------------------------*/
 #if  B3L_ARM == 1
-__attribute__((always_inline)) static  inline f32   B3L_Sqrtf(f32 in);
-__attribute__((always_inline)) static  inline f32   B3L_Absf(f32 in);
+__attribute__((always_inline)) static  inline f32      B3L_Sqrtf(f32 in);
+__attribute__((always_inline)) static  inline f32      B3L_Absf(f32 in);
 #else
 #define B3L_Sqrtf   sqrtf
 #define B3L_Absf    fabsf
@@ -70,7 +70,7 @@ __attribute__((always_inline)) static  inline f32      Clamp_f(f32 v, f32 v1, f3
 Vector and matrix functions
 -----------------------------------------------------------------------------*/
 __attribute__((always_inline)) static  inline void     Vect3_Add(vect3_t *pV1,vect3_t *pV2,vect3_t *pResult);
-__attribute__((always_inline)) static  inline void     MakeClipMatrix(u32 state,f32 near_plane,f32 far_plane,f32 focalLength, f32 aspectRatio,mat4_t *mat);
+__attribute__((always_inline)) static  inline void     MakeClipMatrix(u32 state,f32 near_plane,f32 far_plane,f32 focalLength, f32 aspectRatio,mat4_t *pMat);
 __attribute__((always_inline)) static  inline void     Vect3Xmat4(vect3_t *pV, mat4_t *pMat, vect4_t *pResult);
 __attribute__((always_inline)) static  inline void     Vect3Xmat4WithTestToScreen4(vect3_t *pV, mat4_t *pMat, screen4_t *pResult);
 __attribute__((always_inline)) static  inline void     Vect3Xmat4WithTest_f(vect3_t *pV, mat4_t *pMat, screen3f_t *pResult);
@@ -140,7 +140,6 @@ static void AddObjToTwoWayList(B3LObj_t *pObj, B3LObj_t **pStart);
 Particle list functions
 -----------------------------------------------------------------------------*/
 static void ResetParticleList(B3L_Particle_t *pPool,B3L_Particle_t **pStart,u32 num);
-void B3L_ReturnParticleToPool(B3L_Particle_t *pParticle,scene_t *pScene);
  /*-----------------------------------------------------------------------------
 Buffer functions
 -----------------------------------------------------------------------------*/
@@ -598,20 +597,20 @@ f32 B3L_Vec2Length(vect2_t *pV){
     return B3L_Sqrtf(pV->x*pV->x+pV->y*pV->y);
 }
 
-void B3L_Vect2Normalize(vect2_t *pV){
+void B3L_Vect2Normalize(vect2_t *pV,vect2_t *pResult){
     f32 x = pV->x;f32 y= pV->y;
     f32 factor = FastInvertSqrt(x*x+y*y);
-    pV->x = (x*factor);
-    pV->y = (y*factor);
+    pResult->x = (x*factor);
+    pResult->y = (y*factor);
 }
 
-void B3L_Vect3Normalize(vect3_t *pV){
+void B3L_Vect3Normalize(vect3_t *pV,vect3_t *pResult){
     f32 x = pV->x;f32 y= pV->y;f32 z= pV->z;
     //f32 factor = FastInvertSqrt(x*x+y*y+z*z);
     f32 factor = 1.0f/B3L_Sqrtf(x*x+y*y+z*z);
-    pV->x = (x*factor);
-    pV->y = (y*factor);
-    pV->z = (z*factor);
+    pResult->x = (x*factor);
+    pResult->y = (y*factor);
+    pResult->z = (z*factor);
 }
 
 f32 B3L_Vect3Length(vect3_t *pV){
@@ -619,16 +618,16 @@ f32 B3L_Vect3Length(vect3_t *pV){
     return B3L_Sqrtf(x * x + y*y + z*z);  
 }
 
-void B3L_Vect3Add(vect3_t *pVa,vect3_t *pVb,vect3_t *pVc){
-    pVc->x = pVa->x + pVb->x;
-    pVc->y = pVa->y + pVb->y;
-    pVc->z = pVa->z + pVb->z;
+void B3L_Vect3Add(vect3_t *pVa,vect3_t *pVb,vect3_t *pResult){
+    pResult->x = pVa->x + pVb->x;
+    pResult->y = pVa->y + pVb->y;
+    pResult->z = pVa->z + pVb->z;
 }
 
-void B3L_Vect3Sub(vect3_t *pVa,vect3_t *pVb,vect3_t *pVc){
-    pVc->x = pVa->x - pVb->x;
-    pVc->y = pVa->y - pVb->y;
-    pVc->z = pVa->z - pVb->z;
+void B3L_Vect3Sub(vect3_t *pVa,vect3_t *pVb,vect3_t *pResult){
+    pResult->x = pVa->x - pVb->x;
+    pResult->y = pVa->y - pVb->y;
+    pResult->z = pVa->z - pVb->z;
 
 }
 
@@ -648,10 +647,10 @@ void B3L_Vect3Scale(vect3_t *pV,f32 scale,vect3_t *pResult){
     pResult->z = scale*pV->z;
 }
 
-void B3L_Vect3Interp(vect3_t *pVa,vect3_t *pVb,vect3_t *pVc,f32 t){
-    pVc->x = Interp_f(pVa->x,pVb->x,t);
-    pVc->y = Interp_f(pVa->y,pVb->y,t);
-    pVc->z = Interp_f(pVa->z,pVb->z,t);
+void B3L_Vect3Interp(vect3_t *pVa,vect3_t *pVb,vect3_t *pResult,f32 t){
+    pResult->x = Interp_f(pVa->x,pVb->x,t);
+    pResult->y = Interp_f(pVa->y,pVb->y,t);
+    pResult->z = Interp_f(pVa->z,pVb->z,t);
 }
 
 /*-----------------------------------------------------------------------------
@@ -673,10 +672,10 @@ void B3L_CreateO2WMat(mat3_t *pRMat, vect3_t *pTranslation, vect3_t *pScale, mat
 }
 
 __attribute__((always_inline)) static inline void MakeClipMatrix(u32 state,f32 near_plane,f32 far_plane,
-                                                                 f32 focalLength, f32 aspectRatio,mat4_t *mat){
+                                                                 f32 focalLength, f32 aspectRatio,mat4_t *pMat){
     f32 zero = 0.0f;
     f32 one = 1.0f;
-    #define M(x,y) (mat)->m##x##y
+    #define M(x,y) (pMat)->m##x##y
     if(B3L_TEST(state,B3L_PROJECT_MODE)==PERSPECTIVE_PROJECT){
         M(0,0) = focalLength; M(1,0) = zero;   M(2,0) = zero;   M(3,0) = zero; 
         M(0,1) = zero;   M(1,1) = focalLength*aspectRatio; M(2,1) = zero;   M(3,1) = zero; 
@@ -1647,7 +1646,6 @@ static void ClearZbuff(zBuff_t *pZbuff,u32 length){
 }
 
 static void RenderNoTexMesh(B3LMeshNoTexObj_t *pObj,render_t *pRender, mat4_t *pMat,u32 renderLevel){
-
     int32_t i;
     B3L_Mesh_NoTex_t *pMesh= pObj->pMesh;
     vect3_t *pVectSource = ((vect3_t *)(pMesh->pVect));
@@ -1717,10 +1715,7 @@ static void RenderNoTexMesh(B3LMeshNoTexObj_t *pObj,render_t *pRender, mat4_t *p
         f32 y1 = pVectTarget[vect1Idx].y;
         f32 x2 = pVectTarget[vect2Idx].x;
         f32 y2 = pVectTarget[vect2Idx].y;
-        bool backFaceCullingResult = TriangleFaceToViewer_f(x0, y0, x1, y1, x2, y2);
-#if B3L_DEBUG  == 1
-        printf("backFaceCullingResult = %d\n",backFaceCullingResult);
-#endif   
+        bool backFaceCullingResult = TriangleFaceToViewer_f(x0, y0, x1, y1, x2, y2); 
         if (((cullingState==1) && backFaceCullingResult)||((cullingState==2) && (!backFaceCullingResult))){    
             continue;
         }
@@ -1740,10 +1735,8 @@ static void RenderNoTexMesh(B3LMeshNoTexObj_t *pObj,render_t *pRender, mat4_t *p
         color = pColorIdx[i];
         #endif
         DrawTriColor(
-            x0,y0,pVectTarget[vect0Idx].z,
-            x1,y1,pVectTarget[vect1Idx].z,
-            x2,y2,pVectTarget[vect2Idx].z,
-            renderLevel,lightValue,color,
+            x0,y0,pVectTarget[vect0Idx].z,x1,y1,pVectTarget[vect1Idx].z,
+            x2,y2,pVectTarget[vect2Idx].z,renderLevel,lightValue,color,
             pFrameBuff,pZBuff);
     }        
 }
@@ -2053,11 +2046,8 @@ f32 aU,f32 aV,f32 bU,f32 bV, u32 lightFactor, fBuff_t *pFrameBuff,zBuff_t *pZbuf
                 intu = (uint32_t)u;
                 intv = (uint32_t)v;
                 colorIdx = uvData[intv*(uvSize>>1) + (intu>>1)];
-                if (intu & 0x01){
-                    colorIdx = colorIdx>>4;
-                }else{
-                    colorIdx = colorIdx&0x0F;
-                }
+                colorIdx = colorIdx>>(4*(intu & 0x01));
+                colorIdx = colorIdx&0x0F;
                 if (colorIdx == transColorIdx){
                     continue;
                 }                
@@ -2066,7 +2056,7 @@ f32 aU,f32 aV,f32 bU,f32 bV, u32 lightFactor, fBuff_t *pFrameBuff,zBuff_t *pZbuf
             }
             u +=du;
             v +=dv;
-            aZ = aZ + dZ;
+            aZ +=dZ;
             pCurrentPixelZ ++;
             pixel++;
         }
@@ -2476,9 +2466,9 @@ void B3L_QuaternionToEuler(quat4_t *pQuat,euler3_t *pEuler){
 /*-----------------------------------------------------------------------------
 Quaternion functions
 -----------------------------------------------------------------------------*/
-void B3L_QuaternionInterp(quat4_t *pQuat0,quat4_t *pQuat1,quat4_t *pResult, f32 t){
-    f32 w0 = pQuat0->w; f32 x0 = pQuat0->x; f32 y0 = pQuat0->y; f32 z0 = pQuat0->z;
-    f32 w1 = pQuat1->w; f32 x1 = pQuat1->x; f32 y1 = pQuat1->y; f32 z1 = pQuat1->z;
+void B3L_QuaternionInterp(quat4_t *pFrom,quat4_t *pTo,quat4_t *pResult, f32 t){
+    f32 w0 = pFrom->w; f32 x0 = pFrom->x; f32 y0 = pFrom->y; f32 z0 = pFrom->z;
+    f32 w1 = pTo->w; f32 x1 = pTo->x; f32 y1 = pTo->y; f32 z1 = pTo->z;
     f32 cosOmega = w0*w1+x0*x1+y0*y1+z0*z1;
     if(cosOmega <0.0f){
         w1 = -w1;x1 = -x1; y1 = -y1; z1 = -z1; 
@@ -2524,16 +2514,35 @@ void B3L_CreateQuaternionByAxisAngle(vect3_t *pAxis, f32 angle, quat4_t *pResult
     pResult->w = cosh;
 }
 
+void B3L_FromToRotation(vect3_t *pFrom, vect3_t *pTo,quat4_t *pResult){
+    vect3_t fN;
+    vect3_t tN;
+    B3L_Vect3Normalize(pFrom,&fN);
+    B3L_Vect3Normalize(pTo,&tN);
+    vect3_t normal;
+    B3L_Vect3Cross(pFrom, pTo, &normal);
+    f32 cosA = B3L_Vect3Dot(&fN,&tN);
+    f32 cosh = B3L_Sqrtf(0.5f + cosA*0.5f);
+    f32 sinh = B3L_Sqrtf(0.5f - cosA*0.5f);
+    pResult->x = normal.x*sinh;
+    pResult->y = normal.y*sinh;
+    pResult->z = normal.z*sinh;
+    pResult->w = cosh;
+}
+
 //create a quaternion that rotates vector a to vector b
-void B3L_QuaternionGetRotationTo(vect3_t *pA, vect3_t *pB, vect3_t *pUp, quat4_t *pResult){
-    B3L_Vect3Normalize(pA);
-    B3L_Vect3Normalize(pB); 
-    B3L_Vect3Normalize(pUp);  
-    f32 dot = B3L_Vect3Dot(pA,pB);
+void B3L_LookRotation(vect3_t *pA, vect3_t *pB, vect3_t *pUp, quat4_t *pResult){
+    vect3_t aN;
+    vect3_t bN;
+    vect3_t uN;
+    B3L_Vect3Normalize(pA,&aN);
+    B3L_Vect3Normalize(pB,&bN); 
+    B3L_Vect3Normalize(pUp,&uN);  
+    f32 dot = B3L_Vect3Dot(&aN,&bN);
     
     if (dot < -0.9999f){
         //printf("less than -0.99f\n");
-        B3L_CreateQuaternionByAxisAngle(pUp,0.5f,pResult);
+        B3L_CreateQuaternionByAxisAngle(&uN,0.5f,pResult);
         return;
     }else if(dot > 0.9999f){
         //printf("> than 0.99f\n");
@@ -2543,8 +2552,8 @@ void B3L_QuaternionGetRotationTo(vect3_t *pA, vect3_t *pB, vect3_t *pUp, quat4_t
 
     f32 rotAngle = 0.25f-B3L_asin(dot);
     vect3_t ortAxis;
-    B3L_Vect3Cross(pA,pB,&ortAxis);
-    B3L_Vect3Normalize(&ortAxis);
+    B3L_Vect3Cross(&aN,&bN,&ortAxis);
+    B3L_Vect3Normalize(&ortAxis,&ortAxis);
     B3L_CreateQuaternionByAxisAngle(&ortAxis,rotAngle,pResult);
 }
 
@@ -2552,7 +2561,7 @@ void B3L_CreateLookAtQuaternion(vect3_t *pFrom, vect3_t *pAt, vect3_t *pUp, quat
     vect3_t toObj;
     B3L_Vect3Sub(pAt,pFrom,&toObj);
     vect3_t zAxis = {0.0f,0.0f,1.0f};
-    B3L_QuaternionGetRotationTo(&zAxis,&toObj, pUp, pResult);
+    B3L_LookRotation(&zAxis,&toObj, pUp, pResult);
 }
 
 void B3L_QuatCreateXRotate(quat4_t *pQ,f32 angle){
