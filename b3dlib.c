@@ -996,6 +996,14 @@ void B3L_UpdateClipMatrix(render_t *pRender){
     MakeClipMatrix(pCam->state,pRender->nearPlane,pRender->farPlane,pCam->focalLength,pCam->aspectRate,&(pCam->clipMat));
 }
 
+void B3L_CamSetFocusLengthByFOV(render_t *pRender, f32 fov){
+    f32 halfFOV = 0.5f*fov;
+    f32 sinh = B3L_sin(halfFOV);
+    f32 cosh = B3L_cos(halfFOV);
+    pRender->camera.focalLength = cosh/sinh;
+    B3L_UpdateClipMatrix(pRender);
+}
+
 static void GenerateW2CMatrix(camera_t *pCam){
     mat3_t *pMat3 = &(pCam->mat);
     mat4_t *pW2CMat = &(pCam->camW2CMat);

@@ -487,6 +487,7 @@ extern void     B3L_SetOrthographicProject(render_t *pRender);
 extern void     B3L_SetPerspectiveProject(render_t *pRender);//default mode
 //call after you reset the aspect ratio, focus length, near/far plane, project mode 
 extern void     B3L_UpdateClipMatrix(render_t *pRender);
+extern void     B3L_CamSetFocusLengthByFOV(render_t *pRender, f32 fov);
 extern void     B3L_CameraMoveTo(vect3_t position,camera_t *pCam);
 extern void     B3L_CameraLookAt(camera_t *pCam, vect3_t *pAt,vect3_t *pUp);
 extern void     B3L_CamStopTrack(camera_t *pCam);
