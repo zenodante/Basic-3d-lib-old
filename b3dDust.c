@@ -127,7 +127,7 @@ void DustUpdateAndRender(render_t *pRender,B3LObj_t *pObj,u32 time){
             s32 life = pCurtDust->life;
             color = SatToU8((life)>>2);
 
-            u32 zcolor = SatToU8(((u32)((positionInScreen.z)*DUST_Z_BUFF_SCALE_FACT)));
+            u32 zcolor = 255 - SatToU8(((u32)((positionInScreen.z)*DUST_Z_BUFF_SCALE_FACT)));
             //printf("%.3f\n",positionInScreen.z);
             color = B3L_MIN(color,zcolor);
 #if (FRAME_BUFF_COLOR_TYPE  == 1)

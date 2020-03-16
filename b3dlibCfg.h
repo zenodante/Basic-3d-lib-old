@@ -9,9 +9,10 @@
 #define  B3L_DMA2D              0
 //the in situ light calculation will use the light fact to calculate the pixel rgb value,
 //if it is 0, we will use alpha channel to store the light value and do the shade after rendering
-//
+
 #define  B3L_IN_SITU_LIGHT_CAL  0
 
+#define  B3L_NEAR_PLANE_CLIP    0
 
 #if B3L_DMA2D ==  1
 #define B3L_LCD_BUFF_ADDR     0xXXXXXXXX

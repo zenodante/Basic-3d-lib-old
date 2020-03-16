@@ -8,7 +8,9 @@
 #define DUSTRANGE               30.0f
 #define DUSTRANGE_DOUBLE        60.0f
 #define DUSTRESETDISTANCE_SQ    1600.0f
-#define DUST_Z_BUFF_SCALE_FACT   512.0f
+
+//need to be re-cal carefully
+#define DUST_Z_BUFF_SCALE_FACT   190.0f
 #define INV65535                1.52590218967e-5f
 
 typedef struct{

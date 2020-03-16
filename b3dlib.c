@@ -29,13 +29,13 @@ B3L_Particle_t  particleBuff[B3L_PARTICLE_BUFF_DEPTH];//18KB
 
 
 #if Z_BUFF_LEVEL == 2
-    #define Z_LIMIT_NUM      (0.0f)
+    #define Z_LIMIT_NUM      (1.0f)
 #endif
 #if Z_BUFF_LEVEL == 1
-    #define Z_LIMIT_NUM      (0u)
+    #define Z_LIMIT_NUM      (65535u)
 #endif
 #if Z_BUFF_LEVEL == 0
-    #define Z_LIMIT_NUM      (0u)
+    #define Z_LIMIT_NUM      (255u)
 #endif
 
 #ifndef _swap_f32_t
@@ -679,8 +679,8 @@ __attribute__((always_inline)) static inline void MakeClipMatrix(u32 state,f32 n
     if(B3L_TEST(state,B3L_PROJECT_MODE)==PERSPECTIVE_PROJECT){
         M(0,0) = focalLength; M(1,0) = zero;   M(2,0) = zero;   M(3,0) = zero; 
         M(0,1) = zero;   M(1,1) = focalLength*aspectRatio; M(2,1) = zero;   M(3,1) = zero; 
-        M(0,2) = zero;   M(1,2) = zero;   M(2,2) = near_plane/(near_plane-far_plane); M(3,2) = one; 
-        M(0,3) = zero;   M(1,3) = zero;   M(2,3) =-near_plane*far_plane/(near_plane-far_plane);   M(3,3) = zero; 
+        M(0,2) = zero;   M(1,2) = zero;   M(2,2) = far_plane/(far_plane-near_plane); M(3,2) = one; 
+        M(0,3) = zero;   M(1,3) = zero;   M(2,3) =-near_plane*far_plane/(far_plane-near_plane);   M(3,3) = zero; 
     }else{
         M(0,0) = focalLength; M(1,0) = zero;   M(2,0) = zero;   M(3,0) = zero; 
         M(0,1) = zero;   M(1,1) = focalLength*aspectRatio; M(2,1) = zero;   M(3,1) = zero; 
@@ -1559,7 +1559,7 @@ __attribute__((always_inline)) static  inline void     DrawPixel(fBuff_t color,s
         zBuff_t *pCurrentPixelZ = pZbuff + (y*RENDER_RESOLUTION_X) + x;
         fBuff_t *pixel= pFrameBuff + (y*RENDER_X_SHIFT) + x; 
         zBuff_t compZ = CalZbuffValue(z);
-        if (compZ> *pCurrentPixelZ){          
+        if (compZ<= *pCurrentPixelZ){          
             *pCurrentPixelZ = compZ;
             *pixel =color;           
         }
@@ -1573,7 +1573,7 @@ __attribute__((always_inline)) static  inline void     DrawPixelWithTest(fBuff_t
         zBuff_t *pCurrentPixelZ = pZbuff + (y*RENDER_RESOLUTION_X) + x;
         fBuff_t *pixel= pFrameBuff + (y*RENDER_X_SHIFT) + x; 
         zBuff_t compZ = CalZbuffValue(z);
-        if (compZ> *pCurrentPixelZ){          
+        if (compZ<= *pCurrentPixelZ){          
             *pCurrentPixelZ = compZ;
             *pixel =color;           
         }
@@ -1996,7 +1996,7 @@ __attribute__((always_inline)) static inline void DrawColorHLine(f32 x,s32 y,f32
     zBuff_t compZ;
     for (;i>=0;i--){ //don't draw the most right pixel, so the b has already -1
         compZ = CalZbuffValue(aZ);
-        if (compZ> *pCurrentPixelZ){          
+        if (compZ<= *pCurrentPixelZ){          
             *pCurrentPixelZ = compZ;
             *pixel =finalColor;           
         }
@@ -2050,7 +2050,7 @@ f32 aU,f32 aV,f32 bU,f32 bV, u32 lightFactor, fBuff_t *pFrameBuff,zBuff_t *pZbuf
         case LUT16:
         for (;i>=0;i--){  //don't draw the most right pixel, so the b has already -1
             compZ = CalZbuffValue(aZ);
-            if (compZ> *pCurrentPixelZ){           
+            if (compZ<= *pCurrentPixelZ){           
                 intu = (uint32_t)u;
                 intv = (uint32_t)v;
                 colorIdx = uvData[intv*(uvSize>>1) + (intu>>1)];
@@ -2072,7 +2072,7 @@ f32 aU,f32 aV,f32 bU,f32 bV, u32 lightFactor, fBuff_t *pFrameBuff,zBuff_t *pZbuf
         case LUT256:
         for (;i>=0;i--){
             compZ = CalZbuffValue(aZ);
-            if (compZ> *pCurrentPixelZ){          
+            if (compZ<= *pCurrentPixelZ){          
                 intu = (uint32_t)u;
                 intv = (uint32_t)v;  
                 colorIdx = uvData[intv*uvSize + intu];
@@ -2956,7 +2956,7 @@ void B3L_DrawPixel_ZCheck(render_t *pRender,fBuff_t color,s32 x,s32 y,f32 z){
     zBuff_t *pCurrentPixelZ = pZbuff + (y*RENDER_RESOLUTION_X) + x;
     fBuff_t *pixel= pFrameBuff + (y*RENDER_X_SHIFT) + x; 
     zBuff_t compZ = CalZbuffValue(z);
-    if (compZ> *pCurrentPixelZ){          
+    if (compZ<= *pCurrentPixelZ){          
         *pCurrentPixelZ = compZ;
         *pixel =color;           
     }
