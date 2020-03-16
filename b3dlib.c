@@ -90,7 +90,6 @@ Testing functions
 static bool Vect3InClipSpace(vect3_t *pV, mat4_t *pMat);
 static bool BoundBoxTest(f32 *pMaxMin,mat4_t *pMat);
 __attribute__((always_inline)) static  inline bool     TriangleFaceToViewer_f(f32 x0, f32 y0, f32 x1, f32 y1, f32 x2, f32 y2);
-__attribute__((always_inline)) static  inline bool     TriVisable(u32 r0,u32 r1,u32 r2);
  /*-----------------------------------------------------------------------------
 Draw functions
 -----------------------------------------------------------------------------*/ 
@@ -904,22 +903,6 @@ __attribute__((always_inline)) static inline bool TriangleFaceToViewer_f(f32 x0,
   return winding >= 0.0f ? true : false;
 }
 
-__attribute__((always_inline)) static  inline bool TriVisable(u32 r0,u32 r1,u32 r2){
-    bool returnVal=true;
-    //u32 nearPlaneCount = 0;
-    //u32 inSpaceCount = 0;
-
-    if(B3L_TEST(r0,B3L_IN_SPACE)||B3L_TEST(r1,B3L_IN_SPACE)||B3L_TEST(r2,B3L_IN_SPACE)){
-        //test near plan
-        if (B3L_TEST(r0,B3L_NEAR_PLANE_CLIP)||B3L_TEST(r1,B3L_NEAR_PLANE_CLIP)||B3L_TEST(r2,B3L_NEAR_PLANE_CLIP)){
-            returnVal= false;
-        }
-    }else{
-        returnVal= false;
-    }
-    return returnVal;
-    
-}
 /*-----------------------------------------------------------------------------
 light functions
 -----------------------------------------------------------------------------*/
@@ -1710,13 +1693,7 @@ static void RenderNoTexMesh(B3LMeshNoTexObj_t *pObj,render_t *pRender, mat4_t *p
         vect0Idx = pTriIdx[i*3];
         vect1Idx = pTriIdx[i*3+1];
         vect2Idx = pTriIdx[i*3+2];
-        u32 result0 = pVectTarget[vect0Idx].test;
-        u32 result1 = pVectTarget[vect1Idx].test;
-        u32 result2 = pVectTarget[vect2Idx].test;
-        if(!TriVisable(result0,result1,result2)){
-            continue;
-        }
-        //screen3_t *screenVect = pVectTarget;
+        //back face culling
         f32 x0 = pVectTarget[vect0Idx].x;
         f32 y0 = pVectTarget[vect0Idx].y;
         f32 x1 = pVectTarget[vect1Idx].x;
@@ -1727,8 +1704,23 @@ static void RenderNoTexMesh(B3LMeshNoTexObj_t *pObj,render_t *pRender, mat4_t *p
         if (((cullingState==1) && backFaceCullingResult)||((cullingState==2) && (!backFaceCullingResult))){    
             continue;
         }
+        // out of space clip
+        u32 result0 = pVectTarget[vect0Idx].test;
+        u32 result1 = pVectTarget[vect1Idx].test;
+        u32 result2 = pVectTarget[vect2Idx].test;
+        u32 triVisable = result0|result1|result2;
+        switch(triVisable){
+            case ((1<<B3L_IN_SPACE)|(1<<B3L_NEAR_PLANE_CLIP)):
+                //in space and need the near plane clip
+                continue;
+            case (1<<B3L_NEAR_PLANE_CLIP):
+                //only near plane clip, do nothing
+                continue;
+            case (1<<B3L_IN_SPACE):
+                //in the clip space, normal flow
+                break;
+        }
         if (renderLevel==0){
-            //Norm3Xmat4Normalize(pVectSource+i, pMat, &normalVect); 
             B3L_Vect3MulMat3(pVectSource+i, &(pObj->mat),&normalVect);
             //dot multi light and normalvect to get the light factor
             normalDotLight = normalVect.x*lightX + normalVect.y*lightY + normalVect.z*lightZ;
@@ -1844,18 +1836,22 @@ static void RenderTexMesh(B3LMeshObj_t *pObj,render_t *pRender, mat4_t *pMat,u32
         lightValue=pRender->lvl1Light;
     }  
 //draw tri loop
+#if B3L_DO_NEAR_PLANE_CLIP == 1
+    tri_clip_t clipP0;
+    tri_clip_t clipP1;
+    u32  clipTest;
+    u32  clipType;
+    u32  oneIdx;
+#define  ONE_POINT_OUT     0
+#define  TWO_POINT_OUT     1    
+#endif
+
     for (i=pMesh->triNum -1;i>=0;i--){
         //pTriRenderState[i]=0;
         vect0Idx = pTriIdx[i*3];
         vect1Idx = pTriIdx[i*3+1];
         vect2Idx = pTriIdx[i*3+2];
-        u32 result0 = pVectTarget[vect0Idx].test;
-        u32 result1 = pVectTarget[vect1Idx].test;
-        u32 result2 = pVectTarget[vect2Idx].test;
-        if(!TriVisable(result0,result1,result2)){
-            continue;
-        }
-        //screen3f_t *screenVect = pVectTarget;
+
         f32 x0 = pVectTarget[vect0Idx].x;
         f32 y0 = pVectTarget[vect0Idx].y;
         f32 x1 = pVectTarget[vect1Idx].x;
@@ -1866,22 +1862,71 @@ static void RenderTexMesh(B3LMeshObj_t *pObj,render_t *pRender, mat4_t *pMat,u32
         if (((cullingState==1) && backFaceCullingResult)||((cullingState==2) && (!backFaceCullingResult))){    
             continue;
         }
-        if (renderLevel==0){
-            //Norm3Xmat4Normalize(pVectSource+i, pMat, &normalVect); 
-            B3L_Vect3MulMat3(pVectSource+i, &(pObj->mat),&normalVect);
-            //dot multi light and normalvect to get the light factor
-            normalDotLight = normalVect.x*lightX + normalVect.y*lightY + normalVect.z*lightZ;
-            //normalDotLight is in the range -1.0f to 1.0f
-            lightValue = CalLightFactor(normalDotLight,lightFactor0,lightFactor1);
+        
+        u32 result0 = pVectTarget[vect0Idx].test;
+        u32 result1 = pVectTarget[vect1Idx].test;
+        u32 result2 = pVectTarget[vect2Idx].test;
+
+        u32 triVisable = result0|result1|result2;
+        if(B3L_TEST(triVisable,B3L_IN_SPACE)){
+            if (renderLevel==0){
+                //Norm3Xmat4Normalize(pVectSource+i, pMat, &normalVect); 
+                B3L_Vect3MulMat3(pVectSource+i, &(pObj->mat),&normalVect);
+                //dot multi light and normalvect to get the light factor
+                normalDotLight = normalVect.x*lightX + normalVect.y*lightY + normalVect.z*lightZ;
+                //normalDotLight is in the range -1.0f to 1.0f
+                lightValue = CalLightFactor(normalDotLight,lightFactor0,lightFactor1);
+            }
+            if(B3L_TEST(triVisable,B3L_NEAR_PLANE_CLIP)){
+#if B3L_DO_NEAR_PLANE_CLIP == 1
+                clipTest = (result0&(1))|((result1&(1))<<1)|((result2&(1))<<2);
+                switch(clipTest){
+                    case 1:
+                        //only point 0 clip
+                        clipType = ONE_POINT_OUT;oneIdx= vect0Idx; 
+                        //ClipLine(((vect3_t *)(pMesh->pVect))+vect0Idx,((vect3_t *)(pMesh->pVect))+vect1Idx,&clipP0);
+                        //ClipLine(((vect3_t *)(pMesh->pVect))+vect0Idx,((vect3_t *)(pMesh->pVect))+vect2Idx,&clipP1);
+                        //clip 0-1 0-2
+                        break;
+                    case 2:
+                        clipType = ONE_POINT_OUT;oneIdx = vect1Idx;
+                        break;
+                    case 3:
+                        clipType = TWO_POINT_OUT;oneIdx = vect2Idx;
+                        break;
+                    case 4:
+                        clipType = ONE_POINT_OUT;oneIdx = vect2Idx;
+                        break;
+                    case 5:
+                        clipType = TWO_POINT_OUT;oneIdx = vect1Idx;
+                        break;
+                    case 6:
+                        clipType = TWO_POINT_OUT;oneIdx = vect0Idx;
+                        break;
+                }
+                //clip one idx and two other
+                if (clipType == ONE_POINT_OUT){
+
+                }else{
+
+                }
+#endif
+            }else{
+                DrawTriTexture(
+                x0,y0,(f32)(pUV[i*6]),(f32)(pUV[i*6+1]),pVectTarget[vect0Idx].z,
+                x1,y1,(f32)(pUV[i*6+2]),(f32)(pUV[i*6+3]),pVectTarget[vect1Idx].z,
+                x2,y2,(f32)(pUV[i*6+4]),(f32)(pUV[i*6+5]),pVectTarget[vect2Idx].z,
+                renderLevel,lightValue,pTexture,
+                pFrameBuff,pZBuff);
+            }
         }
-        DrawTriTexture(
-            x0,y0,(f32)(pUV[i*6]),(f32)(pUV[i*6+1]),pVectTarget[vect0Idx].z,
-            x1,y1,(f32)(pUV[i*6+2]),(f32)(pUV[i*6+3]),pVectTarget[vect1Idx].z,
-            x2,y2,(f32)(pUV[i*6+4]),(f32)(pUV[i*6+5]),pVectTarget[vect2Idx].z,
-            renderLevel,lightValue,pTexture,
-            pFrameBuff,pZBuff);
     }        
 }
+
+void ClipLine(vect3_t *pP0,vect3_t *pP1,tri_clip_t *pResult){
+
+}
+
 
 __attribute__((always_inline)) static inline void DrawDepthLineNoClip(s32 Ax,s32 Ay,f32 Az,s32 Bx,s32 By,f32 Bz, 
                                                             texLUT_t color,fBuff_t *pFrameBuff,zBuff_t *pZbuff){

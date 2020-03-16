@@ -107,8 +107,8 @@ typedef struct{
 }vect3_t;
 
 //screen3_t is for 2d screen drawing step, it has same length as vect4_t
-#define B3L_IN_SPACE             (0u)
-#define B3L_NEAR_PLANE_CLIP      (1u)
+#define B3L_IN_SPACE             (1u)
+#define B3L_NEAR_PLANE_CLIP      (0u)
 
 typedef struct{
     int32_t             x;
@@ -134,6 +134,15 @@ typedef struct{
 
 typedef vect3_t euler3_t;
 typedef vect4_t quat4_t;
+
+typedef struct{
+    f32            x;
+    f32            y;
+    f32            z;
+    f32            u;
+    f32            v;
+}tri_clip_t;
+
 //in column first order, mxy -- x is column num, y is the row number
 typedef struct{
     //row0  row1    row2    row3    
