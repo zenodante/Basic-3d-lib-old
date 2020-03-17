@@ -59,7 +59,6 @@ __attribute__((always_inline)) static  inline void  Vect3Xmat4WithTestToScreen4(
     pResult->x = intX;
     pResult->y = intY;
     pResult->z = rz;
-    pResult->w = rw;
     #undef dotCol
 
 }

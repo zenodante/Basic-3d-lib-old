@@ -114,7 +114,6 @@ typedef struct{
     int32_t             x;
     int32_t             y; 
     f32                 z;
-    f32                 w;
     u32                 test;
 }screen4_t;
 
