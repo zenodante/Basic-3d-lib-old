@@ -2285,16 +2285,21 @@ __attribute__((always_inline)) static  inline void  DrawTriTexture_NOCheck(
     f32  aU=u0;f32  bU=u0;f32  aV=v0;f32  bV=v0;
 
     last = inty1-1;
-    y = inty0;
-           
-    for(y;y<=last;y++){
-        if(a>b){
+    y = inty0+1;
+    if((a+dx01)>(b+dx02)){
+        for(y;y<=last;y++){
+            a  += dx01;aU +=du01;aV +=dv01;aZ = aZ + dz01;
+            b  += dx02;bU +=du02;bV +=dv02;bZ = bZ + dz02;
             DrawTexHLine_NOCheck(b,y,a,bZ,aZ,bU,bV,aU,aV,lightFactor,pFrameBuff,pZbuff,pTexture);
-        }else{
+            
+        }
+    }else{
+        for(y;y<=last;y++){
+            a  += dx01;aU +=du01;aV +=dv01;aZ = aZ + dz01;
+            b  += dx02;bU +=du02;bV +=dv02;bZ = bZ + dz02;
             DrawTexHLine_NOCheck(a,y,b,aZ,bZ,aU,aV,bU,bV,lightFactor,pFrameBuff,pZbuff,pTexture);
-        }          
-        a  += dx01;aU +=du01;aV +=dv01;aZ = aZ + dz01;
-        b  += dx02;bU +=du02;bV +=dv02;bZ = bZ + dz02;
+
+        }
     }
     y = inty2;
     last = inty1;   
@@ -2303,18 +2308,25 @@ __attribute__((always_inline)) static  inline void  DrawTriTexture_NOCheck(
         a = x2;aZ=z2;aU=u2;aV=v2;
         b=x1;bZ= z0+dz02*deltay;bU = u0+du02*deltay;bV=v0+dv02*deltay;
     }else{
-        a = x2;b=x2;aZ=z2;aU=u2;aV=v2;
-        bZ= z2;bU=u2;bV=v2;
+        y -=1;
+        a = x2-dx02;aZ=z2-dz02;aU= u2-du02; aV = v2-dv02;
+        b = x2-dx12;bZ=z2-dz12;bU= u2-du12; bV = v2-dv12;
+        //a = x2;b=x2;aZ=z2;aU=u2;aV=v2;
+        //bZ= z2;bU=u2;bV=v2;
     }
-    for (y;y>=last;y--){
-        if(a>b){
+    if(a>b){
+        for (y;y>=last;y--){
             DrawTexHLine_NOCheck(b,y,a,bZ,aZ,bU,bV,aU,aV,lightFactor,pFrameBuff,pZbuff,pTexture);
-        }else{
-            DrawTexHLine_NOCheck(a,y,b,aZ,bZ,aU,aV,bU,bV,lightFactor,pFrameBuff,pZbuff,pTexture);
-        }
             a -= dx02;aZ -= dz02;aU -= du02;aV -= dv02;
             b -= dx12;bZ -= dz12;bU -= du12;bV -= dv12;
-    }  
+        }
+    }else{
+        for (y;y>=last;y--){
+            DrawTexHLine_NOCheck(a,y,b,aZ,bZ,aU,aV,bU,bV,lightFactor,pFrameBuff,pZbuff,pTexture);
+            a -= dx02;aZ -= dz02;aU -= du02;aV -= dv02;
+            b -= dx12;bZ -= dz12;bU -= du12;bV -= dv12;
+        }
+    } 
 }
 
 __attribute__((always_inline)) static  inline void  DrawTriTexture(
@@ -2360,11 +2372,10 @@ __attribute__((always_inline)) static  inline void  DrawTriTexture(
     f32 dz01 = (z1 - z0)*dy01;
     f32 dz02 = (z2 - z0)*dy02;
     f32 dz12 = (z2 - z1)*dy12;
-
-    f32  aZ=z0;f32  bZ=z0;f32  a=x0;f32  b=x0;
-    f32  aU=u0;f32  bU=u0;f32  aV=v0;f32  bV=v0;
+    f32  a=x0+dx01;f32  aZ=z0+dz01;f32  aU=u0+du01;f32  aV=v0+dv01;
+    f32  b=x0+dx02;f32  bZ=z0+dz02;f32  bU=u0+du02;f32  bV=v0+dv02;
     last = inty1-1;
-    y = inty0;
+    y = inty0+1;
     f32 deltaY;
     if (last>=RENDER_RESOLUTION_Y){
             last = RENDER_RESOLUTION_Y -1;
@@ -2375,15 +2386,18 @@ __attribute__((always_inline)) static  inline void  DrawTriTexture(
         a += deltaY*dx01;aZ +=deltaY*dz01;aU += deltaY*du01;aV += deltaY*dv01;
         b += deltaY*dx02;bZ +=deltaY*dz02;bU += deltaY*du02;bV += deltaY*dv02;
     }
-    for(y; y<=last; y++) {
-        //include a, and b how many pixel
-        if(a > b){
+    if(a>b){
+        for(y; y<=last; y++) {
             DrawTexHLine(b,y,a,bZ,aZ,bU,bV,aU,aV,lightFactor,pFrameBuff,pZbuff,pTexture);
-        }else{
+            a += dx01;aU +=du01;aV +=dv01;aZ += dz01;
+            b += dx02;bU +=du02;bV +=dv02;bZ += dz02;   
+        }
+    }else{
+        for(y; y<=last; y++) {
             DrawTexHLine(a,y,b,aZ,bZ,aU,aV,bU,bV,lightFactor,pFrameBuff,pZbuff,pTexture);
-        } 
-        a += dx01;aU +=du01;aV +=dv01;aZ += dz01;
-        b += dx02;bU +=du02;bV +=dv02;bZ += dz02;   
+            a += dx01;aU +=du01;aV +=dv01;aZ += dz01;
+            b += dx02;bU +=du02;bV +=dv02;bZ += dz02;   
+        }
     }
     y= inty2;
     last = inty1; 
@@ -2393,27 +2407,34 @@ __attribute__((always_inline)) static  inline void  DrawTriTexture(
         a = x2;aZ=z2;aU=u2;aV=v2;
         b=x1;bZ= z0+dz02*deltaY;bU = u0+du02*deltaY;bV=v0+dv02*deltaY;
     }else{
+        //y -=1;
+        //a = x2-dx02;aZ=z2-dz02;aU= u2-du02; aV = v2-dv02;
+        //b = x2-dx12;bZ=z2-dz12;bU= u2-du12; bV = v2-dv12;
         a = x2;b=x2;aZ=z2;aU=u2;aV=v2;
         bZ= z2;bU=u2;bV=v2;
     }  
     if (last<0){
         last = 0;
     }
+
     if (y>=RENDER_RESOLUTION_Y){
         y=RENDER_RESOLUTION_Y - 1;
         deltaY = (f32)(inty2 - y);
         a -= deltaY*dx02;aZ -=deltaY*dz02;aU -= deltaY*du02;aV -= deltaY*dv02;
         b -= deltaY*dx12;bZ -=deltaY*dz12;bU -= deltaY*du12;bV -= deltaY*dv12;
     }
-
-    for (y;y>=last;y--){
-        if(a>b){
+    if((a-dx02)>(b-dx12)){
+        for (y;y>=last;y--){
             DrawTexHLine(b,y,a,bZ,aZ,bU,bV,aU,aV,lightFactor,pFrameBuff,pZbuff,pTexture);
-        }else{
-            DrawTexHLine(a,y,b,aZ,bZ,aU,aV,bU,bV,lightFactor,pFrameBuff,pZbuff,pTexture);
-        }
             a -= dx02;aZ -= dz02;aU -= du02;aV -= dv02;
             b -= dx12;bZ -= dz12;bU -= du12;bV -= dv12;
+        }
+    }else{
+        for (y;y>=last;y--){
+            DrawTexHLine(a,y,b,aZ,bZ,aU,aV,bU,bV,lightFactor,pFrameBuff,pZbuff,pTexture);
+            a -= dx02;aZ -= dz02;aU -= du02;aV -= dv02;
+            b -= dx12;bZ -= dz12;bU -= du12;bV -= dv12;
+        }
     }
 }
 
@@ -2478,18 +2499,23 @@ __attribute__((always_inline)) static  inline void  DrawTriColor_NOCheck(
     f32 dy01 = 1.0f/(inty1 - inty0);f32 dy02 = 1.0f/(inty2 - inty0);f32 dy12 = 1.0f/(inty2 - inty1);
     f32 dx01 = (x1 - x0)*dy01;f32 dx02 = (x2 - x0)*dy02;f32 dx12 = (x2 - x1)*dy12;
     f32 dz01 = (z1 - z0)*dy01;f32 dz02 = (z2 - z0)*dy02;f32 dz12 = (z2 - z1)*dy12;
-    f32  aZ=z0;f32  bZ=z0;f32  a=x0;f32  b=x0;
+    f32  aZ=z0+dz01;f32  bZ=z0+dz02;f32  a=x0+dx01;f32  b=x0+dx02;
     last = inty1-1;
-    y = inty0; 
-    for(y;y<=last;y++){
-        if(a<b){
-             DrawColorHLine_NOCheck(a,y,b,aZ,bZ,finalColor,pFrameBuff,pZbuff);
-        }else{
-             DrawColorHLine_NOCheck(b,y,a,bZ,aZ,finalColor,pFrameBuff,pZbuff);
-        }          
-        a  += dx01;aZ = aZ + dz01;
-        b  += dx02;bZ = bZ + dz02;
+    y = inty0+1; 
+    if(a>b){
+        for(y;y<=last;y++){
+            DrawColorHLine_NOCheck(b,y,a,aZ,bZ,finalColor,pFrameBuff,pZbuff);
+            a  += dx01;aZ = aZ + dz01;
+            b  += dx02;bZ = bZ + dz02;
+        }
+    }else{
+        for(y;y<=last;y++){
+            DrawColorHLine_NOCheck(a,y,b,bZ,aZ,finalColor,pFrameBuff,pZbuff);
+            a  += dx01;aZ = aZ + dz01;
+            b  += dx02;bZ = bZ + dz02;
+        }
     }
+
     y = inty2;
     last = inty1;   
     if (y == last){
@@ -2497,18 +2523,23 @@ __attribute__((always_inline)) static  inline void  DrawTriColor_NOCheck(
         a = x2;aZ=z2;
         b=x1;bZ= z0+dz02*deltay;
     }else{
-        a = x2;b=x2;aZ=z2;
-        bZ= z2;
+        y -=1;
+        a = x2-dx02;b=x2-dx12;aZ=z2-dz02;
+        bZ= z2-dz12;
     }
-    for (y;y>=last;y--){
-        if(a<b){
-            DrawColorHLine_NOCheck(a,y,b,aZ,bZ,finalColor,pFrameBuff,pZbuff);
-        }else{
-            DrawColorHLine_NOCheck(b,y,a,bZ,aZ,finalColor,pFrameBuff,pZbuff);           
+    if(a>b){
+        for (y;y>=last;y--){
+            DrawColorHLine_NOCheck(b,y,a,bZ,aZ,finalColor,pFrameBuff,pZbuff); 
+            a -= dx02;aZ -= dz02;
+            b -= dx12;bZ -= dz12;      
         }
+    }else{
+        for (y;y>=last;y--){
+            DrawColorHLine_NOCheck(a,y,b,aZ,bZ,finalColor,pFrameBuff,pZbuff);
             a -= dx02;aZ -= dz02;
             b -= dx12;bZ -= dz12;
-    }  
+        }
+    }
 }
  
 __attribute__((always_inline)) static  inline void  DrawTriColor(f32 x0,f32 y0,f32 z0,f32 x1,f32 y1,f32 z1,
@@ -2534,9 +2565,9 @@ __attribute__((always_inline)) static  inline void  DrawTriColor(f32 x0,f32 y0,f
     f32 dy01 = 1.0f/(inty1 - inty0);f32 dy02 = 1.0f/(inty2 - inty0);f32 dy12 = 1.0f/(inty2 - inty1);
     f32 dx01 = (x1 - x0)*dy01;f32 dx02 = (x2 - x0)*dy02;f32 dx12 = (x2 - x1)*dy12;
     f32 dz01 = (z1 - z0)*dy01;f32 dz02 = (z2 - z0)*dy02;f32 dz12 = (z2 - z1)*dy12;
-    f32  aZ=z0;f32  bZ=z0;f32  a=x0;f32  b=x0;
+    f32  aZ=z0+dz01;f32  bZ=z0+dz02;f32  a=x0+dx01;f32  b=x0+dx02;
     last = inty1-1;
-    y = inty0;
+    y = inty0+1;
     f32 deltaY;
     if (last>=RENDER_RESOLUTION_Y){
             last = RENDER_RESOLUTION_Y -1;
@@ -2547,16 +2578,20 @@ __attribute__((always_inline)) static  inline void  DrawTriColor(f32 x0,f32 y0,f
         a += deltaY*dx01;aZ +=deltaY*dz01;
         b += deltaY*dx02;bZ +=deltaY*dz02;
     }
-    for(y; y<=last; y++) {
-        //include a, and b how many pixel
-        if(a < b){
+    if(a<b){
+        for(y; y<=last; y++) {
             DrawColorHLine(a,y,b,aZ,bZ,finalColor,pFrameBuff,pZbuff);
-        }else{
+            a += dx01;aZ += dz01;
+            b += dx02;bZ += dz02;  
+        }
+    }else{
+        for(y; y<=last; y++) {
             DrawColorHLine(b,y,a,bZ,aZ,finalColor,pFrameBuff,pZbuff);
-        } 
-        a += dx01;aZ += dz01;
-        b += dx02;bZ += dz02;   
+            a += dx01;aZ += dz01;
+            b += dx02;bZ += dz02;  
+        }
     }
+
     y= inty2;
     last = inty1; 
     
@@ -2565,8 +2600,7 @@ __attribute__((always_inline)) static  inline void  DrawTriColor(f32 x0,f32 y0,f
         a = x2;aZ=z2;
         b=x1;bZ= z0+dz02*deltaY;
     }else{
-        a = x2;b=x2;aZ=z2;
-        bZ= z2;
+        a = x2;b=x2;aZ=z2;bZ= z2;
     }  
     if (last<0){
         last = 0;
@@ -2577,15 +2611,18 @@ __attribute__((always_inline)) static  inline void  DrawTriColor(f32 x0,f32 y0,f
         a -= deltaY*dx02;aZ -=deltaY*dz02;
         b -= deltaY*dx12;bZ -=deltaY*dz12;
     }
-
-    for (y;y>=last;y--){
-        if(a < b){
+    if((a-dx02)<(b-dx12)){
+        for (y;y>=last;y--){
             DrawColorHLine(a,y,b,aZ,bZ,finalColor,pFrameBuff,pZbuff);
-        }else{
+            a -= dx02;aZ -= dz02;
+            b -= dx12;bZ -= dz12;
+        }
+    }else{
+        for (y;y>=last;y--){
             DrawColorHLine(b,y,a,bZ,aZ,finalColor,pFrameBuff,pZbuff);
-        } 
-        a -= dx02;aZ -= dz02;
-        b -= dx12;bZ -= dz12;
+            a -= dx02;aZ -= dz02;
+            b -= dx12;bZ -= dz12;
+        }
     }
 }
 
