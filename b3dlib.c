@@ -2626,8 +2626,6 @@ __attribute__((always_inline)) static  inline void  DrawTriColor(f32 x0,f32 y0,f
     }
 }
 
-               // DrawColorHLine(b,y,a,bZ,aZ,finalColor,pFrameBuff,pZbuff);
-
 
 
 /*-----------------------------------------------------------------------------
