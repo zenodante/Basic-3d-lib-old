@@ -105,7 +105,16 @@ typedef struct{
     f32                 y;  
     f32                 z; 
 }vect3_t;
+/*
+   31     2423     1615      87
+   ------------------------------------
+31|********|********|********|**xxBxxA|0
+  ------------------------------------
+A near plane clip state
+B in clip space state
 
+xx bits have been used for tri test
+*/  
 //screen3_t is for 2d screen drawing step, it has same length as vect4_t
 #define B3L_IN_SPACE             (3u)
 #define B3L_NEAR_PLANE_CLIP      (0u)
@@ -133,14 +142,6 @@ typedef struct{
 
 typedef vect3_t euler3_t;
 typedef vect4_t quat4_t;
-
-typedef struct{
-    f32            x;
-    f32            y;
-    f32            z;
-    f32            u;
-    f32            v;
-}tri_clip_t;
 
 //in column first order, mxy -- x is column num, y is the row number
 typedef struct{
