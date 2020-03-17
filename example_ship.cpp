@@ -18,6 +18,7 @@ B3L_timeTweenCtl_t ttCtl;
 B3L_tween_t tCatZ;
 B3LMeshObj_t *pShip;
 B3LMeshObj_t *pBox;
+B3LMeshNoTexObj_t *pColorBox;
 vect3_t at={0.0f,0.0f,0.0f};
 vect3_t up ={0.0f,1.0f,0.0f};
 f32 distance = 200.0f;
@@ -35,9 +36,13 @@ void init() {
     B3L_RenderInit(&B3Lrender,renderBuff);
     //init particle generator
     pBox = B3L_GetFreeMeshObj(&B3Lrender);
+    pColorBox = B3L_GetFreeMeshNoTexObj(&B3Lrender);
     B3L_InitBoxObj(pBox,5.0f);
+    B3L_InitBoxObjNoTexture(pColorBox,5.0f);
     B3L_AddObjToRenderList((B3LObj_t *)pBox, &B3Lrender);
+    B3L_AddObjToRenderList((B3LObj_t *)pColorBox, &B3Lrender);
     pBox->transform.translation.z = -10.0f;
+    pColorBox->transform.translation.x = -10.0f;
     //pParticleGen = B3L_GetFreeParticleGeneratorObj(&B3Lrender);
     //B3L_InitDemoParticleGenObj(pParticleGen);
     //pParticleGen->transform.translation.x = 0.0f;

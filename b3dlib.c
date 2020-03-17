@@ -105,7 +105,19 @@ __attribute__((always_inline)) static  inline void     DrawTriTexture(
                                                                         f32 x2,f32 y2,f32 u2,f32 v2,f32 z2,
                                                                         u32 renderLevel,u32 lightFactor,B3L_texture_t *pTexture,
                                                                         fBuff_t *pFrameBuff,zBuff_t *pZbuff);
+__attribute__((always_inline)) static  inline void     DrawTriTexture_NOCheck(
+                                                                        f32 x0,f32 y0,f32 u0,f32 v0,f32 z0,
+                                                                        f32 x1,f32 y1,f32 u1,f32 v1,f32 z1,
+                                                                        f32 x2,f32 y2,f32 u2,f32 v2,f32 z2,
+                                                                        u32 renderLevel,u32 lightFactor,B3L_texture_t *pTexture,
+                                                                        fBuff_t *pFrameBuff,zBuff_t *pZbuff);
 __attribute__((always_inline)) static  inline void     DrawTriColor(
+                                                                        f32 x0,f32 y0,f32 z0,
+                                                                        f32 x1,f32 y1,f32 z1,
+                                                                        f32 x2,f32 y2,f32 z2,
+                                                                        u32 renderLevel,u32 lightFactor,fBuff_t color,
+                                                                        fBuff_t *pFrameBuff,zBuff_t *pZbuff);
+__attribute__((always_inline)) static  inline void     DrawTriColor_NOCheck(
                                                                         f32 x0,f32 y0,f32 z0,
                                                                         f32 x1,f32 y1,f32 z1,
                                                                         f32 x2,f32 y2,f32 z2,
@@ -115,9 +127,16 @@ __attribute__((always_inline)) static  inline void     DrawTexHLine(f32 x,s32 y,
                                                                         f32 aU,f32 aV,f32 bU,f32 bV,u32 lightFactor, 
                                                                         fBuff_t *pFrameBuff,zBuff_t *pZbuff,
                                                                         B3L_texture_t *pTexture);
+                                                                        
+__attribute__((always_inline)) static inline void      DrawTexHLine_NOCheck(f32 x,s32 y,f32 b, f32 aZ, f32 bZ,
+f32 aU,f32 aV,f32 bU,f32 bV, u32 lightFactor, fBuff_t *pFrameBuff,zBuff_t *pZbuff, B3L_texture_t *pTexture);
+
 __attribute__((always_inline)) static  inline void     DrawColorHLine(f32 x,s32 y,f32 b, f32 aZ, f32 bZ,
                                                                         fBuff_t finalColor, 
                                                                         fBuff_t *pFrameBuff,zBuff_t *pZbuff); 
+__attribute__((always_inline)) static  inline void     DrawColorHLine_NOCheck(f32 x,s32 y,f32 b, f32 aZ, f32 bZ,
+                                                                        fBuff_t finalColor, 
+                                                                        fBuff_t *pFrameBuff,zBuff_t *pZbuff);                                                                        
 __attribute__((always_inline)) static  inline void     DrawDepthLineNoClip(s32 Ax,s32 Ay,f32 Az,s32 Bx,s32 By,f32 Bz, 
                                                                         texLUT_t color,fBuff_t *pFrameBuff,zBuff_t *pZbuff);  
 __attribute__((always_inline)) static  inline void     DrawDepthLineClip(s32 Ax,s32 Ay,f32 Az,s32 Bx,s32 By,f32 Bz, 
@@ -1653,8 +1672,7 @@ static void RenderNoTexMesh(B3LMeshNoTexObj_t *pObj,render_t *pRender, mat4_t *p
     f32 normalFact;
     f32   lightFactor0;
     f32   lightFactor1;
-    if (renderLevel==0){//light calculation is needed, so normalized the normal
-        
+    if (renderLevel==0){//light calculation is needed, so normalized the normal  
         pVectSource = ((vect3_t *)(pMesh->pNormal));// now the vectsource point to the normal vect
         //calculate the Light vect in clip space;      
         if(B3L_TEST(pRender->light.state,LIGHT_TYPE_BIT) == POINT_LIGHT){  
@@ -1663,22 +1681,21 @@ static void RenderNoTexMesh(B3LMeshNoTexObj_t *pObj,render_t *pRender, mat4_t *p
             lightX = pRender->light.lightVect.x - translation->x;
             lightY = pRender->light.lightVect.y - translation->y;
             lightZ = pRender->light.lightVect.z - translation->z;
-            //normalize the obj to light vector
             normalFact = FastInvertSqrt(lightX*lightX+lightY*lightY+lightZ*lightZ);
             lightX = lightX * normalFact;
             lightY = lightY * normalFact;
             lightZ = lightZ * normalFact;
-
         }else{
             //parallel light, the point to light vect is already in camera space
             lightX = pRender->light.lightVect.x;
             lightY = pRender->light.lightVect.y;
             lightZ = pRender->light.lightVect.z;
-        }
-        
+        }      
         lightFactor0 = pRender->light.factor_0;
         lightFactor1 = pRender->light.factor_1;
-    }               
+    }         
+    u32 state = pObj->state;     
+               
     u16 *pTriIdx = pMesh->pTri;
     u32 cullingState = ((pObj->state)&OBJ_CULLING_MASK)>>OBJ_CULLING_SHIFT;
     u32 vect0Idx,vect1Idx,vect2Idx;
@@ -1686,7 +1703,12 @@ static void RenderNoTexMesh(B3LMeshNoTexObj_t *pObj,render_t *pRender, mat4_t *p
     f32   normalDotLight;
     fBuff_t color;
     //if the render level is not zero, then the lightValue would fix at 0xff
-    u32 lightValue=pRender->lvl1Light;
+    u32 lightValue;
+    if (B3L_TEST(state,OBJ_SPECIAL_LIGHT_VALUE)){
+        lightValue= (state &OBJ_SPECIAL_LIGHT_MASK )>>OBJ_SPECIAL_LIGHT_SHIFT;
+    }else{
+        lightValue=pRender->lvl1Light;
+    } 
 //draw tri loop
     for (i=pMesh->triNum -1;i>=0;i--){
         //pTriRenderState[i]=0;
@@ -1708,36 +1730,48 @@ static void RenderNoTexMesh(B3LMeshNoTexObj_t *pObj,render_t *pRender, mat4_t *p
         u32 result0 = pVectTarget[vect0Idx].test;
         u32 result1 = pVectTarget[vect1Idx].test;
         u32 result2 = pVectTarget[vect2Idx].test;
-        u32 triVisable = result0|result1|result2;
-        switch(triVisable){
-            case ((1<<B3L_IN_SPACE)|(1<<B3L_NEAR_PLANE_CLIP)):
-                //in space and need the near plane clip
-                continue;
-            case (1<<B3L_NEAR_PLANE_CLIP):
-                //only near plane clip, do nothing
-                continue;
-            case (1<<B3L_IN_SPACE):
-                //in the clip space, normal flow
-                break;
-        }
-        if (renderLevel==0){
-            B3L_Vect3MulMat3(pVectSource+i, &(pObj->mat),&normalVect);
-            //dot multi light and normalvect to get the light factor
-            normalDotLight = normalVect.x*lightX + normalVect.y*lightY + normalVect.z*lightZ;
-            //normalDotLight is in the range -1.0f to 1.0f
-            lightValue = CalLightFactor(normalDotLight,lightFactor0,lightFactor1);
-        }
-        //printf("renderLevel %d,lightValue %d\n",renderLevel,lightValue);
-        #if (FRAME_BUFF_COLOR_TYPE  == 0) || (FRAME_BUFF_COLOR_TYPE  == 1)
-        color = pLUT[pColorIdx[i]];
-        #endif
-        #if (FRAME_BUFF_COLOR_TYPE  == 2)
-        color = pColorIdx[i];
-        #endif
-        DrawTriColor(
-            x0,y0,pVectTarget[vect0Idx].z,x1,y1,pVectTarget[vect1Idx].z,
-            x2,y2,pVectTarget[vect2Idx].z,renderLevel,lightValue,color,
-            pFrameBuff,pZBuff);
+        u32 triVisable = result0+(result1<<1)+(result2<<2);
+        u32 inSpaceCheck = triVisable>>3;
+        u32 clipCheck = triVisable&0x00000007;
+        /**/
+        if(inSpaceCheck){// at least one point inside the clip space
+            if (renderLevel==0){
+                //Norm3Xmat4Normalize(pVectSource+i, pMat, &normalVect); 
+                B3L_Vect3MulMat3(pVectSource+i, &(pObj->mat),&normalVect);
+                //dot multi light and normalvect to get the light factor
+                normalDotLight = normalVect.x*lightX + normalVect.y*lightY + normalVect.z*lightZ;
+                //normalDotLight is in the range -1.0f to 1.0f
+                lightValue = CalLightFactor(normalDotLight,lightFactor0,lightFactor1);
+            }
+             #if (FRAME_BUFF_COLOR_TYPE  == 0) || (FRAME_BUFF_COLOR_TYPE  == 1)
+            color = pLUT[pColorIdx[i]];
+            #endif
+            #if (FRAME_BUFF_COLOR_TYPE  == 2)
+            color = pColorIdx[i];
+            #endif
+            if (inSpaceCheck == 7){ //0B111
+                //draw tri with no check!
+                DrawTriColor_NOCheck(
+                x0,y0,pVectTarget[vect0Idx].z,x1,y1,pVectTarget[vect1Idx].z,
+                x2,y2,pVectTarget[vect2Idx].z,renderLevel,lightValue,color,
+                pFrameBuff,pZBuff);
+            }else{
+                if(clipCheck){
+#if B3L_DO_NEAR_PLANE_CLIP == 1
+                    continue;
+#else
+                    continue;
+#endif
+                }else{
+                        //draw tri with check!
+                    DrawTriColor(
+                    x0,y0,pVectTarget[vect0Idx].z,x1,y1,pVectTarget[vect1Idx].z,
+                    x2,y2,pVectTarget[vect2Idx].z,renderLevel,lightValue,color,
+                    pFrameBuff,pZBuff);
+                }
+                
+            }
+        }    
     }        
 }
 
@@ -1867,8 +1901,10 @@ static void RenderTexMesh(B3LMeshObj_t *pObj,render_t *pRender, mat4_t *pMat,u32
         u32 result1 = pVectTarget[vect1Idx].test;
         u32 result2 = pVectTarget[vect2Idx].test;
 
-        u32 triVisable = result0|result1|result2;
-        if(B3L_TEST(triVisable,B3L_IN_SPACE)){
+        u32 triVisable = result0+(result1<<1)+(result2<<2);
+        u32 inSpaceCheck = triVisable>>3;
+        u32 clipCheck = triVisable&0x00000007;
+        if(inSpaceCheck){// at least one point inside the clip space
             if (renderLevel==0){
                 //Norm3Xmat4Normalize(pVectSource+i, pMat, &normalVect); 
                 B3L_Vect3MulMat3(pVectSource+i, &(pObj->mat),&normalVect);
@@ -1877,49 +1913,33 @@ static void RenderTexMesh(B3LMeshObj_t *pObj,render_t *pRender, mat4_t *pMat,u32
                 //normalDotLight is in the range -1.0f to 1.0f
                 lightValue = CalLightFactor(normalDotLight,lightFactor0,lightFactor1);
             }
-            if(B3L_TEST(triVisable,B3L_NEAR_PLANE_CLIP)){
-#if B3L_DO_NEAR_PLANE_CLIP == 1
-                clipTest = (result0&(1))|((result1&(1))<<1)|((result2&(1))<<2);
-                switch(clipTest){
-                    case 1:
-                        //only point 0 clip
-                        clipType = ONE_POINT_OUT;oneIdx= vect0Idx; 
-                        //ClipLine(((vect3_t *)(pMesh->pVect))+vect0Idx,((vect3_t *)(pMesh->pVect))+vect1Idx,&clipP0);
-                        //ClipLine(((vect3_t *)(pMesh->pVect))+vect0Idx,((vect3_t *)(pMesh->pVect))+vect2Idx,&clipP1);
-                        //clip 0-1 0-2
-                        break;
-                    case 2:
-                        clipType = ONE_POINT_OUT;oneIdx = vect1Idx;
-                        break;
-                    case 3:
-                        clipType = TWO_POINT_OUT;oneIdx = vect2Idx;
-                        break;
-                    case 4:
-                        clipType = ONE_POINT_OUT;oneIdx = vect2Idx;
-                        break;
-                    case 5:
-                        clipType = TWO_POINT_OUT;oneIdx = vect1Idx;
-                        break;
-                    case 6:
-                        clipType = TWO_POINT_OUT;oneIdx = vect0Idx;
-                        break;
-                }
-                //clip one idx and two other
-                if (clipType == ONE_POINT_OUT){
-
-                }else{
-
-                }
-#endif
-            }else{
-                DrawTriTexture(
+            if (inSpaceCheck == 7){ //0B111
+                //draw tri with no check!
+                DrawTriTexture_NOCheck(    
                 x0,y0,(f32)(pUV[i*6]),(f32)(pUV[i*6+1]),pVectTarget[vect0Idx].z,
                 x1,y1,(f32)(pUV[i*6+2]),(f32)(pUV[i*6+3]),pVectTarget[vect1Idx].z,
                 x2,y2,(f32)(pUV[i*6+4]),(f32)(pUV[i*6+5]),pVectTarget[vect2Idx].z,
                 renderLevel,lightValue,pTexture,
                 pFrameBuff,pZBuff);
+            }else{
+                if(clipCheck){
+#if B3L_DO_NEAR_PLANE_CLIP == 1
+                    continue;
+#else
+                    continue;
+#endif
+                }else{
+                        //draw tri with check!
+                    DrawTriTexture(
+                    x0,y0,(f32)(pUV[i*6]),(f32)(pUV[i*6+1]),pVectTarget[vect0Idx].z,
+                    x1,y1,(f32)(pUV[i*6+2]),(f32)(pUV[i*6+3]),pVectTarget[vect1Idx].z,
+                    x2,y2,(f32)(pUV[i*6+4]),(f32)(pUV[i*6+5]),pVectTarget[vect2Idx].z,
+                    renderLevel,lightValue,pTexture,
+                    pFrameBuff,pZBuff);
+                }
+                
             }
-        }
+        }    
     }        
 }
 
@@ -2011,14 +2031,48 @@ __attribute__((always_inline)) static inline void DrawDepthLineClip(s32 Ax,s32 A
     }
 }
 
+__attribute__((always_inline)) static inline void DrawColorHLine_NOCheck(f32 x,s32 y,f32 b, f32 aZ, f32 bZ,
+                                       fBuff_t finalColor, fBuff_t *pFrameBuff,zBuff_t *pZbuff) {
+    s32 intx = B3L_RoundingToS(x),inty=y,intb=(B3L_RoundingToS(b));
+    f32 invlength;
+    if(intb == intx){
+        invlength = 1.0f;
+    }else{
+        invlength = 1.0f/((f32)(intb-intx));
+    }
+    f32 dZ = (bZ - aZ)*invlength;
+    f32 skip;
+    //u32 intu,intv;
+    s32 i = intb-intx;
+
+    u32 shift = inty*RENDER_RESOLUTION_X  + intx;
+    zBuff_t  *pCurrentPixelZ = pZbuff + shift;  
+    shift = inty*RENDER_X_SHIFT  + intx;
+    fBuff_t *pixel = pFrameBuff +shift;
+    zBuff_t compZ;
+    for (;i>=0;i--){ //don't draw the most right pixel, so the b has already -1
+        compZ = CalZbuffValue(aZ);
+        if (compZ<= *pCurrentPixelZ){          
+            *pCurrentPixelZ = compZ;
+            *pixel =finalColor;           
+        }
+        aZ = aZ + dZ;
+        pCurrentPixelZ ++;
+        pixel++;
+    }    
+}
 
 __attribute__((always_inline)) static inline void DrawColorHLine(f32 x,s32 y,f32 b, f32 aZ, f32 bZ,
                                        fBuff_t finalColor, fBuff_t *pFrameBuff,zBuff_t *pZbuff) {
     s32 intx = B3L_RoundingToS(x),inty=y,intb=(B3L_RoundingToS(b));
     s32 clipL = 0;
     s32 clipR = RENDER_RESOLUTION_X ;
-    f32 invlength = 1.0f/((f32)(intb-intx));
-    intb = intb - 1;
+    f32 invlength;
+    if(intb == intx){
+        invlength = 1.0f;
+    }else{
+        invlength = 1.0f/((f32)(intb-intx));
+    }
     if ((intx>=clipR)||(b<clipL)){
         return;
     }
@@ -2059,8 +2113,13 @@ f32 aU,f32 aV,f32 bU,f32 bV, u32 lightFactor, fBuff_t *pFrameBuff,zBuff_t *pZbuf
     f32 u=aU,v=aV;
     s32 clipL = 0;
     s32 clipR = RENDER_RESOLUTION_X ;
-    f32 invlength = 1.0f/((f32)(intb-intx));
-    intb = intb - 1;
+    f32 invlength;
+    if(intb == intx){
+        invlength = 1.0f;
+    }else{
+        invlength = 1.0f/((f32)(intb-intx));
+    }
+    //intb = intb - 1;
     if ((intx>=clipR)||(b<clipL)){
         return;
     }
@@ -2137,6 +2196,152 @@ f32 aU,f32 aV,f32 bU,f32 bV, u32 lightFactor, fBuff_t *pFrameBuff,zBuff_t *pZbuf
     } 
 }
 
+
+__attribute__((always_inline)) static inline void DrawTexHLine_NOCheck(f32 x,s32 y,f32 b, f32 aZ, f32 bZ,
+f32 aU,f32 aV,f32 bU,f32 bV, u32 lightFactor, fBuff_t *pFrameBuff,zBuff_t *pZbuff, B3L_texture_t *pTexture) {
+    //printf("auv%.2f,%.2f,buv%.2f,%.2f\n",aU,aV,bU,bV);
+    s32 intx = B3L_RoundingToS(x),inty=y,intb=(B3L_RoundingToS(b));
+    //s32 b = x + length -1;//correct
+    f32 u=aU,v=aV;
+    f32 invlength;
+    if(intb == intx){
+        invlength = 1.0f;
+    }else{
+        invlength = 1.0f/((f32)(intb-intx));
+    }
+    //intb = intb;
+    f32 dZ = (bZ - aZ)*invlength;
+    f32 du = (bU - aU)*invlength;
+    f32 dv = (bV - aV)*invlength; 
+    u32 intu,intv;
+    s32 i = intb-intx;
+    u32 shift = inty*RENDER_RESOLUTION_X  + intx;
+    zBuff_t  *pCurrentPixelZ = pZbuff + shift;  
+    shift = inty*RENDER_X_SHIFT  + intx;
+    fBuff_t *pixel = pFrameBuff +shift; 
+    u32 uvSize = pTexture->uvSize;
+    u8  *uvData = pTexture->pData;
+    texLUT_t *lut = pTexture->pLUT;
+    u8  colorIdx = 0;
+    //fBuff_t color;
+    u8 transColorIdx = pTexture->transColorIdx;
+    zBuff_t compZ;
+    switch(pTexture->type){
+        case LUT16:
+        for (;i>=0;i--){  //don't draw the most right pixel, so the b has already -1
+            compZ = CalZbuffValue(aZ);
+            if (compZ<= *pCurrentPixelZ){           
+                intu = (uint32_t)u;
+                intv = (uint32_t)v;
+                colorIdx = uvData[intv*(uvSize>>1) + (intu>>1)];
+                colorIdx = colorIdx>>(4*(intu & 0x01));
+                colorIdx = colorIdx&0x0F;
+                if (colorIdx == transColorIdx){
+                    continue;
+                }                
+                *pCurrentPixelZ = compZ;
+                *pixel = GetColorValue(lut,colorIdx,lightFactor);          
+            }
+            u +=du;
+            v +=dv;
+            aZ +=dZ;
+            pCurrentPixelZ ++;
+            pixel++;
+        }
+        break;
+        case LUT256:
+        for (;i>=0;i--){
+            compZ = CalZbuffValue(aZ);
+            if (compZ<= *pCurrentPixelZ){          
+                intu = (uint32_t)u;
+                intv = (uint32_t)v;  
+                colorIdx = uvData[intv*uvSize + intu];
+                if (colorIdx == transColorIdx){
+                    continue;
+                }
+                *pCurrentPixelZ = compZ;
+                *pixel = GetColorValue(lut,colorIdx,lightFactor);           
+            }
+            u +=du;
+            v +=dv;
+            aZ +=dZ;
+            pCurrentPixelZ++;
+            pixel++;
+        }
+        break;
+    } 
+}
+
+__attribute__((always_inline)) static  inline void  DrawTriTexture_NOCheck(
+                                                                        f32 x0,f32 y0,f32 u0,f32 v0,f32 z0,
+                                                                        f32 x1,f32 y1,f32 u1,f32 v1,f32 z1,
+                                                                        f32 x2,f32 y2,f32 u2,f32 v2,f32 z2,
+                                                                        u32 renderLevel,u32 lightFactor,B3L_texture_t *pTexture,
+                                                                        fBuff_t *pFrameBuff,zBuff_t *pZbuff){
+    s32 y,last;
+    if(y0 > y1){
+        //B3L_SWAP_DRAW_TRI_VECT(0,1);
+        _swap_f32_t(y0,y1);_swap_f32_t(x0,x1);_swap_f32_t(u0,u1);_swap_f32_t(v0,v1); _swap_f32_t(z0,z1); 
+        //_swap_int32_t(inty0,inty1);  
+    }
+    if (y1 > y2) {
+        //B3L_SWAP_DRAW_TRI_VECT(2,1);
+        _swap_f32_t(y2,y1);_swap_f32_t(x2,x1);_swap_f32_t(u2,u1);_swap_f32_t(v2,v1);_swap_f32_t(z2,z1);  
+        //_swap_int32_t(inty1,inty2);  
+    }
+    if(y0 > y1){
+        //B3L_SWAP_DRAW_TRI_VECT(0,1);
+        _swap_f32_t(y0,y1);_swap_f32_t(x0,x1);_swap_f32_t(u0,u1);_swap_f32_t(v0,v1);_swap_f32_t(z0,z1); 
+        //_swap_int32_t(inty0,inty1);   
+    }
+    s32 inty0 = B3L_RoundingToS(y0),inty1 = B3L_RoundingToS(y1),inty2 = B3L_RoundingToS(y2);
+    if(inty0 == inty2) { // Handle awkward all-on-same-line case as its own thing
+        return;
+    }
+    f32 dy01 = 1.0f/(inty1 - inty0);f32 dy02 = 1.0f/(inty2 - inty0);f32 dy12 = 1.0f/(inty2 - inty1);
+
+    f32 dx01 = (x1 - x0)*dy01;f32 dx02 = (x2 - x0)*dy02;f32 dx12 = (x2 - x1)*dy12;
+    
+    f32 du01 = (u1 - u0)*dy01;f32 dv01 = (v1 - v0)*dy01;f32 du02 = (u2 - u0)*dy02;f32 dv02 = (v2 - v0)*dy02;
+    f32 du12 = (u2 - u1)*dy12;f32 dv12 = (v2 - v1)*dy12;f32 dz01 = (z1 - z0)*dy01;f32 dz02 = (z2 - z0)*dy02;
+    f32 dz12 = (z2 - z1)*dy12;
+
+    f32  aZ=z0;f32  bZ=z0;f32  a=x0;f32  b=x0;
+    f32  aU=u0;f32  bU=u0;f32  aV=v0;f32  bV=v0;
+
+    last = inty1-1;
+    y = inty0;
+           
+    for(y;y<=last;y++){
+        if(a>b){
+            DrawTexHLine_NOCheck(b,y,a,bZ,aZ,bU,bV,aU,aV,lightFactor,pFrameBuff,pZbuff,pTexture);
+        }else{
+            DrawTexHLine_NOCheck(a,y,b,aZ,bZ,aU,aV,bU,bV,lightFactor,pFrameBuff,pZbuff,pTexture);
+        }          
+        a  += dx01;aU +=du01;aV +=dv01;aZ = aZ + dz01;
+        b  += dx02;bU +=du02;bV +=dv02;bZ = bZ + dz02;
+    }
+    y = inty2;
+    last = inty1;   
+    if (y == last){
+        f32 deltay= (f32)(inty1-inty0);
+        a = x2;aZ=z2;aU=u2;aV=v2;
+        b=x1;bZ= z0+dz02*deltay;bU = u0+du02*deltay;bV=v0+dv02*deltay;
+    }else{
+        a = x2;b=x2;aZ=z2;aU=u2;aV=v2;
+        bZ= z2;bU=u2;bV=v2;
+    }
+    for (y;y>=last;y--){
+        if(a>b){
+            DrawTexHLine_NOCheck(b,y,a,bZ,aZ,bU,bV,aU,aV,lightFactor,pFrameBuff,pZbuff,pTexture);
+        }else{
+            DrawTexHLine_NOCheck(a,y,b,aZ,bZ,aU,aV,bU,bV,lightFactor,pFrameBuff,pZbuff,pTexture);
+        }
+            a -= dx02;aZ -= dz02;aU -= du02;aV -= dv02;
+            b -= dx12;bZ -= dz12;bU -= du12;bV -= dv12;
+    }  
+}
+
 __attribute__((always_inline)) static  inline void  DrawTriTexture(
                                                                         f32 x0,f32 y0,f32 u0,f32 v0,f32 z0,
                                                                         f32 x1,f32 y1,f32 u1,f32 v1,f32 z1,
@@ -2146,29 +2351,17 @@ __attribute__((always_inline)) static  inline void  DrawTriTexture(
     s32 y,last;
     if(y0 > y1){
         //B3L_SWAP_DRAW_TRI_VECT(0,1);
-        _swap_f32_t(y0,y1);
-        _swap_f32_t(x0,x1);
-        _swap_f32_t(u0,u1);
-        _swap_f32_t(v0,v1); 
-        _swap_f32_t(z0,z1); 
+        _swap_f32_t(y0,y1);_swap_f32_t(x0,x1);_swap_f32_t(u0,u1);_swap_f32_t(v0,v1); _swap_f32_t(z0,z1); 
         //_swap_int32_t(inty0,inty1);  
     }
     if (y1 > y2) {
         //B3L_SWAP_DRAW_TRI_VECT(2,1);
-        _swap_f32_t(y2,y1);
-        _swap_f32_t(x2,x1);
-        _swap_f32_t(u2,u1);
-        _swap_f32_t(v2,v1);
-        _swap_f32_t(z2,z1);  
+        _swap_f32_t(y2,y1);_swap_f32_t(x2,x1);_swap_f32_t(u2,u1);_swap_f32_t(v2,v1);_swap_f32_t(z2,z1);  
         //_swap_int32_t(inty1,inty2);  
     }
     if(y0 > y1){
         //B3L_SWAP_DRAW_TRI_VECT(0,1);
-        _swap_f32_t(y0,y1);
-        _swap_f32_t(x0,x1);
-        _swap_f32_t(u0,u1);
-        _swap_f32_t(v0,v1);
-        _swap_f32_t(z0,z1); 
+        _swap_f32_t(y0,y1);_swap_f32_t(x0,x1);_swap_f32_t(u0,u1);_swap_f32_t(v0,v1);_swap_f32_t(z0,z1); 
         //_swap_int32_t(inty0,inty1);   
     }
     s32 inty0 = B3L_RoundingToS(y0),inty1 = B3L_RoundingToS(y1),inty2 = B3L_RoundingToS(y2);
@@ -2195,70 +2388,57 @@ __attribute__((always_inline)) static  inline void  DrawTriTexture(
 
     f32  aZ=z0;f32  bZ=z0;f32  a=x0;f32  b=x0;
     f32  aU=u0;f32  bU=u0;f32  aV=v0;f32  bV=v0;
-    /*
-    if(inty1 == inty2) last = inty1;   // Include y1 scanline
-    else last = inty1-1; // Skip it
-    */
     last = inty1-1;
+    y = inty0;
+    f32 deltaY;
     if (last>=RENDER_RESOLUTION_Y){
             last = RENDER_RESOLUTION_Y -1;
     }
-    //printf("in first half\n");
-    for(y=inty0; y<=last; y++) {
-        if ((aZ>1.0f) && (bZ>1.0f)){
-            continue;
-        }  
-        if(!((y<0)||((B3L_RoundingToS(a))==(B3L_RoundingToS(b))))){
+    if (y<0){
+        deltaY = (f32)(-y);
+        y = 0;
+        a += deltaY*dx01;aZ +=deltaY*dz01;aU += deltaY*du01;aV += deltaY*dv01;
+        b += deltaY*dx02;bZ +=deltaY*dz02;bU += deltaY*du02;bV += deltaY*dv02;
+    }
+    for(y; y<=last; y++) {
         //include a, and b how many pixel
-            if(a > b){
-                DrawTexHLine(b,y,a,bZ,aZ,bU,bV,aU,aV,lightFactor,pFrameBuff,pZbuff,pTexture);
-            }else{
-                DrawTexHLine(a,y,b,aZ,bZ,aU,aV,bU,bV,lightFactor,pFrameBuff,pZbuff,pTexture);
-            } 
-        }
-        a   += dx01;
-        b   += dx02;
-        aU +=du01;
-        aV +=dv01;
-        bU +=du02;
-        bV +=dv02;
-        aZ = aZ + dz01;
-        bZ = bZ + dz02;
+        if(a > b){
+            DrawTexHLine(b,y,a,bZ,aZ,bU,bV,aU,aV,lightFactor,pFrameBuff,pZbuff,pTexture);
+        }else{
+            DrawTexHLine(a,y,b,aZ,bZ,aU,aV,bU,bV,lightFactor,pFrameBuff,pZbuff,pTexture);
+        } 
+        a += dx01;aU +=du01;aV +=dv01;aZ += dz01;
+        b += dx02;bU +=du02;bV +=dv02;bZ += dz02;   
+    }
+    y= inty2;
+    last = inty1; 
+    
+    if (y == last){
+        deltaY= (f32)(inty1-inty0);
+        a = x2;aZ=z2;aU=u2;aV=v2;
+        b=x1;bZ= z0+dz02*deltaY;bU = u0+du02*deltaY;bV=v0+dv02*deltaY;
+    }else{
+        a = x2;b=x2;aZ=z2;aU=u2;aV=v2;
+        bZ= z2;bU=u2;bV=v2;
+    }  
+    if (last<0){
+        last = 0;
+    }
+    if (y>=RENDER_RESOLUTION_Y){
+        y=RENDER_RESOLUTION_Y - 1;
+        deltaY = (f32)(inty2 - y);
+        a -= deltaY*dx02;aZ -=deltaY*dz02;aU -= deltaY*du02;aV -= deltaY*dv02;
+        b -= deltaY*dx12;bZ -=deltaY*dz12;bU -= deltaY*du12;bV -= deltaY*dv12;
     }
 
-    //s32 deltaY1 = y-inty1;
-    s32 deltaY0 = y-inty0;
-    a = x1;
-    b = x0 + dx02*deltaY0;
-    aZ = z1;
-    aU = u1;
-    aV = v1;
-    bU = u0+du02*deltaY0;
-    bV = v0+dv02*deltaY0;
-    //s32 y2 = tri->y2;
-    if (inty2>=RENDER_RESOLUTION_Y){
-        inty2= RENDER_RESOLUTION_Y -1;
-    }
-    for(; y<=inty2; y++) {
-        if ((aZ>1.0f) && (bZ>1.0f)){
-            continue;
+    for (y;y>=last;y--){
+        if(a>b){
+            DrawTexHLine(b,y,a,bZ,aZ,bU,bV,aU,aV,lightFactor,pFrameBuff,pZbuff,pTexture);
+        }else{
+            DrawTexHLine(a,y,b,aZ,bZ,aU,aV,bU,bV,lightFactor,pFrameBuff,pZbuff,pTexture);
         }
-        if(!((y<0)||((B3L_RoundingToS(a))==(B3L_RoundingToS(b))))){
-        //include a, and b how many pixel
-            if(a > b){
-                DrawTexHLine(b,y,a,bZ,aZ,bU,bV,aU,aV,lightFactor,pFrameBuff,pZbuff,pTexture);
-            }else{
-                DrawTexHLine(a,y,b,aZ,bZ,aU,aV,bU,bV,lightFactor,pFrameBuff,pZbuff,pTexture);
-            } 
-        }
-        a  += dx12;
-        b  += dx02;
-        aU += du12;
-        aV += dv12;
-        bU += du02;
-        bV += dv02;
-        aZ += dz12;
-        bZ += dz02; 
+            a -= dx02;aZ -= dz02;aU -= du02;aV -= dv02;
+            b -= dx12;bZ -= dz12;bU -= du12;bV -= dv12;
     }
 }
 
@@ -2292,9 +2472,71 @@ __attribute__((always_inline)) static  inline fBuff_t GetFinalColor(fBuff_t colo
 }
 
 
-__attribute__((always_inline)) static  inline void  DrawTriColor(
+__attribute__((always_inline)) static  inline void  DrawTriColor_NOCheck(
                                                                         f32 x0,f32 y0,f32 z0,
                                                                         f32 x1,f32 y1,f32 z1,
+                                                                        f32 x2,f32 y2,f32 z2,
+                                                                        u32 renderLevel,u32 lightFactor,fBuff_t color,
+                                                                        fBuff_t *pFrameBuff,zBuff_t *pZbuff){
+
+    s32 y,last;   
+    fBuff_t finalColor = GetFinalColor(color,lightFactor);  
+    if(y0 > y1){
+        //B3L_SWAP_DRAW_TRI_VECT(0,1);
+        _swap_f32_t(y0,y1);_swap_f32_t(x0,x1); _swap_f32_t(z0,z1); 
+        //_swap_int32_t(inty0,inty1);  
+    }
+    if (y1 > y2) {
+        //B3L_SWAP_DRAW_TRI_VECT(2,1);
+        _swap_f32_t(y2,y1);_swap_f32_t(x2,x1);_swap_f32_t(z2,z1);  
+        //_swap_int32_t(inty1,inty2);  
+    }
+    if(y0 > y1){
+        //B3L_SWAP_DRAW_TRI_VECT(0,1);
+        _swap_f32_t(y0,y1);_swap_f32_t(x0,x1);_swap_f32_t(z0,z1); 
+        //_swap_int32_t(inty0,inty1);   
+    }
+    s32 inty0 = B3L_RoundingToS(y0),inty1 = B3L_RoundingToS(y1),inty2 = B3L_RoundingToS(y2);
+    if(inty0 == inty2) { // Handle awkward all-on-same-line case as its own thing
+        return;
+    }
+    f32 dy01 = 1.0f/(inty1 - inty0);f32 dy02 = 1.0f/(inty2 - inty0);f32 dy12 = 1.0f/(inty2 - inty1);
+    f32 dx01 = (x1 - x0)*dy01;f32 dx02 = (x2 - x0)*dy02;f32 dx12 = (x2 - x1)*dy12;
+    f32 dz01 = (z1 - z0)*dy01;f32 dz02 = (z2 - z0)*dy02;f32 dz12 = (z2 - z1)*dy12;
+    f32  aZ=z0;f32  bZ=z0;f32  a=x0;f32  b=x0;
+    last = inty1-1;
+    y = inty0; 
+    for(y;y<=last;y++){
+        if(a<b){
+             DrawColorHLine_NOCheck(a,y,b,aZ,bZ,finalColor,pFrameBuff,pZbuff);
+        }else{
+             DrawColorHLine_NOCheck(b,y,a,bZ,aZ,finalColor,pFrameBuff,pZbuff);
+        }          
+        a  += dx01;aZ = aZ + dz01;
+        b  += dx02;bZ = bZ + dz02;
+    }
+    y = inty2;
+    last = inty1;   
+    if (y == last){
+        f32 deltay= (f32)(inty1-inty0);
+        a = x2;aZ=z2;
+        b=x1;bZ= z0+dz02*deltay;
+    }else{
+        a = x2;b=x2;aZ=z2;
+        bZ= z2;
+    }
+    for (y;y>=last;y--){
+        if(a<b){
+            DrawColorHLine_NOCheck(a,y,b,aZ,bZ,finalColor,pFrameBuff,pZbuff);
+        }else{
+            DrawColorHLine_NOCheck(b,y,a,bZ,aZ,finalColor,pFrameBuff,pZbuff);           
+        }
+            a -= dx02;aZ -= dz02;
+            b -= dx12;bZ -= dz12;
+    }  
+}
+ 
+__attribute__((always_inline)) static  inline void  DrawTriColor(f32 x0,f32 y0,f32 z0,f32 x1,f32 y1,f32 z1,
                                                                         f32 x2,f32 y2,f32 z2,
                                                                         u32 renderLevel,u32 lightFactor,fBuff_t color,
                                                                         fBuff_t *pFrameBuff,zBuff_t *pZbuff){
@@ -2302,94 +2544,79 @@ __attribute__((always_inline)) static  inline void  DrawTriColor(
     fBuff_t finalColor = GetFinalColor(color,lightFactor);
     s32 y,last;
     if(y0 > y1){
-        _swap_f32_t(y0,y1);
-        _swap_f32_t(x0,x1);
-        _swap_f32_t(z0,z1); 
-        //_swap_int32_t(inty0,inty1);  
+        _swap_f32_t(y0,y1);_swap_f32_t(x0,x1);_swap_f32_t(z0,z1); 
     }
     if (y1 > y2) {
-        _swap_f32_t(y2,y1);
-        _swap_f32_t(x2,x1);
-        _swap_f32_t(z2,z1);  
-        //_swap_int32_t(inty1,inty2);  
+        _swap_f32_t(y2,y1);_swap_f32_t(x2,x1);_swap_f32_t(z2,z1);  
     }
     if(y0 > y1){
-        _swap_f32_t(y0,y1);
-        _swap_f32_t(x0,x1);
-        _swap_f32_t(z0,z1); 
-        //_swap_int32_t(inty0,inty1);   
+        _swap_f32_t(y0,y1);_swap_f32_t(x0,x1);_swap_f32_t(z0,z1);    
     }
     s32 inty0 = B3L_RoundingToS(y0),inty1 = B3L_RoundingToS(y1),inty2 = B3L_RoundingToS(y2);
     if(inty0 == inty2) { // Handle awkward all-on-same-line case as its own thing
         return;
     }
-    f32 dy01 = 1.0f/(inty1 - inty0);
-    f32 dy02 = 1.0f/(inty2 - inty0);
-    f32 dy12 = 1.0f/(inty2 - inty1);
-    f32 dx01 = (x1 - x0)*dy01;
-    f32 dx02 = (x2 - x0)*dy02;
-    f32 dx12 = (x2 - x1)*dy12;
-    f32 dz01 = (z1 - z0)*dy01;
-    f32 dz02 = (z2 - z0)*dy02;
-    f32 dz12 = (z2 - z1)*dy12;
-    f32  aZ=z0;
-    f32  bZ=z0;
-    f32  a=x0;
-    f32  b=x0;
-    /*
-    if(inty1 == inty2) last = inty1;   // Include y1 scanline
-    else last = inty1-1; // Skip it
-    */
+    f32 dy01 = 1.0f/(inty1 - inty0);f32 dy02 = 1.0f/(inty2 - inty0);f32 dy12 = 1.0f/(inty2 - inty1);
+    f32 dx01 = (x1 - x0)*dy01;f32 dx02 = (x2 - x0)*dy02;f32 dx12 = (x2 - x1)*dy12;
+    f32 dz01 = (z1 - z0)*dy01;f32 dz02 = (z2 - z0)*dy02;f32 dz12 = (z2 - z1)*dy12;
+    f32  aZ=z0;f32  bZ=z0;f32  a=x0;f32  b=x0;
     last = inty1-1;
+    y = inty0;
+    f32 deltaY;
     if (last>=RENDER_RESOLUTION_Y){
             last = RENDER_RESOLUTION_Y -1;
     }
-    //printf("in first half\n");
-    for(y=inty0; y<=last; y++) {
-        if ((aZ>1.0f) && (bZ>1.0f)){
-            continue;
-        } 
-        if(!((y<0)||((B3L_RoundingToS(a))==(B3L_RoundingToS(b))))){
+    if (y<0){
+        deltaY = (f32)(-y);
+        y = 0;
+        a += deltaY*dx01;aZ +=deltaY*dz01;
+        b += deltaY*dx02;bZ +=deltaY*dz02;
+    }
+    for(y; y<=last; y++) {
         //include a, and b how many pixel
-            if(a > b){
-                DrawColorHLine(b,y,a,bZ,aZ,finalColor,pFrameBuff,pZbuff);
-            }else{
-                DrawColorHLine(a,y,b,aZ,bZ,finalColor,pFrameBuff,pZbuff);
-            } 
-        }
-        a   += dx01;
-        b   += dx02;
-        aZ = aZ + dz01;
-        bZ = bZ + dz02;
+        if(a < b){
+            DrawColorHLine(a,y,b,aZ,bZ,finalColor,pFrameBuff,pZbuff);
+        }else{
+            DrawColorHLine(b,y,a,bZ,aZ,finalColor,pFrameBuff,pZbuff);
+        } 
+        a += dx01;aZ += dz01;
+        b += dx02;bZ += dz02;   
+    }
+    y= inty2;
+    last = inty1; 
+    
+    if (y == last){
+        deltaY= (f32)(inty1-inty0);
+        a = x2;aZ=z2;
+        b=x1;bZ= z0+dz02*deltaY;
+    }else{
+        a = x2;b=x2;aZ=z2;
+        bZ= z2;
+    }  
+    if (last<0){
+        last = 0;
+    }
+    if (y>=RENDER_RESOLUTION_Y){
+        y=RENDER_RESOLUTION_Y - 1;
+        deltaY = (f32)(inty2 - y);
+        a -= deltaY*dx02;aZ -=deltaY*dz02;
+        b -= deltaY*dx12;bZ -=deltaY*dz12;
     }
 
-    //s32 deltaY1 = y-inty1;
-    s32 deltaY0 = y-inty0;
-    a = x1;
-    b = x0 + dx02*deltaY0;
-    aZ = z1;
-    if (inty2>=RENDER_RESOLUTION_Y){
-        inty2= RENDER_RESOLUTION_Y -1;
-    }
-    //printf("aU,%.3f aV,%.3f bU,%.3f bV%.3f \n",aU,aV,bU,bV);    
-    for(; y<=inty2; y++) {
-        if ((aZ>1.0f) && (bZ>1.0f)){
-            continue;
-        }
-        if(!((y<0)||((B3L_RoundingToS(a))==(B3L_RoundingToS(b))))){
-        //include a, and b how many pixel
-            if(a > b){
-                DrawColorHLine(b,y,a,bZ,aZ,finalColor,pFrameBuff,pZbuff);
-            }else{
-                DrawColorHLine(a,y,b,aZ,bZ,finalColor,pFrameBuff,pZbuff);
-            } 
-        }
-        a  += dx12;
-        b  += dx02;
-        aZ += dz12;
-        bZ += dz02; 
+    for (y;y>=last;y--){
+        if(a < b){
+            DrawColorHLine(a,y,b,aZ,bZ,finalColor,pFrameBuff,pZbuff);
+        }else{
+            DrawColorHLine(b,y,a,bZ,aZ,finalColor,pFrameBuff,pZbuff);
+        } 
+        a -= dx02;aZ -= dz02;
+        b -= dx12;bZ -= dz12;
     }
 }
+
+               // DrawColorHLine(b,y,a,bZ,aZ,finalColor,pFrameBuff,pZbuff);
+
+
 
 /*-----------------------------------------------------------------------------
 Rotation calculation functions 
@@ -2992,7 +3219,6 @@ bool  B3L_DMA2DOcupied(void){
     return DMA2DOccupied;
 }
 #endif
-
 
 //public draw functions
 void B3L_DrawPixel_ZCheck(render_t *pRender,fBuff_t color,s32 x,s32 y,f32 z){
