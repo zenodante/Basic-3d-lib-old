@@ -107,7 +107,7 @@ typedef struct{
 }vect3_t;
 
 //screen3_t is for 2d screen drawing step, it has same length as vect4_t
-#define B3L_IN_SPACE             (1u)
+#define B3L_IN_SPACE             (3u)
 #define B3L_NEAR_PLANE_CLIP      (0u)
 
 typedef struct{

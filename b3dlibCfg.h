@@ -12,7 +12,6 @@
 
 #define  B3L_IN_SITU_LIGHT_CAL  0
 
-#define  B3L_DO_NEAR_PLANE_CLIP    1
 
 #if B3L_DMA2D ==  1
 #define B3L_LCD_BUFF_ADDR     0xXXXXXXXX

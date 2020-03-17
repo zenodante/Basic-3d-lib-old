@@ -21,7 +21,7 @@
 #pragma GCC optimize("-O3")
 //config the ram position if necessary
 u32            B3L_seed = 0x31415926;
-screen3f_t     vectBuff[VECT_BUFF_SIZE]; //8KB
+screen3f_t     vectBuff[VECT_BUFF_SIZE]; //10KB
 __attribute__((section(".zbuff")))  zBuff_t  zBuff[Z_BUFF_LENTH];        //
 #ifdef B3L_USING_PARTICLE
 B3L_Particle_t  particleBuff[B3L_PARTICLE_BUFF_DEPTH];//18KB
@@ -406,7 +406,7 @@ __attribute__((always_inline)) static  inline void  Vect3Xmat4WithTest_f(vect3_t
     rz = dotCol(2);
     rw = dotCol(3);
 
-    if (rz<0.0f){//if the near plane clip, then don't do the calculation, set bit and return directly
+    if (rz<=0.0f){//if the near plane clip, then don't do the calculation, set bit and return directly
         B3L_SET(testResult,B3L_NEAR_PLANE_CLIP); 
         pResult->test = testResult;     
         return;
@@ -417,13 +417,13 @@ __attribute__((always_inline)) static  inline void  Vect3Xmat4WithTest_f(vect3_t
         }
     }
     
-    f32 factor=1.0f / (rw);//rw won't be zero due we returned already rz<0 (rz>0, rw must >0)
-    f32 intX = (HALF_RESOLUTION_X + rx *factor* HALF_RESOLUTION_X);
-    f32 intY = (HALF_RESOLUTION_Y - ry *factor* HALF_RESOLUTION_Y);
+    f32 factor=1.0f / (rw);//prevent div zero error
+    f32 screenX = (HALF_RESOLUTION_X + rx *factor* HALF_RESOLUTION_X);
+    f32 screenY = (HALF_RESOLUTION_Y - ry *factor* HALF_RESOLUTION_Y);
     rz = rz*factor;
     pResult->test = testResult; 
-    pResult->x = intX;
-    pResult->y = intY;
+    pResult->x = screenX;
+    pResult->y = screenY;
     pResult->z = rz;
     #undef dotCol
 
@@ -1756,13 +1756,7 @@ static void RenderNoTexMesh(B3LMeshNoTexObj_t *pObj,render_t *pRender, mat4_t *p
                 x2,y2,pVectTarget[vect2Idx].z,renderLevel,lightValue,color,
                 pFrameBuff,pZBuff);
             }else{
-                if(clipCheck){
-#if B3L_DO_NEAR_PLANE_CLIP == 1
-                    continue;
-#else
-                    continue;
-#endif
-                }else{
+                if(!clipCheck){
                         //draw tri with check!
                     DrawTriColor(
                     x0,y0,pVectTarget[vect0Idx].z,x1,y1,pVectTarget[vect1Idx].z,
@@ -1870,15 +1864,6 @@ static void RenderTexMesh(B3LMeshObj_t *pObj,render_t *pRender, mat4_t *pMat,u32
         lightValue=pRender->lvl1Light;
     }  
 //draw tri loop
-#if B3L_DO_NEAR_PLANE_CLIP == 1
-    tri_clip_t clipP0;
-    tri_clip_t clipP1;
-    u32  clipTest;
-    u32  clipType;
-    u32  oneIdx;
-#define  ONE_POINT_OUT     0
-#define  TWO_POINT_OUT     1    
-#endif
 
     for (i=pMesh->triNum -1;i>=0;i--){
         //pTriRenderState[i]=0;
@@ -1922,13 +1907,7 @@ static void RenderTexMesh(B3LMeshObj_t *pObj,render_t *pRender, mat4_t *pMat,u32
                 renderLevel,lightValue,pTexture,
                 pFrameBuff,pZBuff);
             }else{
-                if(clipCheck){
-#if B3L_DO_NEAR_PLANE_CLIP == 1
-                    continue;
-#else
-                    continue;
-#endif
-                }else{
+                if(!clipCheck){
                         //draw tri with check!
                     DrawTriTexture(
                     x0,y0,(f32)(pUV[i*6]),(f32)(pUV[i*6+1]),pVectTarget[vect0Idx].z,
@@ -1942,11 +1921,6 @@ static void RenderTexMesh(B3LMeshObj_t *pObj,render_t *pRender, mat4_t *pMat,u32
         }    
     }        
 }
-
-void ClipLine(vect3_t *pP0,vect3_t *pP1,tri_clip_t *pResult){
-
-}
-
 
 __attribute__((always_inline)) static inline void DrawDepthLineNoClip(s32 Ax,s32 Ay,f32 Az,s32 Bx,s32 By,f32 Bz, 
                                                             texLUT_t color,fBuff_t *pFrameBuff,zBuff_t *pZbuff){
@@ -2041,7 +2015,6 @@ __attribute__((always_inline)) static inline void DrawColorHLine_NOCheck(f32 x,s
         invlength = 1.0f/((f32)(intb-intx));
     }
     f32 dZ = (bZ - aZ)*invlength;
-    f32 skip;
     //u32 intu,intv;
     s32 i = intb-intx;
 
