@@ -1790,9 +1790,11 @@ static void RenderPolygon(B3LPolygonObj_t *pObj,render_t *pRender, mat4_t *pMat)
         lineIdxB = pLine[i*2+1];
         testA = pVectTarget[lineIdxA].test;
         testB = pVectTarget[lineIdxB].test;
-        if (B3L_TEST(testA,B3L_NEAR_PLANE_CLIP)||
-            B3L_TEST(testB,B3L_NEAR_PLANE_CLIP)){
-                continue;
+        u32 testAll = testA + (testB<<1);
+        u32 testClip = testAll&0x07;
+        u32 testInSpace = testAll>>3;
+        if (testClip){
+            continue;
         }
         s32 Ax = B3L_RoundingToS(pVectTarget[lineIdxA].x);
         s32 Ay = B3L_RoundingToS(pVectTarget[lineIdxA].y);
@@ -1800,11 +1802,12 @@ static void RenderPolygon(B3LPolygonObj_t *pObj,render_t *pRender, mat4_t *pMat)
         s32 Bx = B3L_RoundingToS(pVectTarget[lineIdxB].x);
         s32 By = B3L_RoundingToS(pVectTarget[lineIdxB].y);
         f32 Bz = pVectTarget[lineIdxB].z;
-        if (B3L_TEST(testA,B3L_IN_SPACE )&&
-            B3L_TEST(testB,B3L_IN_SPACE )){
-            DrawDepthLineNoClip(Ax,Ay,Az,Bx,By,Bz,color,pFrameBuff,pZBuff);
-        }else{
-            DrawDepthLineClip(Ax,Ay,Az,Bx,By,Bz,color,pFrameBuff,pZBuff);
+        if (testInSpace){
+            if (testInSpace == 1){
+                DrawDepthLineClip(Ax,Ay,Az,Bx,By,Bz,color,pFrameBuff,pZBuff);
+            }else{
+                DrawDepthLineNoClip(Ax,Ay,Az,Bx,By,Bz,color,pFrameBuff,pZBuff);
+            }
         }
     }
 }
