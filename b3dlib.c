@@ -90,6 +90,7 @@ Testing functions
 static bool Vect3InClipSpace(vect3_t *pV, mat4_t *pMat);
 static bool BoundBoxTest(f32 *pMaxMin,mat4_t *pMat);
 __attribute__((always_inline)) static  inline bool     TriangleFaceToViewer_f(f32 x0, f32 y0, f32 x1, f32 y1, f32 x2, f32 y2);
+static ClipPoint(u32 v0,u32 v1,u32 v2,u32 i0,u32 i1,u32 i2, f32 nearPlane, vect3_t *pVect,mat4_t *pMat, u8 *pUV,B3L_clip_t *pC0,B3L_clip_t *pC1 );
  /*-----------------------------------------------------------------------------
 Draw functions
 -----------------------------------------------------------------------------*/ 
@@ -105,6 +106,12 @@ __attribute__((always_inline)) static  inline void     DrawTriTexture(
                                                                         f32 x2,f32 y2,f32 u2,f32 v2,f32 z2,
                                                                         u32 renderLevel,u32 lightFactor,B3L_texture_t *pTexture,
                                                                         fBuff_t *pFrameBuff,zBuff_t *pZbuff);
+static void  DrawTriTexture_NotInline(
+                                f32 x0,f32 y0,f32 u0,f32 v0,f32 z0,
+                                f32 x1,f32 y1,f32 u1,f32 v1,f32 z1,
+                                f32 x2,f32 y2,f32 u2,f32 v2,f32 z2,
+                                u32 renderLevel,u32 lightFactor,B3L_texture_t *pTexture,
+                                fBuff_t *pFrameBuff,zBuff_t *pZbuff);
 __attribute__((always_inline)) static  inline void     DrawTriTexture_NOCheck(
                                                                         f32 x0,f32 y0,f32 u0,f32 v0,f32 z0,
                                                                         f32 x1,f32 y1,f32 u1,f32 v1,f32 z1,
@@ -410,13 +417,9 @@ __attribute__((always_inline)) static  inline void  Vect3Xmat4WithTest_f(vect3_t
         B3L_SET(testResult,B3L_NEAR_PLANE_CLIP); 
         pResult->test = testResult;     
         return;
-    }else{
-        if((rx<=rw)&&(rx>=-rw)&&(ry<=rw)&&(ry>=-rw)&&(rz<=rw)){
-            B3L_SET(testResult,B3L_IN_SPACE);
-               
-        }
+    }else if((rx<=rw)&&(rx>=-rw)&&(ry<=rw)&&(ry>=-rw)&&(rz<=rw)){
+            B3L_SET(testResult,B3L_IN_SPACE);                    
     }
-    
     f32 factor=1.0f / (rw);//prevent div zero error
     f32 screenX = (HALF_RESOLUTION_X + rx *factor* HALF_RESOLUTION_X);
     f32 screenY = (HALF_RESOLUTION_Y - ry *factor* HALF_RESOLUTION_Y);
@@ -508,7 +511,7 @@ void     B3L_Point3MulMat4(vect3_t *pV, mat4_t *pMat, vect3_t *pResult){
 
 __attribute__((always_inline)) static  inline bool Vect4BoundTest(vect4_t *pV){
     f32 x=pV->x;f32 y=pV->y;f32 z=pV->z;f32 w=pV->w;
-    if((x<=w)&&(x>=-w)&&(y<=w)&&(y>=-w)&&(z>=0)&&(z<=w)){
+    if((x<=w)&&(x>=-w)&&(y<=w)&&(y>=-w)&&(z>0)&&(z<=w)){
         return true;
     }else{
         return false;
@@ -1866,7 +1869,11 @@ static void RenderTexMesh(B3LMeshObj_t *pObj,render_t *pRender, mat4_t *pMat,u32
         lightValue=pRender->lvl1Light;
     }  
 //draw tri loop
-
+#if B3L_DO_NEAR_PLANE_CLIP == 1
+    B3L_clip_t  c0,c1;
+    f32 nearPlane = pRender->nearPlane;
+#endif
+    mat3_t *rotateMat =  &(pObj->mat);
     for (i=pMesh->triNum -1;i>=0;i--){
         //pTriRenderState[i]=0;
         vect0Idx = pTriIdx[i*3];
@@ -1894,7 +1901,7 @@ static void RenderTexMesh(B3LMeshObj_t *pObj,render_t *pRender, mat4_t *pMat,u32
         if(inSpaceCheck){// at least one point inside the clip space
             if (renderLevel==0){
                 //Norm3Xmat4Normalize(pVectSource+i, pMat, &normalVect); 
-                B3L_Vect3MulMat3(pVectSource+i, &(pObj->mat),&normalVect);
+                B3L_Vect3MulMat3(pVectSource+i, rotateMat,&normalVect);
                 //dot multi light and normalvect to get the light factor
                 normalDotLight = normalVect.x*lightX + normalVect.y*lightY + normalVect.z*lightZ;
                 //normalDotLight is in the range -1.0f to 1.0f
@@ -1909,8 +1916,8 @@ static void RenderTexMesh(B3LMeshObj_t *pObj,render_t *pRender, mat4_t *pMat,u32
                 renderLevel,lightValue,pTexture,
                 pFrameBuff,pZBuff);
             }else{
-                if(!clipCheck){
-                        //draw tri with check!
+                if(clipCheck == 0){
+                        //draw tri with check for no near plane clip necessary!
                     DrawTriTexture(
                     x0,y0,(f32)(pUV[i*6]),(f32)(pUV[i*6+1]),pVectTarget[vect0Idx].z,
                     x1,y1,(f32)(pUV[i*6+2]),(f32)(pUV[i*6+3]),pVectTarget[vect1Idx].z,
@@ -1918,10 +1925,102 @@ static void RenderTexMesh(B3LMeshObj_t *pObj,render_t *pRender, mat4_t *pMat,u32
                     renderLevel,lightValue,pTexture,
                     pFrameBuff,pZBuff);
                 }
-                
-            }
-        }    
-    }        
+#if B3L_DO_NEAR_PLANE_CLIP == 1
+                else{//do the clip!
+                    switch(clipCheck){
+                        case 1:  //vect 0 outside
+                            ClipPoint(vect0Idx,vect1Idx,vect2Idx,i*6,i*6+2,i*6+4,nearPlane,((vect3_t *)(pMesh->pVect)),pMat,pUV,&c0,&c1);
+                            DrawTriTexture_NotInline(x1,y1,(f32)(pUV[i*6+2]),(f32)(pUV[i*6+3]),pVectTarget[vect1Idx].z,
+                                                     x2,y2,(f32)(pUV[i*6+4]),(f32)(pUV[i*6+5]),pVectTarget[vect2Idx].z,
+                                                     c0.x,c0.y,c0.u,c0.v,0.0f,
+                                                      renderLevel,lightValue,pTexture,
+                                                        pFrameBuff,pZBuff);
+                            DrawTriTexture_NotInline(x2,y2,(f32)(pUV[i*6+4]),(f32)(pUV[i*6+5]),pVectTarget[vect2Idx].z,
+                                                     c0.x,c0.y,c0.u,c0.v,0.0f,
+                                                     c1.x,c1.y,c1.u,c1.v,0.0f,
+                                                      renderLevel,lightValue,pTexture,
+                                                    pFrameBuff,pZBuff);
+                            break;
+                        case 6: //vect 0 inside
+                            ClipPoint(vect0Idx,vect1Idx,vect2Idx,i*6,i*6+2,i*6+4,nearPlane,((vect3_t *)(pMesh->pVect)),pMat,pUV,&c0,&c1);
+                            DrawTriTexture_NotInline( x0,y0,(f32)(pUV[i*6]),(f32)(pUV[i*6+1]),pVectTarget[vect0Idx].z,
+                                                      c0.x,c0.y,c0.u,c0.v,0.0f,
+                                                      c1.x,c1.y,c1.u,c1.v,0.0f,
+                                                       renderLevel,lightValue,pTexture,
+                                                        pFrameBuff,pZBuff);
+                            break;
+                        case 5: //vect 1 inside
+                            ClipPoint(vect1Idx,vect0Idx,vect2Idx,i*6+2,i*6,i*6+4,nearPlane,((vect3_t *)(pMesh->pVect)),pMat,pUV,&c0,&c1);
+                            DrawTriTexture_NotInline( x1,y1,(f32)(pUV[i*6+2]),(f32)(pUV[i*6+3]),pVectTarget[vect1Idx].z,
+                                                      c0.x,c0.y,c0.u,c0.v,0.0f,
+                                                      c1.x,c1.y,c1.u,c1.v,0.0f,
+                                                       renderLevel,lightValue,pTexture,
+                                                      pFrameBuff,pZBuff);
+                            break;
+                        case 2:  //vect 1 outside
+                            ClipPoint(vect1Idx,vect0Idx,vect2Idx,i*6+2,i*6,i*6+4,nearPlane,((vect3_t *)(pMesh->pVect)),pMat,pUV,&c0,&c1);
+                            DrawTriTexture_NotInline(x0,y0,(f32)(pUV[i*6]),(f32)(pUV[i*6+1]),pVectTarget[vect0Idx].z,
+                                                     x2,y2,(f32)(pUV[i*6+4]),(f32)(pUV[i*6+5]),pVectTarget[vect2Idx].z,
+                                                     c0.x,c0.y,c0.u,c0.v,0.0f,
+                                                      renderLevel,lightValue,pTexture,
+                                                     pFrameBuff,pZBuff);
+                            DrawTriTexture_NotInline(x2,y2,(f32)(pUV[i*6+4]),(f32)(pUV[i*6+5]),pVectTarget[vect2Idx].z,
+                                                     c0.x,c0.y,c0.u,c0.v,0.0f,
+                                                     c1.x,c1.y,c1.u,c1.v,0.0f,
+                                                      renderLevel,lightValue,pTexture,
+                                                     pFrameBuff,pZBuff);
+                            break;
+                        case 3://vect 2 inside
+                            ClipPoint(vect2Idx,vect0Idx,vect1Idx,i*6+4,i*6,i*6+2,nearPlane,((vect3_t *)(pMesh->pVect)),pMat,pUV,&c0,&c1);
+                            DrawTriTexture_NotInline( x2,y2,(f32)(pUV[i*6+4]),(f32)(pUV[i*6+5]),pVectTarget[vect2Idx].z,
+                                                      c0.x,c0.y,c0.u,c0.v,0.0f,
+                                                      c1.x,c1.y,c1.u,c1.v,0.0f,
+                                                       renderLevel,lightValue,pTexture,
+                                                      pFrameBuff,pZBuff);
+                            break;
+                        case 4://vect 2 outside
+                            ClipPoint(vect2Idx,vect0Idx,vect1Idx,i*6+4,i*6,i*6+2,nearPlane,((vect3_t *)(pMesh->pVect)),pMat,pUV,&c0,&c1);
+                            DrawTriTexture_NotInline(x0,y0,(f32)(pUV[i*6]),(f32)(pUV[i*6+1]),pVectTarget[vect0Idx].z,
+                                                     x1,y1,(f32)(pUV[i*6+2]),(f32)(pUV[i*6+3]),pVectTarget[vect1Idx].z,
+                                                     c0.x,c0.y,c0.u,c0.v,0.0f,
+                                                      renderLevel,lightValue,pTexture,
+                                                pFrameBuff,pZBuff);
+                            DrawTriTexture_NotInline(x1,y1,(f32)(pUV[i*6+2]),(f32)(pUV[i*6+3]),pVectTarget[vect1Idx].z,
+                                                     c0.x,c0.y,c0.u,c0.v,0.0f,
+                                                     c1.x,c1.y,c1.u,c1.v,0.0f,
+                                                      renderLevel,lightValue,pTexture,
+                                                     pFrameBuff,pZBuff);
+                            break;
+                    }//end of switch
+                }//end of else clip check
+#endif             
+            }//end of not fully inside clip space
+        }//at least one terminal inside    
+    }//end of triangle draw loop        
+}
+
+static ClipPoint(u32 v0,u32 v1,u32 v2,u32 i0,u32 i1,u32 i2,f32 nearPlane, vect3_t *pVect,mat4_t *pMat, u8 *pUV,B3L_clip_t *pC0,B3L_clip_t *pC1 ){
+    vect4_t vect0,vect1,vect2;
+    Vect3Xmat4(pVect+v0, pMat, &vect0);
+    Vect3Xmat4(pVect+v1, pMat, &vect1);
+    Vect3Xmat4(pVect+v2, pMat, &vect2);
+    f32 rwFactor = 1.0f/nearPlane;
+    f32 factor = (vect0.w - nearPlane)/(vect0.w - vect1.w);
+    pC0->x = HALF_RESOLUTION_X + HALF_RESOLUTION_X*(vect0.x- factor*(vect0.x-vect1.x))*rwFactor;
+    pC0->y = HALF_RESOLUTION_Y - HALF_RESOLUTION_Y*(vect0.y- factor*(vect0.y-vect1.y))*rwFactor;
+    f32 mapu0 = (f32)(pUV[i0]);
+    f32 mapu1 = (f32)(pUV[i1]);
+    f32 mapv0 = (f32)(pUV[i0+1]);
+    f32 mapv1 = (f32)(pUV[i1+1]);
+    pC0->u = mapu0 - factor*(mapu0-mapu1);
+    pC0->v = mapv0 - factor*(mapv0-mapv1);
+    factor = (vect0.w - nearPlane)/(vect0.w - vect2.w);
+    pC1->x = HALF_RESOLUTION_X + HALF_RESOLUTION_X*(vect0.x- factor*(vect0.x-vect2.x))*rwFactor;
+    pC1->y = HALF_RESOLUTION_Y - HALF_RESOLUTION_Y*(vect0.y- factor*(vect0.y-vect2.y))*rwFactor;
+    f32 mapu2 = (f32)(pUV[i2]);
+    f32 mapv2 = (f32)(pUV[i2+1]);
+    pC1->u = mapu0 - factor*(mapu0-mapu2);
+    pC1->v = mapv0 - factor*(mapv0-mapv2);
 }
 
 __attribute__((always_inline)) static inline void DrawDepthLineNoClip(s32 Ax,s32 Ay,f32 Az,s32 Bx,s32 By,f32 Bz, 
@@ -2328,6 +2427,116 @@ __attribute__((always_inline)) static  inline void  DrawTriTexture_NOCheck(
         }
     } 
 }
+
+static void  DrawTriTexture_NotInline(
+                                f32 x0,f32 y0,f32 u0,f32 v0,f32 z0,
+                                f32 x1,f32 y1,f32 u1,f32 v1,f32 z1,
+                                f32 x2,f32 y2,f32 u2,f32 v2,f32 z2,
+                                u32 renderLevel,u32 lightFactor,B3L_texture_t *pTexture,
+                                fBuff_t *pFrameBuff,zBuff_t *pZbuff){
+    s32 y,last;
+    if(y0 > y1){
+        //B3L_SWAP_DRAW_TRI_VECT(0,1);
+        _swap_f32_t(y0,y1);_swap_f32_t(x0,x1);_swap_f32_t(u0,u1);_swap_f32_t(v0,v1); _swap_f32_t(z0,z1); 
+        //_swap_int32_t(inty0,inty1);  
+    }
+    if (y1 > y2) {
+        //B3L_SWAP_DRAW_TRI_VECT(2,1);
+        _swap_f32_t(y2,y1);_swap_f32_t(x2,x1);_swap_f32_t(u2,u1);_swap_f32_t(v2,v1);_swap_f32_t(z2,z1);  
+        //_swap_int32_t(inty1,inty2);  
+    }
+    if(y0 > y1){
+        //B3L_SWAP_DRAW_TRI_VECT(0,1);
+        _swap_f32_t(y0,y1);_swap_f32_t(x0,x1);_swap_f32_t(u0,u1);_swap_f32_t(v0,v1);_swap_f32_t(z0,z1); 
+        //_swap_int32_t(inty0,inty1);   
+    }
+    s32 inty0 = B3L_RoundingToS(y0),inty1 = B3L_RoundingToS(y1),inty2 = B3L_RoundingToS(y2);
+    if(inty0 == inty2) { // Handle awkward all-on-same-line case as its own thing
+        return;
+    }
+    f32 dy01 = 1.0f/(inty1 - inty0);
+    f32 dy02 = 1.0f/(inty2 - inty0);
+    f32 dy12 = 1.0f/(inty2 - inty1);
+
+    f32 dx01 = (x1 - x0)*dy01;
+    f32 dx02 = (x2 - x0)*dy02;
+    f32 dx12 = (x2 - x1)*dy12;
+    
+    f32 du01 = (u1 - u0)*dy01;
+    f32 dv01 = (v1 - v0)*dy01;
+    f32 du02 = (u2 - u0)*dy02;
+    f32 dv02 = (v2 - v0)*dy02;
+    f32 du12 = (u2 - u1)*dy12;
+    f32 dv12 = (v2 - v1)*dy12;
+    f32 dz01 = (z1 - z0)*dy01;
+    f32 dz02 = (z2 - z0)*dy02;
+    f32 dz12 = (z2 - z1)*dy12;
+    f32  a=x0+dx01;f32  aZ=z0+dz01;f32  aU=u0+du01;f32  aV=v0+dv01;
+    f32  b=x0+dx02;f32  bZ=z0+dz02;f32  bU=u0+du02;f32  bV=v0+dv02;
+    last = inty1-1;
+    y = inty0+1;
+    f32 deltaY;
+    if (last>=RENDER_RESOLUTION_Y){
+            last = RENDER_RESOLUTION_Y -1;
+    }
+    if (y<0){
+        deltaY = (f32)(-y);
+        y = 0;
+        a += deltaY*dx01;aZ +=deltaY*dz01;aU += deltaY*du01;aV += deltaY*dv01;
+        b += deltaY*dx02;bZ +=deltaY*dz02;bU += deltaY*du02;bV += deltaY*dv02;
+    }
+    if(a>b){
+        for(y; y<=last; y++) {
+            DrawTexHLine(b,y,a,bZ,aZ,bU,bV,aU,aV,lightFactor,pFrameBuff,pZbuff,pTexture);
+            a += dx01;aU +=du01;aV +=dv01;aZ += dz01;
+            b += dx02;bU +=du02;bV +=dv02;bZ += dz02;   
+        }
+    }else{
+        for(y; y<=last; y++) {
+            DrawTexHLine(a,y,b,aZ,bZ,aU,aV,bU,bV,lightFactor,pFrameBuff,pZbuff,pTexture);
+            a += dx01;aU +=du01;aV +=dv01;aZ += dz01;
+            b += dx02;bU +=du02;bV +=dv02;bZ += dz02;   
+        }
+    }
+    y= inty2;
+    last = inty1; 
+    
+    if (y == last){
+        deltaY= (f32)(inty1-inty0);
+        a = x2;aZ=z2;aU=u2;aV=v2;
+        b=x1;bZ= z0+dz02*deltaY;bU = u0+du02*deltaY;bV=v0+dv02*deltaY;
+    }else{
+        //y -=1;
+        //a = x2-dx02;aZ=z2-dz02;aU= u2-du02; aV = v2-dv02;
+        //b = x2-dx12;bZ=z2-dz12;bU= u2-du12; bV = v2-dv12;
+        a = x2;b=x2;aZ=z2;aU=u2;aV=v2;
+        bZ= z2;bU=u2;bV=v2;
+    }  
+    if (last<0){
+        last = 0;
+    }
+
+    if (y>=RENDER_RESOLUTION_Y){
+        y=RENDER_RESOLUTION_Y - 1;
+        deltaY = (f32)(inty2 - y);
+        a -= deltaY*dx02;aZ -=deltaY*dz02;aU -= deltaY*du02;aV -= deltaY*dv02;
+        b -= deltaY*dx12;bZ -=deltaY*dz12;bU -= deltaY*du12;bV -= deltaY*dv12;
+    }
+    if((a-dx02)>(b-dx12)){
+        for (y;y>=last;y--){
+            DrawTexHLine(b,y,a,bZ,aZ,bU,bV,aU,aV,lightFactor,pFrameBuff,pZbuff,pTexture);
+            a -= dx02;aZ -= dz02;aU -= du02;aV -= dv02;
+            b -= dx12;bZ -= dz12;bU -= du12;bV -= dv12;
+        }
+    }else{
+        for (y;y>=last;y--){
+            DrawTexHLine(a,y,b,aZ,bZ,aU,aV,bU,bV,lightFactor,pFrameBuff,pZbuff,pTexture);
+            a -= dx02;aZ -= dz02;aU -= du02;aV -= dv02;
+            b -= dx12;bZ -= dz12;bU -= du12;bV -= dv12;
+        }
+    }
+}
+
 
 __attribute__((always_inline)) static  inline void  DrawTriTexture(
                                                                         f32 x0,f32 y0,f32 u0,f32 v0,f32 z0,

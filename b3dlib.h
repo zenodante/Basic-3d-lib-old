@@ -140,6 +140,14 @@ typedef struct{
     f32                 w;  
 }vect4_t;
 
+typedef struct{
+    f32          x;
+    f32          y;
+    f32          z;
+    f32          u;
+    f32          v;
+}B3L_clip_t;
+
 typedef vect3_t euler3_t;
 typedef vect4_t quat4_t;
 
