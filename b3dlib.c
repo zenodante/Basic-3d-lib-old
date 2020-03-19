@@ -415,7 +415,12 @@ __attribute__((always_inline)) static  inline void  Vect3Xmat4WithTest_f(vect3_t
 
     if (rz<0.0f){//if the near plane clip, then don't do the calculation, set bit and return directly
         B3L_SET(testResult,B3L_NEAR_PLANE_CLIP); 
-        pResult->test = testResult;     
+        pResult->test = testResult;   
+#if B3L_DO_NEAR_PLANE_CLIP == 1
+        //to calculate a correct backface culling, not always correct!
+        pResult->x = HALF_RESOLUTION_X + HALF_RESOLUTION_X*rx;
+        pResult->y = HALF_RESOLUTION_Y - HALF_RESOLUTION_Y*ry;
+#endif
         return;
     }else if((rx<=rw)&&(rx>=-rw)&&(ry<=rw)&&(ry>=-rw)&&(rz<=rw)){
             B3L_SET(testResult,B3L_IN_SPACE);                    
