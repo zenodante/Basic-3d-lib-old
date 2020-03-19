@@ -137,23 +137,40 @@ void update(uint32_t time){
         //ROTATE_IN_BODY_Y(&(B3Lrender.camera),0.002f);
         //B3Lrender.camera.transform.translation.x +=1.0f;
     }
-    if (pressed(A)){
+    //if (pressed(A)){
         //B3Lrender.camera.trackDistance += 1.0f;
         //distance += 1.0f;
-        ROTATE_IN_BODY_Z(pShip,-0.002f);
-    }
-    if (pressed(B)){
+        //ROTATE_IN_BODY_Z(pShip,-0.002f);
+    //}
+    //if (pressed(B)){
         //B3Lrender.camera.trackDistance -= 1.0f;
         //distance -= 1.0f;
-        ROTATE_IN_BODY_Z(pShip,0.002f);
-    }
+        //ROTATE_IN_BODY_Z(pShip,0.002f);
+    //}
     SYNC_ROTATION_STATE_NOW(pShip);
     vect3_t frontDirect;
     frontDirect.x = pShip->mat.m02*0.1f;
     frontDirect.y = pShip->mat.m12*0.1f;
     frontDirect.z = pShip->mat.m22*0.1f;
-    B3L_Vect3Add(&(pShip->transform.translation),&frontDirect,&(pShip->transform.translation));
+    //B3L_Vect3Add(&(pShip->transform.translation),&frontDirect,&(pShip->transform.translation));
 
+    if (pressed(A)){
+        //B3Lrender.camera.trackDistance += 1.0f;
+        //distance += 1.0f;
+        //ROTATE_IN_BODY_Z(pShip,-0.002f);
+        B3L_Vect3Add(&(pShip->transform.translation),&frontDirect,&(pShip->transform.translation));
+
+    }
+    if (pressed(B)){
+        //B3Lrender.camera.trackDistance -= 1.0f;
+        //distance -= 1.0f;
+        //ROTATE_IN_BODY_Z(pShip,0.002f);
+        frontDirect.x = -frontDirect.x;
+        frontDirect.y = -frontDirect.y;
+        frontDirect.z = -frontDirect.z;
+        B3L_Vect3Add(&(pShip->transform.translation),&frontDirect,&(pShip->transform.translation));
+
+    }
     /*
     vect3_t result;
     

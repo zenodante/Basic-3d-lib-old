@@ -225,7 +225,7 @@ typedef struct{
 B3LObj_t state
    31     2423     1615      87
    ------------------------------------
-31|$$$$$$$$|******RQ|PONMLKJI|***EDCBA|0
+31|$$$$$$$$|******RQ|PONML*JI|***EDCBA|0
   ------------------------------------
   A-- mesh obj with texture
   B-- polygon obj
@@ -233,8 +233,8 @@ B3LObj_t state
   D-- particle generator obj
   E-- Bitmap obj
   I-- obj visualization
-  J-- Back face culling clock wise
-  K-- Back face culling anti-clock wise
+  J-- Back face culling state
+  
   L-- fix render level switch
   M-- Particle generator acitve state
   N-- need update euler angle
@@ -252,11 +252,7 @@ B3LObj_t state
 #define BITMAP_OBJ                          (4)
 //obj visualizable control
 #define OBJ_VISUALIZABLE                    (8)
-
-#define OBJ_BACK_CULLING_CLOCK              (9)
-#define OBJ_BACK_CULLING_ANTICLOCK         (10)
-#define OBJ_CULLING_MASK             0x00000600  
-#define OBJ_CULLING_SHIFT             (9)
+#define OBJ_BACKFACE_CULLING                (9)
 
 #define OBJ_IGNORE_RENDER_LEVEL            (11)
 #define OBJ_PARTICLE_ACTIVE                (12)

@@ -12,7 +12,7 @@
 
 #define  B3L_IN_SITU_LIGHT_CAL  0
 
-#define  B3L_DO_NEAR_PLANE_CLIP     1
+#define  B3L_DO_NEAR_PLANE_CLIP     0
 
 #define B3L_CLIP_NEAR_Z         0.1f
 

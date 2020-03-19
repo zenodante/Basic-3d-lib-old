@@ -752,7 +752,8 @@ void InitShipObj(B3LMeshObj_t *pObj,f32 size){
     pObj->pBoundBox = (f32 *)ship2_72tribound;
     B3L_SET(pObj->state,MESH_OBJ); 
     B3L_SET(pObj->state,OBJ_VISUALIZABLE);
-    B3L_SET(pObj->state,OBJ_BACK_CULLING_ANTICLOCK);
+	B3L_SET(pObj->state,OBJ_BACKFACE_CULLING);
+    //B3L_SET(pObj->state,OBJ_BACK_CULLING_ANTICLOCK);
     //B3L_SET(pObj->state,OBJ_IGNORE_RENDER_LEVEL);
     //B3L_SET(pObj->state,OBJ_FIX_RENDER_LEVEL_SHIFT);
 }

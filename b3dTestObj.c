@@ -30,18 +30,18 @@ const f32   B3L_boxVect[24] = {
 };
 
 const u16 B3L_boxTri[36] ={
-    3, 0, 2, /* front  */
-    1, 0, 3,
-    0, 4, 2, /* right  */
-    2, 4, 6,
-    4, 5, 6, /* back   */
-    7, 6, 5,
-    3, 7, 1, /* left   */
-    1, 7, 5,
-    6, 3, 2, /* top    */
-    7, 3, 6,
-    1, 4, 0, /* bottom */
-    5, 4, 1
+    3,  2,0, /* front  */
+    1,  3,0,
+    0,  2,4, /* right  */
+    2,  6,4,
+    4,  6,5, /* back   */
+    7,  5,6,
+    3,  1,7, /* left   */
+    1,  5,7,
+    6,  2,3, /* top    */
+    7,  6,3,
+    1,  0,4, /* bottom */
+    5,  1,4,
 };
 
 const u8 B3L_boxColorIdx[12]={
@@ -53,18 +53,18 @@ const u8 B3L_boxColorIdx[12]={
 
 #define m 15
 const u8 B3L_boxUV[72]={
-    0,0,  m,m,  m,0,\
-    0,m,  m,m,  0,0,\
-    m,m,  m,0,  0,m,\
-    0,m,  m,0,  0,0,\
-    m,0,  0,0,  m,m,\
-    0,m,  m,m,  0,0,\
-    0,0,  0,m,  m,0,\
-    m,0,  0,m,  m,m,\
-    0,0,  m,m,  m,0,\
-    0,m,  m,m,  0,0,\
-    m,0,  0,m,  m,m,\
-    0,0,  0,m,  m,0
+    0,0,   m,0, m,m,\
+    0,m,   0,0, m,m,\
+    m,m,   0,m, m,0,\
+    0,m,   0,0, m,0,\
+    m,0,   m,m, 0,0,\
+    0,m,   0,0, m,m,\
+    0,0,   m,0, 0,m,\
+    m,0,   m,m, 0,m,\
+    0,0,   m,0, m,m,\
+    0,m,   0,0, m,m,\
+    m,0,   m,m, 0,m,\
+    0,0,   m,0, 0,m,
 };
 #undef m
 
@@ -178,8 +178,8 @@ void B3L_InitBoxObj(B3LMeshObj_t *pObj,f32 size){
 
     B3L_SET(pObj->state,MESH_OBJ); 
     B3L_SET(pObj->state,OBJ_VISUALIZABLE);
-
-    B3L_SET(pObj->state,OBJ_BACK_CULLING_CLOCK);
+    B3L_SET(pObj->state,OBJ_BACKFACE_CULLING);
+    //B3L_SET(pObj->state,OBJ_BACK_CULLING_CLOCK);
 }
 
 
@@ -201,8 +201,8 @@ void B3L_InitBoxObjNoTexture(B3LMeshNoTexObj_t *pObj,f32 size){
     #endif
     B3L_SET(pObj->state,NOTEX_MESH_OBJ); 
     B3L_SET(pObj->state,OBJ_VISUALIZABLE);
-
-    B3L_SET(pObj->state,OBJ_BACK_CULLING_CLOCK);
+    B3L_SET(pObj->state,OBJ_BACKFACE_CULLING);
+    //B3L_SET(pObj->state,OBJ_BACK_CULLING_CLOCK);
 
 }
 

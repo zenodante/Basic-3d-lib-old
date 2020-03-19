@@ -413,7 +413,7 @@ __attribute__((always_inline)) static  inline void  Vect3Xmat4WithTest_f(vect3_t
     rz = dotCol(2);
     rw = dotCol(3);
 
-    if (rz<=0.0f){//if the near plane clip, then don't do the calculation, set bit and return directly
+    if (rz<0.0f){//if the near plane clip, then don't do the calculation, set bit and return directly
         B3L_SET(testResult,B3L_NEAR_PLANE_CLIP); 
         pResult->test = testResult;     
         return;
@@ -921,7 +921,7 @@ __attribute__((always_inline)) static inline bool TriangleFaceToViewer_f(f32 x0,
     (x1 - x0) * (y2 - y0) - (y1 - y0) * (x2 - x0) ;
     // ^ cross product for points with z == 0
 
-  return winding >= 0.0f ? true : false;
+  return winding <= 0.0f ? true : false;
 }
 
 /*-----------------------------------------------------------------------------
@@ -1699,7 +1699,8 @@ static void RenderNoTexMesh(B3LMeshNoTexObj_t *pObj,render_t *pRender, mat4_t *p
     u32 state = pObj->state;     
                
     u16 *pTriIdx = pMesh->pTri;
-    u32 cullingState = ((pObj->state)&OBJ_CULLING_MASK)>>OBJ_CULLING_SHIFT;
+    u32 cullingstate = B3L_TEST(state,OBJ_BACKFACE_CULLING);
+    //u32 cullingState = ((pObj->state)&OBJ_CULLING_MASK)>>OBJ_CULLING_SHIFT;
     u32 vect0Idx,vect1Idx,vect2Idx;
     vect3_t normalVect;
     f32   normalDotLight;
@@ -1725,7 +1726,12 @@ static void RenderNoTexMesh(B3LMeshNoTexObj_t *pObj,render_t *pRender, mat4_t *p
         f32 x2 = pVectTarget[vect2Idx].x;
         f32 y2 = pVectTarget[vect2Idx].y;
         bool backFaceCullingResult = TriangleFaceToViewer_f(x0, y0, x1, y1, x2, y2); 
+        /*
         if (((cullingState==1) && backFaceCullingResult)||((cullingState==2) && (!backFaceCullingResult))){    
+            continue;
+        }
+        */
+        if(cullingstate && backFaceCullingResult){
             continue;
         }
         // out of space clip
@@ -1856,7 +1862,8 @@ static void RenderTexMesh(B3LMeshObj_t *pObj,render_t *pRender, mat4_t *pMat,u32
     }         
     u32 state = pObj->state;     
     u16 *pTriIdx = pMesh->pTri;
-    u32 cullingState = ((state)&OBJ_CULLING_MASK)>>OBJ_CULLING_SHIFT;
+    u32 cullingState = B3L_TEST(state,OBJ_BACKFACE_CULLING);
+    //u32 cullingState = ((state)&OBJ_CULLING_MASK)>>OBJ_CULLING_SHIFT;
     u32 vect0Idx,vect1Idx,vect2Idx;
     vect3_t normalVect;
     f32   normalDotLight;
@@ -1887,10 +1894,14 @@ static void RenderTexMesh(B3LMeshObj_t *pObj,render_t *pRender, mat4_t *pMat,u32
         f32 x2 = pVectTarget[vect2Idx].x;
         f32 y2 = pVectTarget[vect2Idx].y;
         bool backFaceCullingResult = TriangleFaceToViewer_f(x0, y0, x1, y1, x2, y2);     
+        /*
         if (((cullingState==1) && backFaceCullingResult)||((cullingState==2) && (!backFaceCullingResult))){    
             continue;
         }
-        
+        */
+        if (cullingState && backFaceCullingResult){
+            continue;
+        }
         u32 result0 = pVectTarget[vect0Idx].test;
         u32 result1 = pVectTarget[vect1Idx].test;
         u32 result2 = pVectTarget[vect2Idx].test;
@@ -1927,6 +1938,7 @@ static void RenderTexMesh(B3LMeshObj_t *pObj,render_t *pRender, mat4_t *pMat,u32
                 }
 #if B3L_DO_NEAR_PLANE_CLIP == 1
                 else{//do the clip!
+                    //printf("%d\n",clipCheck);
                     switch(clipCheck){
                         case 1:  //vect 0 outside
                             ClipPoint(vect0Idx,vect1Idx,vect2Idx,i*6,i*6+2,i*6+4,nearPlane,((vect3_t *)(pMesh->pVect)),pMat,pUV,&c0,&c1);
