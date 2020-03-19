@@ -14,11 +14,11 @@
 #ifndef   __ASM
 #define   __ASM        __asm
 #endif
-#ifdef WIN32 
-#define __attribute__(A)
-#endif
+
+
 
 #pragma GCC optimize("-O3")
+
 //config the ram position if necessary
 u32            B3L_seed = 0x31415926;
 screen3f_t     vectBuff[VECT_BUFF_SIZE]; //10KB
@@ -50,204 +50,212 @@ B3L_Particle_t  particleBuff[B3L_PARTICLE_BUFF_DEPTH];//18KB
 Math functions
 -----------------------------------------------------------------------------*/
 #if  B3L_ARM == 1
-__attribute__((always_inline)) static  inline f32      B3L_Sqrtf(f32 in);
-__attribute__((always_inline)) static  inline f32      B3L_Absf(f32 in);
+__STATIC_FORCEINLINE f32      B3L_Sqrtf(f32 in);
+__STATIC_FORCEINLINE f32      B3L_Absf(f32 in);
 #else
 #define B3L_Sqrtf   sqrtf
 #define B3L_Absf    fabsf
 #endif 
-__attribute__((always_inline)) static  inline s32      B3L_RoundingToS(f32 in);
-__attribute__((always_inline)) static  inline s32      B3L_RoundingToU(f32 in);
-__attribute__((always_inline)) static  inline f32      FastInvertSqrt(f32 x);  
-__attribute__((always_inline)) static  inline s32      VcvtF32ToS32_Fix(f32 in);
-__attribute__((always_inline)) static  inline f32      VcvtS32ToF32_Fix(s32 in);
-__attribute__((always_inline)) static  inline u32      SatToU8(u32 in);
-__attribute__((always_inline)) static  inline u32      SatToU16(u32 in);
-__attribute__((always_inline)) static  inline f32      Interp_f(f32 x1, f32 x2, f32 t);
-__attribute__((always_inline)) static  inline s32      Clamp_i(s32 v, s32 v1, s32 v2);
-__attribute__((always_inline)) static  inline f32      Clamp_f(f32 v, f32 v1, f32 v2);
+__STATIC_FORCEINLINE s32      B3L_RoundingToS(f32 in);
+__STATIC_FORCEINLINE s32      B3L_RoundingToU(f32 in);
+__STATIC_FORCEINLINE f32      FastInvertSqrt(f32 x);
+__STATIC_FORCEINLINE s32      VcvtF32ToS32_Fix(f32 in);
+__STATIC_FORCEINLINE f32      VcvtS32ToF32_Fix(s32 in);
+__STATIC_FORCEINLINE u32      SatToU8(u32 in);
+__STATIC_FORCEINLINE u32      SatToU16(u32 in);
+__STATIC_FORCEINLINE f32      Interp_f(f32 x1, f32 x2, f32 t);
+__STATIC_FORCEINLINE s32      Clamp_i(s32 v, s32 v1, s32 v2);
+__STATIC_FORCEINLINE f32      Clamp_f(f32 v, f32 v1, f32 v2);
 /*-----------------------------------------------------------------------------
 Vector and matrix functions
 -----------------------------------------------------------------------------*/
-__attribute__((always_inline)) static  inline void     Vect3_Add(vect3_t *pV1,vect3_t *pV2,vect3_t *pResult);
-__attribute__((always_inline)) static  inline void     MakeClipMatrix(u32 state,f32 near_plane,f32 far_plane,f32 focalLength, f32 aspectRatio,mat4_t *pMat);
-__attribute__((always_inline)) static  inline void     Vect3Xmat4(vect3_t *pV, mat4_t *pMat, vect4_t *pResult);
-__attribute__((always_inline)) static  inline void     Vect3Xmat4WithTestToScreen4(vect3_t *pV, mat4_t *pMat, screen4_t *pResult);
-__attribute__((always_inline)) static  inline void     Vect3Xmat4WithTest_f(vect3_t *pV, mat4_t *pMat, screen3f_t *pResult);
-__attribute__((always_inline)) static  inline bool     Vect4BoundTest(vect4_t *pV);
+__STATIC_FORCEINLINE void     Vect3_Add(vect3_t *pV1,vect3_t *pV2,vect3_t *pResult);
+__STATIC_FORCEINLINE void     MakeClipMatrix(u32 state,f32 near_plane,f32 far_plane,f32 focalLength, f32 aspectRatio,mat4_t *pMat);
+__STATIC_FORCEINLINE void     Vect3Xmat4(vect3_t *pV, mat4_t *pMat, vect4_t *pResult);
+__STATIC_FORCEINLINE void     Vect3Xmat4WithTestToScreen4(vect3_t *pV, mat4_t *pMat, screen4_t *pResult);
+__STATIC_FORCEINLINE void     Vect3Xmat4WithTest_f(vect3_t *pV, mat4_t *pMat, screen3f_t *pResult);
+__STATIC_FORCEINLINE bool     Vect4BoundTest(vect4_t *pV);
 /*-----------------------------------------------------------------------------
 Z buff functions
 -----------------------------------------------------------------------------*/
-__attribute__((always_inline)) static  inline zBuff_t  CalZbuffValue(f32 z);
+__STATIC_FORCEINLINE zBuff_t  CalZbuffValue(f32 z);
 /*-----------------------------------------------------------------------------
 Light functions
 -----------------------------------------------------------------------------*/
-__attribute__((always_inline)) static  inline fBuff_t  LightBlend(u32 inputPixel, u8 r, u8 g, u8 b);
-__attribute__((always_inline)) static  inline u32      CalLightFactor(f32 normalDotLight, f32 lightFactor0,f32 lightFactor1);
- /*-----------------------------------------------------------------------------
+__STATIC_FORCEINLINE fBuff_t  LightBlend(u32 inputPixel, u8 r, u8 g, u8 b);
+__STATIC_FORCEINLINE u32      CalLightFactor(f32 normalDotLight, f32 lightFactor0,f32 lightFactor1);
+/*-----------------------------------------------------------------------------
 Testing functions
 -----------------------------------------------------------------------------*/
-static bool Vect3InClipSpace(vect3_t *pV, mat4_t *pMat);
-static bool BoundBoxTest(f32 *pMaxMin,mat4_t *pMat);
-__attribute__((always_inline)) static  inline bool     TriangleFaceToViewer_f(f32 x0, f32 y0, f32 x1, f32 y1, f32 x2, f32 y2);
-static ClipPoint(u32 v0,u32 v1,u32 v2,u32 i0,u32 i1,u32 i2, f32 nearPlane, vect3_t *pVect,mat4_t *pMat, u8 *pUV,B3L_clip_t *pC0,B3L_clip_t *pC1 );
-static ClipPointNoTex(u32 v0,u32 v1,u32 v2,f32 nearPlane, vect3_t *pVect,mat4_t *pMat,B3L_clip_t *pC0,B3L_clip_t *pC1 );
+__STATIC_FORCEINLINE bool     TriangleFaceToViewer_f(f32 x0, f32 y0, f32 x1, f32 y1, f32 x2, f32 y2);
+_RAM_FUNC     static bool     Vect3InClipSpace(vect3_t *pV, mat4_t *pMat);
+_RAM_FUNC     static bool     BoundBoxTest(f32 *pMaxMin,mat4_t *pMat);
+/*-----------------------------------------------------------------------------
+Near plane clip functions
+-----------------------------------------------------------------------------*/
+_RAM_FUNC     static void     ClipPoint(u32 v0,u32 v1,u32 v2,u32 i0,u32 i1,u32 i2,
+                                         f32 nearPlane, vect3_t *pVect,mat4_t *pMat,
+                                         u8 *pUV,B3L_clip_t *pC0,B3L_clip_t *pC1);
+_RAM_FUNC     static void     ClipPointNoTex(u32 v0,u32 v1,u32 v2,f32 nearPlane, 
+                                              vect3_t *pVect,mat4_t *pMat,
+                                              B3L_clip_t *pC0,B3L_clip_t *pC1 );
 /*-----------------------------------------------------------------------------
 Draw functions
 -----------------------------------------------------------------------------*/ 
-__attribute__((always_inline)) static  inline fBuff_t  GetFinalColor(fBuff_t color,u32 lightFactor);
-__attribute__((always_inline)) static  inline fBuff_t  GetColorValue(texLUT_t *lut,u8 colorIdx,u32 lightFactor);
-__attribute__((always_inline)) static  inline void     DrawPixel(fBuff_t color,s32 x,s32 y,f32 z,
+__STATIC_FORCEINLINE fBuff_t  GetFinalColor(fBuff_t color,u32 lightFactor);
+__STATIC_FORCEINLINE fBuff_t  GetColorValue(texLUT_t *lut,u8 colorIdx,u32 lightFactor);
+__STATIC_FORCEINLINE void     DrawPixel(fBuff_t color,s32 x,s32 y,f32 z,
                                                                         fBuff_t *pFrameBuff,zBuff_t *pZbuff);
-__attribute__((always_inline)) static  inline void     DrawPixelWithTest(fBuff_t color,s32 x,s32 y,f32 z,
+__STATIC_FORCEINLINE void     DrawPixelWithTest(fBuff_t color,s32 x,s32 y,f32 z,
                                                                         fBuff_t *pFrameBuff,zBuff_t *pZbuff);                                                                        
-__attribute__((always_inline)) static  inline void     DrawTriTexture(
-                                                                        f32 x0,f32 y0,f32 u0,f32 v0,f32 z0,
-                                                                        f32 x1,f32 y1,f32 u1,f32 v1,f32 z1,
-                                                                        f32 x2,f32 y2,f32 u2,f32 v2,f32 z2,
-                                                                        u32 renderLevel,u32 lightFactor,B3L_texture_t *pTexture,
-                                                                        fBuff_t *pFrameBuff,zBuff_t *pZbuff);
-static void  DrawTriTexture_NotInline(
-                                f32 x0,f32 y0,f32 u0,f32 v0,f32 z0,
-                                f32 x1,f32 y1,f32 u1,f32 v1,f32 z1,
-                                f32 x2,f32 y2,f32 u2,f32 v2,f32 z2,
-                                u32 renderLevel,u32 lightFactor,B3L_texture_t *pTexture,
-                                fBuff_t *pFrameBuff,zBuff_t *pZbuff);
-static void     DrawTriColor_NotInline(
-                                f32 x0,f32 y0,f32 z0,
-                                f32 x1,f32 y1,f32 z1,
-                                f32 x2,f32 y2,f32 z2,
-                                u32 renderLevel,u32 lightFactor,fBuff_t color,
-                                fBuff_t *pFrameBuff,zBuff_t *pZbuff);
-__attribute__((always_inline)) static  inline void     DrawTriTexture_NOCheck(
-                                                                        f32 x0,f32 y0,f32 u0,f32 v0,f32 z0,
-                                                                        f32 x1,f32 y1,f32 u1,f32 v1,f32 z1,
-                                                                        f32 x2,f32 y2,f32 u2,f32 v2,f32 z2,
-                                                                        u32 renderLevel,u32 lightFactor,B3L_texture_t *pTexture,
-                                                                        fBuff_t *pFrameBuff,zBuff_t *pZbuff);
-__attribute__((always_inline)) static  inline void     DrawTriColor(
-                                                                        f32 x0,f32 y0,f32 z0,
-                                                                        f32 x1,f32 y1,f32 z1,
-                                                                        f32 x2,f32 y2,f32 z2,
-                                                                        u32 renderLevel,u32 lightFactor,fBuff_t color,
-                                                                        fBuff_t *pFrameBuff,zBuff_t *pZbuff);
-__attribute__((always_inline)) static  inline void     DrawTriColor_NOCheck(
-                                                                        f32 x0,f32 y0,f32 z0,
-                                                                        f32 x1,f32 y1,f32 z1,
-                                                                        f32 x2,f32 y2,f32 z2,
-                                                                        u32 renderLevel,u32 lightFactor,fBuff_t color,
-                                                                        fBuff_t *pFrameBuff,zBuff_t *pZbuff);
-__attribute__((always_inline)) static  inline void     DrawTexHLine(f32 x,s32 y,f32 b, f32 aZ, f32 bZ,
-                                                                        f32 aU,f32 aV,f32 bU,f32 bV,u32 lightFactor, 
-                                                                        fBuff_t *pFrameBuff,zBuff_t *pZbuff,
-                                                                        B3L_texture_t *pTexture);
+__STATIC_FORCEINLINE void     DrawTriTexture(f32 x0,f32 y0,f32 u0,f32 v0,f32 z0,
+                                            f32 x1,f32 y1,f32 u1,f32 v1,f32 z1,
+                                            f32 x2,f32 y2,f32 u2,f32 v2,f32 z2,
+                                            u32 renderLevel,u32 lightFactor,B3L_texture_t *pTexture,
+                                            fBuff_t *pFrameBuff,zBuff_t *pZbuff);
+_RAM_FUNC static void  DrawTriTexture_NotInline(
+                                            f32 x0,f32 y0,f32 u0,f32 v0,f32 z0,
+                                            f32 x1,f32 y1,f32 u1,f32 v1,f32 z1,
+                                            f32 x2,f32 y2,f32 u2,f32 v2,f32 z2,
+                                            u32 renderLevel,u32 lightFactor,B3L_texture_t *pTexture,
+                                            fBuff_t *pFrameBuff,zBuff_t *pZbuff);
+_RAM_FUNC static void     DrawTriColor_NotInline(f32 x0,f32 y0,f32 z0,
+                                            f32 x1,f32 y1,f32 z1,
+                                            f32 x2,f32 y2,f32 z2,
+                                            u32 renderLevel,u32 lightFactor,fBuff_t color,
+                                            fBuff_t *pFrameBuff,zBuff_t *pZbuff);
+__STATIC_FORCEINLINE void     DrawTriTexture_NOCheck(
+                                            f32 x0,f32 y0,f32 u0,f32 v0,f32 z0,
+                                            f32 x1,f32 y1,f32 u1,f32 v1,f32 z1,
+                                            f32 x2,f32 y2,f32 u2,f32 v2,f32 z2,
+                                            u32 renderLevel,u32 lightFactor,B3L_texture_t *pTexture,
+                                            fBuff_t *pFrameBuff,zBuff_t *pZbuff);
+__STATIC_FORCEINLINE void     DrawTriColor(
+                                            f32 x0,f32 y0,f32 z0,
+                                            f32 x1,f32 y1,f32 z1,
+                                            f32 x2,f32 y2,f32 z2,
+                                            u32 renderLevel,u32 lightFactor,fBuff_t color,
+                                            fBuff_t *pFrameBuff,zBuff_t *pZbuff);
+__STATIC_FORCEINLINE void     DrawTriColor_NOCheck(
+                                            f32 x0,f32 y0,f32 z0,
+                                            f32 x1,f32 y1,f32 z1,
+                                            f32 x2,f32 y2,f32 z2,
+                                            u32 renderLevel,u32 lightFactor,fBuff_t color,
+                                            fBuff_t *pFrameBuff,zBuff_t *pZbuff);
+__STATIC_FORCEINLINE void     DrawTexHLine(f32 x,s32 y,f32 b, f32 aZ, f32 bZ,
+                                            f32 aU,f32 aV,f32 bU,f32 bV,u32 lightFactor, 
+                                            fBuff_t *pFrameBuff,zBuff_t *pZbuff,
+                                            B3L_texture_t *pTexture);
                                                                         
-__attribute__((always_inline)) static inline void      DrawTexHLine_NOCheck(f32 x,s32 y,f32 b, f32 aZ, f32 bZ,
-f32 aU,f32 aV,f32 bU,f32 bV, u32 lightFactor, fBuff_t *pFrameBuff,zBuff_t *pZbuff, B3L_texture_t *pTexture);
+__STATIC_FORCEINLINE void     DrawTexHLine_NOCheck(f32 x,s32 y,f32 b, f32 aZ, f32 bZ,
+                                                   f32 aU,f32 aV,f32 bU,f32 bV, u32 lightFactor,
+                                                    fBuff_t *pFrameBuff,zBuff_t *pZbuff, B3L_texture_t *pTexture);
 
-__attribute__((always_inline)) static  inline void     DrawColorHLine(f32 x,s32 y,f32 b, f32 aZ, f32 bZ,
-                                                                        fBuff_t finalColor, 
-                                                                        fBuff_t *pFrameBuff,zBuff_t *pZbuff); 
-__attribute__((always_inline)) static  inline void     DrawColorHLine_NOCheck(f32 x,s32 y,f32 b, f32 aZ, f32 bZ,
-                                                                        fBuff_t finalColor, 
-                                                                        fBuff_t *pFrameBuff,zBuff_t *pZbuff);                                                                        
-__attribute__((always_inline)) static  inline void     DrawDepthLineNoClip(s32 Ax,s32 Ay,f32 Az,s32 Bx,s32 By,f32 Bz, 
-                                                                        texLUT_t color,fBuff_t *pFrameBuff,zBuff_t *pZbuff);  
-__attribute__((always_inline)) static  inline void     DrawDepthLineClip(s32 Ax,s32 Ay,f32 Az,s32 Bx,s32 By,f32 Bz, 
-                                                                        texLUT_t color,fBuff_t *pFrameBuff,zBuff_t *pZbuff);             
+__STATIC_FORCEINLINE void     DrawColorHLine(f32 x,s32 y,f32 b, f32 aZ, f32 bZ,
+                                            fBuff_t finalColor, 
+                                            fBuff_t *pFrameBuff,zBuff_t *pZbuff); 
+__STATIC_FORCEINLINE void     DrawColorHLine_NOCheck(f32 x,s32 y,f32 b, f32 aZ, f32 bZ,
+                                                    fBuff_t finalColor, 
+                                                    fBuff_t *pFrameBuff,zBuff_t *pZbuff);                                                                        
+__STATIC_FORCEINLINE void     DrawDepthLineNoClip(s32 Ax,s32 Ay,f32 Az,s32 Bx,s32 By,f32 Bz, 
+                                                texLUT_t color,fBuff_t *pFrameBuff,zBuff_t *pZbuff);  
+__STATIC_FORCEINLINE void     DrawDepthLineClip(s32 Ax,s32 Ay,f32 Az,s32 Bx,s32 By,f32 Bz, 
+                                                texLUT_t color,fBuff_t *pFrameBuff,zBuff_t *pZbuff);             
  /*-----------------------------------------------------------------------------
 Camera functions
 -----------------------------------------------------------------------------*/
-static void     UpdateCam(render_t *pRender);
-static void     GenerateW2CMatrix(camera_t *pCam);
+_RAM_FUNC static void     UpdateCam(render_t *pRender);
+_RAM_FUNC static void     GenerateW2CMatrix(camera_t *pCam);
 
-static void     CamCalNewTrackPosition(camera_t *pCam);
-static void     CamCalNewTrackQuaternion(camera_t *pCam);
+_RAM_FUNC static void     CamCalNewTrackPosition(camera_t *pCam);
+_RAM_FUNC static void     CamCalNewTrackQuaternion(camera_t *pCam);
  /*-----------------------------------------------------------------------------
 Obj list functions
 -----------------------------------------------------------------------------*/
-static void ResetObjList(scene_t *pScene);
-static void AddObjToTwoWayList(B3LObj_t *pObj, B3LObj_t **pStart);
+_RAM_FUNC static void     ResetObjList(scene_t *pScene);
+_RAM_FUNC static void     AddObjToTwoWayList(B3LObj_t *pObj, B3LObj_t **pStart);
  /*-----------------------------------------------------------------------------
 Particle list functions
 -----------------------------------------------------------------------------*/
-static void ResetParticleList(B3L_Particle_t *pPool,B3L_Particle_t **pStart,u32 num);
+_RAM_FUNC static void     ResetParticleList(B3L_Particle_t *pPool,B3L_Particle_t **pStart,u32 num);
  /*-----------------------------------------------------------------------------
 Buffer functions
 -----------------------------------------------------------------------------*/
-static void ClearFrameBuff(fBuff_t *pFramebuff,fBuff_t value,u32 lineNum,u32 lineLength,u32 lineSkip);
-static void ClearZbuff(zBuff_t *pZbuff,u32 length);
+_RAM_FUNC static void     ClearFrameBuff(fBuff_t *pFramebuff,fBuff_t value,u32 lineNum,u32 lineLength,u32 lineSkip);
+_RAM_FUNC static void     ClearZbuff(zBuff_t *pZbuff,u32 length);
  /*-----------------------------------------------------------------------------
 Obj render functions
 -----------------------------------------------------------------------------*/
-static void RenderMeshObjs(render_t *pRender);
+_RAM_FUNC static void     RenderMeshObjs(render_t *pRender);
 #ifdef B3L_USING_PARTICLE
-static void UpdateParticleObjs(render_t *pRender, u32 time);
-static void RenderParticleObjs(render_t *pRender);
-#endif
-static void RenderTexMesh(B3LMeshObj_t *pObj,render_t *pRender, mat4_t *pMat,u32 renderLevel);
-static void RenderNoTexMesh(B3LMeshNoTexObj_t *pObj,render_t *pRender, mat4_t *pMat,u32 renderLevel);
-static void RenderPolygon(B3LPolygonObj_t *pObj,render_t *pRender, mat4_t *pMat);
+_RAM_FUNC static void     UpdateParticleObjs(render_t *pRender, u32 time);
+_RAM_FUNC static void     RenderParticleObjs(render_t *pRender);
+#endif    
+_RAM_FUNC static void     RenderTexMesh(B3LMeshObj_t *pObj,render_t *pRender, mat4_t *pMat,u32 renderLevel);
+_RAM_FUNC static void     RenderNoTexMesh(B3LMeshNoTexObj_t *pObj,render_t *pRender, mat4_t *pMat,u32 renderLevel);
+_RAM_FUNC static void     RenderPolygon(B3LPolygonObj_t *pObj,render_t *pRender, mat4_t *pMat);
 
 /*Function defines-----------------------------------------------------------*/
 /*-----------------------------------------------------------------------------
 Math function
 -----------------------------------------------------------------------------*/
 #if B3L_ARM  == 1
-__attribute__((always_inline)) static  inline f32 B3L_Sqrtf(f32 in){
+__STATIC_FORCEINLINE f32 B3L_Sqrtf(f32 in){
     f32 result;
 __ASM("vsqrt.f32 %0,%1" : "=t"(result) : "t"(in));
   return (result);
 }
-__attribute__((always_inline)) static  inline f32 B3L_Absf(f32 in){
+__STATIC_FORCEINLINE f32 B3L_Absf(f32 in){
     f32 result;
     __ASM("vabs.f32 %0,%1" : "=t"(result) : "t"(in));
     return (result); 
 }
-__attribute__((always_inline)) static  inline s32   VcvtF32ToS32_Fix(f32 in){
+__STATIC_FORCEINLINE s32   VcvtF32ToS32_Fix(f32 in){
     s32 result;
     __ASM ("vcvt.s32.f32 %0,%1,#B3L_FIX_BITS" : "=t"(result) : "t"(in));
     return result; 
 }
 
-__attribute__((always_inline)) static  inline f32   VcvtS32ToF32_Fix(s32 in){
+__STATIC_FORCEINLINE f32   VcvtS32ToF32_Fix(s32 in){
     s32 result;
     __ASM ("vcvt.f32.s32 %0,%1,#B3L_FIX_BITS" : "=t"(result) : "t"(in));
     return result; 
 }
 
-__attribute__((always_inline)) static  inline u32   SatToU8(u32 in){
+__STATIC_FORCEINLINE u32   SatToU8(u32 in){
     u32 result;
-    __ASM ("usat %0,#8,%1" : "=t"(result) : "t"(in));
+    __ASM ("usat %0, %1, %2" : "=r" (result) :  "I" (8), "r" (in) ); 
     return result; 
 }
 
-__attribute__((always_inline)) static  inline u32   SatToU16(u32 in){
+
+__STATIC_FORCEINLINE u32   SatToU16(u32 in){
     u32 result;
-    __ASM ("usat %0,#16,%1" : "=t"(result) : "t"(in));
-    return result; 
+    __ASM ("usat %0, %1, %2" : "=r" (result) :  "I" (16), "r" (in) ); 
+    return result;
 }
 
-__attribute__((always_inline)) static  inline s32   B3L_RoundingToS(f32 in){
+
+__STATIC_FORCEINLINE s32   B3L_RoundingToS(f32 in){
     s32 result;
     __ASM ("vcvtr.s32.f32 %0,%1" : "=t"(result) : "t"(in));
     return result; 
 }
 
-__attribute__((always_inline)) static  inline s32   B3L_RoundingToU(f32 in){
+__STATIC_FORCEINLINE s32   B3L_RoundingToU(f32 in){
     u32 result;
     __ASM ("vcvtr.u32.f32 %0,%1" : "=t"(result) : "t"(in));
     return result; 
 }
 
 #else
-__attribute__((always_inline)) static  inline s32   VcvtF32ToS32_Fix(f32 in){
+__STATIC_FORCEINLINE s32   VcvtF32ToS32_Fix(f32 in){
     return ((s32)(in*((f32)(1<<B3L_FIX_BITS))));
 }
-__attribute__((always_inline)) static  inline f32   VcvtS32ToF32_Fix(s32 in){
+__STATIC_FORCEINLINE f32   VcvtS32ToF32_Fix(s32 in){
     return ((f32)in)/((f32)(1<<B3L_FIX_BITS));
 }
-__attribute__((always_inline)) static  inline u32   SatToU8(u32 in){
+__STATIC_FORCEINLINE u32   SatToU8(u32 in){
     const uint32_t max = ((1U << 8) - 1U);
     if (in > max){
         return max;
@@ -255,7 +263,7 @@ __attribute__((always_inline)) static  inline u32   SatToU8(u32 in){
         return in;
     }
 }
-__attribute__((always_inline)) static  inline u32   SatToU16(u32 in){
+__STATIC_FORCEINLINE u32   SatToU16(u32 in){
     const uint32_t max = ((1U << 16) - 1U);
     if (in > max){
         return max;
@@ -264,26 +272,26 @@ __attribute__((always_inline)) static  inline u32   SatToU16(u32 in){
     }
 }
 
-__attribute__((always_inline)) static  inline s32   B3L_RoundingToS(f32 in){
+__STATIC_FORCEINLINE s32   B3L_RoundingToS(f32 in){
     return (s32)roundf(in); 
 }
 
-__attribute__((always_inline)) static  inline s32   B3L_RoundingToU(f32 in){
+__STATIC_FORCEINLINE s32   B3L_RoundingToU(f32 in){
     return (u32)roundf(in); 
 }
 #endif //end of B3L_ARM
 
-__attribute__((always_inline)) static  inline f32 Clamp_f(f32 v, f32 v1, f32 v2){
+__STATIC_FORCEINLINE f32 Clamp_f(f32 v, f32 v1, f32 v2){
     return v > v1 ? (v < v2 ? v : v2) : v1;
 }
 
-__attribute__((always_inline)) static  inline s32 Clamp_i(s32 v, s32 v1, s32 v2)
+__STATIC_FORCEINLINE s32 Clamp_i(s32 v, s32 v1, s32 v2)
 {
     return v >= v1 ? (v <= v2 ? v : v2) : v1;
 }
 
 //inv sqrt black magic from quake 
-__attribute__((always_inline)) static  inline f32 FastInvertSqrt(f32 x){
+__STATIC_FORCEINLINE f32 FastInvertSqrt(f32 x){
     f32 xhalf = 0.5f * x;
         int i = *(int*)&x;            // store floating-point bits in integer
         i = 0x5f3759df - (i >> 1);    // initial guess for Newton's method
@@ -292,11 +300,11 @@ __attribute__((always_inline)) static  inline f32 FastInvertSqrt(f32 x){
         return x;
 }
 
-__attribute__((always_inline)) static inline f32 Interp_f(f32 x1, f32 x2, f32 t){
+__STATIC_FORCEINLINE f32 Interp_f(f32 x1, f32 x2, f32 t){
     return x1 + (x2 - x1) * t;
 }
 
-__attribute__((always_inline)) static  inline void Vect3_Add(vect3_t *pV1,vect3_t *pV2,vect3_t *pResult){
+__STATIC_FORCEINLINE void Vect3_Add(vect3_t *pV1,vect3_t *pV2,vect3_t *pResult){
     pResult->x = pV1->x + pV2->x;
     pResult->y = pV1->y + pV2->y;
     pResult->z = pV1->z + pV2->z;
@@ -305,7 +313,7 @@ __attribute__((always_inline)) static  inline void Vect3_Add(vect3_t *pV1,vect3_
 /*
     Create 3*3 matrix for rotation in x axis
 */
-void B3L_Mat3XRotate(mat3_t *pMat,f32 angle){
+_RAM_FUNC void B3L_Mat3XRotate(mat3_t *pMat,f32 angle){
     f32 cosp = B3L_cos(angle);
     f32 sinp = B3L_sin(angle);
     pMat->m00=1.0f; pMat->m01=0.0f; pMat->m02=0.0f;
@@ -316,7 +324,7 @@ void B3L_Mat3XRotate(mat3_t *pMat,f32 angle){
 /*
     Create 3*3 matrix for rotation in y axis
 */
-void B3L_Mat3YRotate(mat3_t *pMat,f32 angle){
+_RAM_FUNC void B3L_Mat3YRotate(mat3_t *pMat,f32 angle){
     f32 cosh = B3L_cos(angle);
     f32 sinh = B3L_sin(angle);
     pMat->m00=cosh; pMat->m01=0.0f; pMat->m02=sinh;
@@ -327,7 +335,7 @@ void B3L_Mat3YRotate(mat3_t *pMat,f32 angle){
 /*
     Create 3*3 matrix for rotation in z axis
 */
-void B3L_Mat3ZRotate(mat3_t *pMat,f32 angle){
+_RAM_FUNC void B3L_Mat3ZRotate(mat3_t *pMat,f32 angle){
     f32 cosb = B3L_cos(angle);
     f32 sinb = B3L_sin(angle);
     pMat->m00=cosb; pMat->m01=-sinb; pMat->m02=0.0f;
@@ -338,7 +346,7 @@ void B3L_Mat3ZRotate(mat3_t *pMat,f32 angle){
 /*
     Rotate obj matrix in obj space by x axis
 */
-void B3L_RotateObjInOX(quat4_t *pQuat,f32 angle){
+_RAM_FUNC void B3L_RotateObjInOX(quat4_t *pQuat,f32 angle){
     quat4_t rqat;
     B3L_QuatCreateXRotate(&rqat,angle);
     B3L_QuatMult(pQuat,&rqat, pQuat);
@@ -347,7 +355,7 @@ void B3L_RotateObjInOX(quat4_t *pQuat,f32 angle){
 /*
     Rotate obj matrix in obj space by y axis
 */
-void B3L_RotateObjInOY(quat4_t *pQuat,f32 angle){
+_RAM_FUNC void B3L_RotateObjInOY(quat4_t *pQuat,f32 angle){
     quat4_t rqat;
     B3L_QuatCreateYRotate(&rqat,angle);
     B3L_QuatMult(pQuat,&rqat, pQuat);
@@ -356,7 +364,7 @@ void B3L_RotateObjInOY(quat4_t *pQuat,f32 angle){
 /*
     Rotate obj matrix in obj space by z axis
 */
-void B3L_RotateObjInOZ(quat4_t *pQuat,f32 angle){
+_RAM_FUNC void B3L_RotateObjInOZ(quat4_t *pQuat,f32 angle){
     quat4_t rqat;
     B3L_QuatCreateZRotate(&rqat,angle);
     B3L_QuatMult(pQuat,&rqat, pQuat);
@@ -365,7 +373,7 @@ void B3L_RotateObjInOZ(quat4_t *pQuat,f32 angle){
 /*
     Rotate obj matrix in world space by x axis
 */
-void B3L_RotateObjInWX(quat4_t *pQuat,f32 angle){
+_RAM_FUNC void B3L_RotateObjInWX(quat4_t *pQuat,f32 angle){
     quat4_t rqat;
     B3L_QuatCreateXRotate(&rqat,angle);
     B3L_QuatMult(&rqat, pQuat,pQuat);
@@ -374,7 +382,7 @@ void B3L_RotateObjInWX(quat4_t *pQuat,f32 angle){
 /*
     Rotate obj matrix in world space by y axis
 */
-void B3L_RotateObjInWY(quat4_t *pQuat,f32 angle){
+_RAM_FUNC void B3L_RotateObjInWY(quat4_t *pQuat,f32 angle){
     quat4_t rqat;
     B3L_QuatCreateYRotate(&rqat,angle);
     B3L_QuatMult(&rqat, pQuat,pQuat);
@@ -383,14 +391,14 @@ void B3L_RotateObjInWY(quat4_t *pQuat,f32 angle){
 /*
     Rotate obj matrix in world space by z axis ?? may should use matrix type ABA
 */
-void B3L_RotateObjInWZ(quat4_t *pQuat,f32 angle){
+_RAM_FUNC void B3L_RotateObjInWZ(quat4_t *pQuat,f32 angle){
     quat4_t rqat;
     B3L_QuatCreateZRotate(&rqat,angle);
     B3L_QuatMult(&rqat, pQuat,pQuat);
 
 }
 
-__attribute__((always_inline)) static inline void Vect3Xmat4(vect3_t *pV, mat4_t *pMat, vect4_t *pResult){
+__STATIC_FORCEINLINE void Vect3Xmat4(vect3_t *pV, mat4_t *pMat, vect4_t *pResult){
     f32 x = pV->x; f32 y = pV->y; f32 z = pV->z;
     #define dotCol(col)\
         ((x*(pMat->m##col##0)) +\
@@ -405,7 +413,7 @@ __attribute__((always_inline)) static inline void Vect3Xmat4(vect3_t *pV, mat4_t
     #undef dotCol
 }
 
-__attribute__((always_inline)) static  inline void  Vect3Xmat4WithTest_f(vect3_t *pV, mat4_t *pMat, screen3f_t *pResult){
+__STATIC_FORCEINLINE void  Vect3Xmat4WithTest_f(vect3_t *pV, mat4_t *pMat, screen3f_t *pResult){
     f32 x = pV->x; f32 y = pV->y; f32 z = pV->z;
     f32 rx,ry,rz,rw;
     u32 testResult=0;
@@ -444,7 +452,7 @@ __attribute__((always_inline)) static  inline void  Vect3Xmat4WithTest_f(vect3_t
 
 }
 
-__attribute__((always_inline)) static  inline void  Vect3Xmat4WithTestToScreen4(vect3_t *pV, mat4_t *pMat, screen4_t *pResult){
+__STATIC_FORCEINLINE void  Vect3Xmat4WithTestToScreen4(vect3_t *pV, mat4_t *pMat, screen4_t *pResult){
     f32 x = pV->x; f32 y = pV->y; f32 z = pV->z;
     f32 rx,ry,rz,rw;
     u32 testResult=0;
@@ -482,7 +490,7 @@ __attribute__((always_inline)) static  inline void  Vect3Xmat4WithTestToScreen4(
 
 }
 
-void     B3L_Vect3MulMat3(vect3_t *pV, mat3_t *pMat, vect3_t *pResult){
+_RAM_FUNC void B3L_Vect3MulMat3(vect3_t *pV, mat3_t *pMat, vect3_t *pResult){
     f32 x = pV->x; f32 y = pV->y; f32 z = pV->z;
     f32 rx,ry,rz;
 
@@ -501,7 +509,7 @@ void     B3L_Vect3MulMat3(vect3_t *pV, mat3_t *pMat, vect3_t *pResult){
     #undef dotCol 
 }
 
-void     B3L_Point3MulMat4(vect3_t *pV, mat4_t *pMat, vect3_t *pResult){
+_RAM_FUNC void B3L_Point3MulMat4(vect3_t *pV, mat4_t *pMat, vect3_t *pResult){
     f32 x = pV->x; f32 y = pV->y; f32 z = pV->z;
     f32 rx,ry,rz;
 
@@ -521,7 +529,7 @@ void     B3L_Point3MulMat4(vect3_t *pV, mat4_t *pMat, vect3_t *pResult){
     #undef dotCol
 }
 
-__attribute__((always_inline)) static  inline bool Vect4BoundTest(vect4_t *pV){
+__STATIC_FORCEINLINE bool Vect4BoundTest(vect4_t *pV){
     f32 x=pV->x;f32 y=pV->y;f32 z=pV->z;f32 w=pV->w;
     if((x<=w)&&(x>=-w)&&(y<=w)&&(y>=-w)&&(z>0)&&(z<=w)){
         return true;
@@ -534,7 +542,7 @@ __attribute__((always_inline)) static  inline bool Vect4BoundTest(vect4_t *pV){
 /*-----------------------------------------------------------------------------
     Math functions
 -----------------------------------------------------------------------------*/
-f32 B3L_sin(f32 in){
+_RAM_FUNC f32 B3L_sin(f32 in){
     in = in-(f32)((s32)in);//scale to -1~1
     if (in>0.25f){in = 0.5f - in;}
     if (in<-0.25f){in = -0.5f -in;}
@@ -546,11 +554,11 @@ f32 B3L_sin(f32 in){
     return  6.28316394434f*in-41.3371315018f*v3+81.3404239211f*v5-70.99090501333f*v7;
 }
 
-f32 B3L_cos(f32 in){
+_RAM_FUNC f32 B3L_cos(f32 in){
     return B3L_sin(in + 0.25f);
 }
 
-f32 B3L_asin(f32 in){
+_RAM_FUNC f32 B3L_asin(f32 in){
     in = Clamp_f(in, -1.0f,1.0f);
     float negate = (f32)(in < 0);
     
@@ -569,7 +577,7 @@ f32 B3L_asin(f32 in){
     return ret;
 }
 
-f32  B3L_atan2(f32 y,f32 x){
+_RAM_FUNC f32  B3L_atan2(f32 y,f32 x){
     f32 t0, t1, t3, t4;
 
     t3 = B3L_Absf(x);
@@ -593,50 +601,50 @@ f32  B3L_atan2(f32 y,f32 x){
 }
 
 //random function
-void B3L_SetSeed(u32 seed){
+_RAM_FUNC void B3L_SetSeed(u32 seed){
     B3L_seed = seed|1;
 }
 //using rand xorshift algorithm from george marsaglia's paper
-u32 B3L_Random(void){
+_RAM_FUNC u32 B3L_Random(void){
     B3L_seed ^=(B3L_seed<<13);
     B3L_seed ^=(B3L_seed>>17);
     B3L_seed ^=(B3L_seed<<5);
     return B3L_seed;
 }
 
-u32  B3L_Rnd(u32 range){
+_RAM_FUNC u32  B3L_Rnd(u32 range){
     return B3L_Random()%range;
 }
 /*-----------------------------------------------------------------------------
 Vector functions
 -----------------------------------------------------------------------------*/
-vect2_t B3L_Vect2(f32 x,f32 y){
+_RAM_FUNC vect2_t B3L_Vect2(f32 x,f32 y){
     vect2_t output = {.x=x,.y=y};
     return output;
 }
 
-vect3_t B3L_Vect3(f32 x,f32 y,f32 z){
+_RAM_FUNC vect3_t B3L_Vect3(f32 x,f32 y,f32 z){
     vect3_t output = {.x=x,.y=y,.z=z};
     return output;
 }
 
-vect4_t B3L_Vect4(f32 x,f32 y,f32 z,f32 w){
+_RAM_FUNC vect4_t B3L_Vect4(f32 x,f32 y,f32 z,f32 w){
     vect4_t output = {.x=x,.y=y,.z=z,.w=w};
     return output;
 }
 
-f32 B3L_Vec2Length(vect2_t *pV){
+_RAM_FUNC f32 B3L_Vec2Length(vect2_t *pV){
     return B3L_Sqrtf(pV->x*pV->x+pV->y*pV->y);
 }
 
-void B3L_Vect2Normalize(vect2_t *pV,vect2_t *pResult){
+_RAM_FUNC void B3L_Vect2Normalize(vect2_t *pV,vect2_t *pResult){
     f32 x = pV->x;f32 y= pV->y;
     f32 factor = FastInvertSqrt(x*x+y*y);
     pResult->x = (x*factor);
     pResult->y = (y*factor);
 }
 
-void B3L_Vect3Normalize(vect3_t *pV,vect3_t *pResult){
+_RAM_FUNC void B3L_Vect3Normalize(vect3_t *pV,vect3_t *pResult){
     f32 x = pV->x;f32 y= pV->y;f32 z= pV->z;
     //f32 factor = FastInvertSqrt(x*x+y*y+z*z);
     f32 factor = 1.0f/B3L_Sqrtf(x*x+y*y+z*z);
@@ -645,41 +653,41 @@ void B3L_Vect3Normalize(vect3_t *pV,vect3_t *pResult){
     pResult->z = (z*factor);
 }
 
-f32 B3L_Vect3Length(vect3_t *pV){
+_RAM_FUNC f32 B3L_Vect3Length(vect3_t *pV){
     f32 x = pV->x;f32 y= pV->y;f32 z= pV->z;
     return B3L_Sqrtf(x * x + y*y + z*z);  
 }
 
-void B3L_Vect3Add(vect3_t *pVa,vect3_t *pVb,vect3_t *pResult){
+_RAM_FUNC void B3L_Vect3Add(vect3_t *pVa,vect3_t *pVb,vect3_t *pResult){
     pResult->x = pVa->x + pVb->x;
     pResult->y = pVa->y + pVb->y;
     pResult->z = pVa->z + pVb->z;
 }
 
-void B3L_Vect3Sub(vect3_t *pVa,vect3_t *pVb,vect3_t *pResult){
+_RAM_FUNC void B3L_Vect3Sub(vect3_t *pVa,vect3_t *pVb,vect3_t *pResult){
     pResult->x = pVa->x - pVb->x;
     pResult->y = pVa->y - pVb->y;
     pResult->z = pVa->z - pVb->z;
 
 }
 
-void B3L_Vect3Cross(vect3_t *pA, vect3_t *pB, vect3_t *pResult){
+_RAM_FUNC void B3L_Vect3Cross(vect3_t *pA, vect3_t *pB, vect3_t *pResult){
     pResult->x = pA->y * pB->z - pA->z * pB->y;
     pResult->y = pA->z * pB->x - pA->x * pB->z;
     pResult->z = pA->x * pB->y - pA->y * pB->x;  
 }
 
-f32 B3L_Vect3Dot(vect3_t *pA, vect3_t *pB){
+_RAM_FUNC f32 B3L_Vect3Dot(vect3_t *pA, vect3_t *pB){
     return (pA->x*pB->x+pA->y*pB->y+pA->z*pB->z);
 }
 
-void B3L_Vect3Scale(vect3_t *pV,f32 scale,vect3_t *pResult){
+_RAM_FUNC void B3L_Vect3Scale(vect3_t *pV,f32 scale,vect3_t *pResult){
     pResult->x = scale*pV->x;
     pResult->y = scale*pV->y;
     pResult->z = scale*pV->z;
 }
 
-void B3L_Vect3Interp(vect3_t *pVa,vect3_t *pVb,vect3_t *pResult,f32 t){
+_RAM_FUNC void B3L_Vect3Interp(vect3_t *pVa,vect3_t *pVb,vect3_t *pResult,f32 t){
     pResult->x = Interp_f(pVa->x,pVb->x,t);
     pResult->y = Interp_f(pVa->y,pVb->y,t);
     pResult->z = Interp_f(pVa->z,pVb->z,t);
@@ -688,13 +696,13 @@ void B3L_Vect3Interp(vect3_t *pVa,vect3_t *pVb,vect3_t *pResult,f32 t){
 /*-----------------------------------------------------------------------------
 Matrix functions
 -----------------------------------------------------------------------------*/
-void B3L_InitUnitMat3(mat3_t *pMat){
+_RAM_FUNC void B3L_InitUnitMat3(mat3_t *pMat){
     pMat->m00 = 1.0f;pMat->m01 = 0.0f;pMat->m02 = 0.0f;
     pMat->m10 = 0.0f;pMat->m11 = 1.0f;pMat->m12 = 0.0f;
     pMat->m20 = 0.0f;pMat->m21 = 0.0f;pMat->m22 = 1.0f;
 }
 
-void B3L_CreateO2WMat(mat3_t *pRMat, vect3_t *pTranslation, vect3_t *pScale, mat4_t *pResult){
+_RAM_FUNC void B3L_CreateO2WMat(mat3_t *pRMat, vect3_t *pTranslation, vect3_t *pScale, mat4_t *pResult){
     f32 sx = pScale->x;f32 sy = pScale->y;f32 sz = pScale->z;
     pResult->m03 = pTranslation->x; pResult->m13 = pTranslation->y; pResult->m23 = pTranslation->z;
     pResult->m00 = pRMat->m00*sx; pResult->m01 = pRMat->m01*sy; pResult->m02 = pRMat->m02*sz;
@@ -703,7 +711,7 @@ void B3L_CreateO2WMat(mat3_t *pRMat, vect3_t *pTranslation, vect3_t *pScale, mat
     pResult->m30 = 0.0f; pResult->m31 = 0.0f; pResult->m32 = 0.0f; pResult->m33 = 1.0f;
 }
 
-__attribute__((always_inline)) static inline void MakeClipMatrix(u32 state,f32 near_plane,f32 far_plane,
+__STATIC_FORCEINLINE void MakeClipMatrix(u32 state,f32 near_plane,f32 far_plane,
                                                                  f32 focalLength, f32 aspectRatio,mat4_t *pMat){
     f32 zero = 0.0f;
     f32 one = 1.0f;
@@ -723,7 +731,7 @@ __attribute__((always_inline)) static inline void MakeClipMatrix(u32 state,f32 n
     #undef M
 }
 
-void B3L_InitMat4One(mat4_t *pMat){
+_RAM_FUNC void B3L_InitMat4One(mat4_t *pMat){
     #define M(x,y) (pMat)->m##x##y
     M(0,0) = 1.0f; M(1,0) = 0.0f; M(2,0) = 0.0f; M(3,0) = 0.0f; 
     M(0,1) = 0.0f; M(1,1) = 1.0f; M(2,1) = 0.0f; M(3,1) = 0.0f; 
@@ -732,7 +740,7 @@ void B3L_InitMat4One(mat4_t *pMat){
     #undef M
 }
 
-void B3L_TransposeMat4(mat4_t *pMat){
+_RAM_FUNC void B3L_TransposeMat4(mat4_t *pMat){
     f32 temp;
     temp = ((f32 *)pMat)[1];
     ((f32 *)pMat)[1]=((f32 *)pMat)[4];
@@ -760,7 +768,7 @@ void B3L_TransposeMat4(mat4_t *pMat){
 }
 
 //mat1 * mat2 -> mat3, it is safe to set mat1 same as mat3
-void B3L_Mat4XMat4(mat4_t *pMat1,mat4_t *pMat2, mat4_t *pMat3){
+_RAM_FUNC void B3L_Mat4XMat4(mat4_t *pMat1,mat4_t *pMat2, mat4_t *pMat3){
     f32 t0,t1,t2,t3;
     f32 s0,s1,s2,s3;
     #define M(x,y) (pMat1)->m##x##y
@@ -798,7 +806,7 @@ void B3L_Mat4XMat4(mat4_t *pMat1,mat4_t *pMat2, mat4_t *pMat3){
 /*
     matrix 3*3 B = AB
 */
-void B3L_Mat3MultMat3ABB(mat3_t *pMatA,mat3_t *pMatB){
+_RAM_FUNC void B3L_Mat3MultMat3ABB(mat3_t *pMatA,mat3_t *pMatB){
 f32 t0,t1,t2;
     f32 s0,s1,s2;
     #define M(x,y) (pMatA)->m##x##y
@@ -825,7 +833,7 @@ f32 t0,t1,t2;
 /*
     matrix 3*3 A = AB
 */
-void B3L_Mat3MultMat3ABA(mat3_t *pMatA,mat3_t *pMatB){
+_RAM_FUNC void B3L_Mat3MultMat3ABA(mat3_t *pMatA,mat3_t *pMatB){
     f32 t0,t1,t2;
     f32 s0,s1,s2;
     #define M(x,y) (pMatA)->m##x##y
@@ -849,7 +857,7 @@ void B3L_Mat3MultMat3ABA(mat3_t *pMatA,mat3_t *pMatB){
     #undef N
 }
 
-void B3L_MakeScaleMatrix(f32 scaleX,f32 scaleY,f32 scaleZ,mat4_t *pMat){
+_RAM_FUNC void B3L_MakeScaleMatrix(f32 scaleX,f32 scaleY,f32 scaleZ,mat4_t *pMat){
     #define M(x,y) (pMat)->m##x##y
 
     M(0,0) = scaleX; M(1,0) = 0.0f;   M(2,0) = 0.0f;   M(3,0) = 0.0f; 
@@ -860,7 +868,7 @@ void B3L_MakeScaleMatrix(f32 scaleX,f32 scaleY,f32 scaleZ,mat4_t *pMat){
     #undef M
 }
 
-void B3L_MakeTranslationMat(f32 offsetX,f32 offsetY,f32 offsetZ,mat4_t *pMat){
+_RAM_FUNC void B3L_MakeTranslationMat(f32 offsetX,f32 offsetY,f32 offsetZ,mat4_t *pMat){
     #define M(x,y) (pMat)->m##x##y
     f32 one = 1.0f;
     M(0,0) = one; M(1,0) = 0.0f; M(2,0) = 0.0f; M(3,0) = 0.0f; 
@@ -870,7 +878,7 @@ void B3L_MakeTranslationMat(f32 offsetX,f32 offsetY,f32 offsetZ,mat4_t *pMat){
     #undef M
 }
 
-void B3L_MakeO2CMatrix(mat3_t *pRMat,vect3_t *pScale,vect3_t *pTrans,mat4_t *pCamMat, mat4_t *pResult){
+_RAM_FUNC void B3L_MakeO2CMatrix(mat3_t *pRMat,vect3_t *pScale,vect3_t *pTrans,mat4_t *pCamMat, mat4_t *pResult){
 
     f32 t0,t1,t2,t3;
     f32 s0,s1,s2;
@@ -911,7 +919,7 @@ void B3L_MakeO2CMatrix(mat3_t *pRMat,vect3_t *pScale,vect3_t *pTrans,mat4_t *pCa
 }
 
 
-__attribute__((always_inline)) static  inline zBuff_t CalZbuffValue(f32 z){
+__STATIC_FORCEINLINE zBuff_t CalZbuffValue(f32 z){
              #if  (Z_BUFF_LEVEL == 0) 
             u32 tempZ = B3L_RoundingToU(z*255.0f);
             u8  compZ = SatToU8(tempZ);
@@ -928,7 +936,7 @@ __attribute__((always_inline)) static  inline zBuff_t CalZbuffValue(f32 z){
 /*-----------------------------------------------------------------------------
 Triangle testing functions
 -----------------------------------------------------------------------------*/
-__attribute__((always_inline)) static inline bool TriangleFaceToViewer_f(f32 x0, f32 y0, f32 x1, f32 y1, f32 x2, f32 y2){
+__STATIC_FORCEINLINE bool TriangleFaceToViewer_f(f32 x0, f32 y0, f32 x1, f32 y1, f32 x2, f32 y2){
   f32 winding =
     (x1 - x0) * (y2 - y0) - (y1 - y0) * (x2 - x0) ;
     // ^ cross product for points with z == 0
@@ -939,7 +947,7 @@ __attribute__((always_inline)) static inline bool TriangleFaceToViewer_f(f32 x0,
 /*-----------------------------------------------------------------------------
 light functions
 -----------------------------------------------------------------------------*/
-void B3L_ResetLight(light_t *pLight){
+_RAM_FUNC void B3L_ResetLight(light_t *pLight){
     B3L_CLR(pLight->state,LIGHT_TYPE_BIT); //parallel light
     B3L_VECT3_SET(pLight->lightVect,0.0f,1.0f,0.0f);
     pLight->color = 0xFF000000;
@@ -948,7 +956,7 @@ void B3L_ResetLight(light_t *pLight){
 
 }
 
-__attribute__((always_inline)) static inline u32 CalLightFactor(f32 normalDotLight, f32 lightFactor0,f32 lightFactor1){
+__STATIC_FORCEINLINE u32 CalLightFactor(f32 normalDotLight, f32 lightFactor0,f32 lightFactor1){
     s32 lightValue;
     normalDotLight += lightFactor0;
     lightValue =B3L_RoundingToS(normalDotLight*lightFactor1);
@@ -959,7 +967,7 @@ __attribute__((always_inline)) static inline u32 CalLightFactor(f32 normalDotLig
     return lightValue;
 }
 
-void B3L_SetLightType(render_t *pRender,lightType_e type){
+_RAM_FUNC void B3L_SetLightType(render_t *pRender,lightType_e type){
     if (parallelLight == type ){
         B3L_CLR(pRender->light.state,LIGHT_TYPE_BIT);
     }
@@ -968,7 +976,7 @@ void B3L_SetLightType(render_t *pRender,lightType_e type){
     }
 }
 
-void B3L_SetLightVect(render_t *pRender, f32 x,f32 y,f32 z){
+_RAM_FUNC void B3L_SetLightVect(render_t *pRender, f32 x,f32 y,f32 z){
     if (B3L_TEST(pRender->light.state,LIGHT_TYPE_BIT) == PARALLEL_LIGHT){//parallel light
         //normalized the vector
         f32 invSqrt = FastInvertSqrt(x*x+y*y+z*z);
@@ -981,7 +989,7 @@ void B3L_SetLightVect(render_t *pRender, f32 x,f32 y,f32 z){
 /*-----------------------------------------------------------------------------
 Camera functions
 -----------------------------------------------------------------------------*/
-void B3L_InitCamera(render_t *pRender){
+_RAM_FUNC void B3L_InitCamera(render_t *pRender){
     camera_t *pCam = &(pRender->camera);
     pCam->aspectRate = DEFAULT_ASPECT_RATIO;
     pCam->focalLength = DEFAULT_FOCUS_LENGTH;
@@ -997,22 +1005,22 @@ void B3L_InitCamera(render_t *pRender){
     pCam->state = 0; //default is PERSPECTIVE_PROJECT
 }
 
-void B3L_SetOrthographicProject(render_t *pRender){
+_RAM_FUNC void B3L_SetOrthographicProject(render_t *pRender){
     B3L_SET(pRender->camera.state,B3L_PROJECT_MODE);
     B3L_UpdateClipMatrix(pRender);
 }
 
-void B3L_SetPerspectiveProject(render_t *pRender){
+_RAM_FUNC void B3L_SetPerspectiveProject(render_t *pRender){
     B3L_CLR(pRender->camera.state,B3L_PROJECT_MODE);
     B3L_UpdateClipMatrix(pRender);
 }
 
-void B3L_UpdateClipMatrix(render_t *pRender){
+_RAM_FUNC void B3L_UpdateClipMatrix(render_t *pRender){
     camera_t *pCam = &(pRender->camera);
     MakeClipMatrix(pCam->state,pRender->nearPlane,pRender->farPlane,pCam->focalLength,pCam->aspectRate,&(pCam->clipMat));
 }
 
-void B3L_CamSetFocusLengthByFOV(render_t *pRender, f32 fov){
+_RAM_FUNC void B3L_CamSetFocusLengthByFOV(render_t *pRender, f32 fov){
     f32 halfFOV = 0.5f*fov;
     f32 sinh = B3L_sin(halfFOV);
     f32 cosh = B3L_cos(halfFOV);
@@ -1020,7 +1028,7 @@ void B3L_CamSetFocusLengthByFOV(render_t *pRender, f32 fov){
     B3L_UpdateClipMatrix(pRender);
 }
 
-static void GenerateW2CMatrix(camera_t *pCam){
+_RAM_FUNC static void GenerateW2CMatrix(camera_t *pCam){
     mat3_t *pMat3 = &(pCam->mat);
     mat4_t *pW2CMat = &(pCam->camW2CMat);
     f32 x = -(pCam->transform.translation.x);
@@ -1038,29 +1046,29 @@ static void GenerateW2CMatrix(camera_t *pCam){
 }
 
 
-void B3L_CameraMoveTo(vect3_t position,camera_t *pCam){
+_RAM_FUNC void B3L_CameraMoveTo(vect3_t position,camera_t *pCam){
     pCam->transform.translation.x = position.x;
     pCam->transform.translation.y = position.y;
     pCam->transform.translation.z = position.z;
 }
 
 
-void B3L_CameraLookAt(camera_t *pCam, vect3_t *pAt,vect3_t *pUp){
+_RAM_FUNC void B3L_CameraLookAt(camera_t *pCam, vect3_t *pAt,vect3_t *pUp){
     B3L_SET(pCam->state,CAM_NEED_MATRIX_UPDATE);
     B3L_CreateLookAtQuaternion(&(pCam->transform.translation), 
                                 pAt, pUp, &(pCam->transform.quaternion));
 }
 
-void B3L_CamStopTrack(camera_t *pCam){
+_RAM_FUNC void B3L_CamStopTrack(camera_t *pCam){
     B3L_CLR(pCam->state,B3L_CAMERA_TRACK_OBJ_MODE);
 }
 
-void B3L_CamStartTrack(camera_t *pCam){
+_RAM_FUNC void B3L_CamStartTrack(camera_t *pCam){
     B3L_SET(pCam->state,B3L_CAMERA_TRACK_OBJ_MODE);
 }
 
 
-void B3L_CamInitTrack(camera_t *pCam,B3LObj_t *pObj,f32 camX,f32 camY,f32 camZ,f32 lookAtX,f32 lookAtY,f32 lookAtZ){
+_RAM_FUNC void B3L_CamInitTrack(camera_t *pCam,B3LObj_t *pObj,f32 camX,f32 camY,f32 camZ,f32 lookAtX,f32 lookAtY,f32 lookAtZ){
     //B3L_SET(pCam->state,B3L_CAMERA_TRACK_OBJ_MODE);
     pCam->pTrackObj = pObj;
     pCam->targetPosition.x = camX;
@@ -1074,7 +1082,7 @@ void B3L_CamInitTrack(camera_t *pCam,B3LObj_t *pObj,f32 camX,f32 camY,f32 camZ,f
     //B3L_logVec4(pCam->targetQuat);
 }
 
-static void CamCalNewTrackPosition(camera_t *pCam){
+_RAM_FUNC static void CamCalNewTrackPosition(camera_t *pCam){
     B3LObj_t *pObj = pCam->pTrackObj;
     if (B3L_TEST(pObj->state,OBJ_NEED_MATRIX_UPDATE)){
         //update it's matrix and clear the flag
@@ -1087,7 +1095,7 @@ static void CamCalNewTrackPosition(camera_t *pCam){
     B3L_Vect3Add(&result,&(pObj->transform.translation),&(pCam->transform.translation));
 }
 
-static void CamCalNewTrackQuaternion(camera_t *pCam){
+_RAM_FUNC static void CamCalNewTrackQuaternion(camera_t *pCam){
     quat4_t targetQuat;
     B3LObj_t *pObj = pCam->pTrackObj;
     if(B3L_TEST(pObj->state,OBJ_NEED_QUAT_UPDATE)){
@@ -1106,7 +1114,7 @@ static void CamCalNewTrackQuaternion(camera_t *pCam){
 }
 
 
-static void  UpdateCam(render_t *pRender){
+_RAM_FUNC static void  UpdateCam(render_t *pRender){
     camera_t *pCam = &(pRender->camera);
     if(B3L_TEST(pCam->state,B3L_CAMERA_TRACK_OBJ_MODE)){
         CamCalNewTrackPosition(pCam);
@@ -1129,7 +1137,7 @@ static void  UpdateCam(render_t *pRender){
 obj functions
 -----------------------------------------------------------------------------*/
 #ifdef B3L_USING_PARTICLE
-static void UpdateParticleObjs(render_t *pRender, u32 time){
+_RAM_FUNC static void UpdateParticleObjs(render_t *pRender, u32 time){
     B3LObj_t  *pCurrentObj =(pRender->scene.pActiveParticleGenObjs);
     u32 state;
     while(pCurrentObj != (B3LObj_t  *)NULL){
@@ -1152,7 +1160,7 @@ static void UpdateParticleObjs(render_t *pRender, u32 time){
     }
 }
 
-static void RenderParticleObjs(render_t *pRender) {
+_RAM_FUNC static void RenderParticleObjs(render_t *pRender) {
     B3LObj_t  *pCurrentObj =(pRender->scene.pActiveParticleGenObjs);
     u32 state;
     mat4_t *pcamW2CMat = &(pRender->camera.camW2CMat);
@@ -1188,7 +1196,7 @@ static void RenderParticleObjs(render_t *pRender) {
     }
 }
 
-void B3L_UpdateAllParticlesStatesInGen(render_t *pRender,B3LParticleGenObj_t *pGen,u32 deltaTime,vect3_t *pForce){
+_RAM_FUNC void B3L_UpdateAllParticlesStatesInGen(render_t *pRender,B3LParticleGenObj_t *pGen,u32 deltaTime,vect3_t *pForce){
     u32 i = pGen->particleNum ;
     B3L_Particle_t *pParticle = pGen->pParticleActive;
     B3L_Particle_t *pPrevParticle = pGen->pParticleActive;
@@ -1220,13 +1228,13 @@ void B3L_UpdateAllParticlesStatesInGen(render_t *pRender,B3LParticleGenObj_t *pG
 
 #endif
 
-static bool Vect3InClipSpace(vect3_t *pV, mat4_t *pMat){
+_RAM_FUNC static bool Vect3InClipSpace(vect3_t *pV, mat4_t *pMat){
     vect4_t output;
     Vect3Xmat4(pV, pMat, &output);
     return Vect4BoundTest( &output);
 }
 
-static bool BoundBoxTest(f32 *pMaxMin,mat4_t *pMat){
+_RAM_FUNC static bool BoundBoxTest(f32 *pMaxMin,mat4_t *pMat){
     bool result;
     f32 maxX = pMaxMin[0];f32 maxY = pMaxMin[1];f32 maxZ = pMaxMin[2];
     f32 minX = pMaxMin[3];f32 minY = pMaxMin[4];f32 minZ = pMaxMin[5];
@@ -1250,7 +1258,7 @@ static bool BoundBoxTest(f32 *pMaxMin,mat4_t *pMat){
     return result;
 }
 
-static void RenderMeshObjs(render_t *pRender){
+_RAM_FUNC static void RenderMeshObjs(render_t *pRender){
     mat4_t mat; //64 byte
     u32 state;
     u32 renderLevel;
@@ -1312,7 +1320,7 @@ static void RenderMeshObjs(render_t *pRender){
 
 }
 
-void B3L_RenderScence(render_t *pRender){
+_RAM_FUNC void B3L_RenderScence(render_t *pRender){
     //from camera's rotation matrix to create world -> clip space matrix
     UpdateCam(pRender);
     RenderMeshObjs(pRender);
@@ -1322,7 +1330,7 @@ void B3L_RenderScence(render_t *pRender){
 
 }
 
-void B3L_Update(render_t *pRender,u32 time){
+_RAM_FUNC void B3L_Update(render_t *pRender,u32 time){
     static u32 oldTime = 0;
     if (oldTime == 0) {//first time run
       oldTime = time;
@@ -1337,7 +1345,7 @@ void B3L_Update(render_t *pRender,u32 time){
     //TODO: Add particle update and other hook here
 }
 
-void B3L_NewRenderStart(render_t *pRender,fBuff_t color){
+_RAM_FUNC void B3L_NewRenderStart(render_t *pRender,fBuff_t color){
     #if B3L_DMA2D == 0
     ClearFrameBuff(pRender->pFrameBuff,color,RENDER_RESOLUTION_Y,RENDER_RESOLUTION_X,RENDER_LINE_SKIP);
     //ClearFrameBuff(pRender->pFrameBuff,0xFF003423,Z_BUFF_LENTH);//need to add shift
@@ -1347,7 +1355,7 @@ void B3L_NewRenderStart(render_t *pRender,fBuff_t color){
     #endif   //if DMA2D == 1, the clean work would be done by DMA2D
 }    
 
-void B3L_ResetScene(scene_t *pScene){
+_RAM_FUNC void B3L_ResetScene(scene_t *pScene){
     pScene->freeObjNum = OBJ_BUFF_SIZE; //reset free obj numbers
     pScene->pActiveMeshObjs = (B3LObj_t *)NULL; //reset active obj list
     ResetObjList(pScene);
@@ -1359,7 +1367,7 @@ void B3L_ResetScene(scene_t *pScene){
 #endif
 }
 
-static void ResetObjList(scene_t *pScene){
+_RAM_FUNC static void ResetObjList(scene_t *pScene){
     u32 i;
     pScene->pFreeObjs = pScene->objBuff;  //reset all the obj buffer
     pScene->objBuff[0].state = 0x00000000;
@@ -1374,7 +1382,7 @@ static void ResetObjList(scene_t *pScene){
 }
 
 #ifdef B3L_USING_PARTICLE
-static void ResetParticleList(B3L_Particle_t *pPool,B3L_Particle_t **pStart,u32 num){
+_RAM_FUNC static void ResetParticleList(B3L_Particle_t *pPool,B3L_Particle_t **pStart,u32 num){
     u32 i;
     *pStart = pPool;
     for (i=0;i<(num-1);i++){
@@ -1385,7 +1393,7 @@ static void ResetParticleList(B3L_Particle_t *pPool,B3L_Particle_t **pStart,u32 
 
 }
 
-void B3L_ReturnParticleToPool(B3L_Particle_t *pParticle,scene_t *pScene){
+_RAM_FUNC void B3L_ReturnParticleToPool(B3L_Particle_t *pParticle,scene_t *pScene){
     
     B3L_Particle_t *temp=pScene->pfreeParticles;
     pParticle->state = 0x00000000;
@@ -1394,7 +1402,7 @@ void B3L_ReturnParticleToPool(B3L_Particle_t *pParticle,scene_t *pScene){
     pScene->freeParticleNum +=1;
 }
 
-void B3L_AddParticleToGenerator(B3L_Particle_t *pParticle,B3LParticleGenObj_t  *pGenerator){
+_RAM_FUNC void B3L_AddParticleToGenerator(B3L_Particle_t *pParticle,B3LParticleGenObj_t  *pGenerator){
     B3L_Particle_t *pTemp = pGenerator->pParticleActive;
     pGenerator->pParticleActive = pParticle;
     pParticle->next = pTemp;
@@ -1402,7 +1410,7 @@ void B3L_AddParticleToGenerator(B3L_Particle_t *pParticle,B3LParticleGenObj_t  *
 }
 
 
-B3L_Particle_t *B3L_GetFreeParticle(scene_t *pScene){
+_RAM_FUNC B3L_Particle_t *B3L_GetFreeParticle(scene_t *pScene){
     //todo
     if (pScene->freeParticleNum == 0){
         return (B3L_Particle_t *)NULL;
@@ -1414,7 +1422,7 @@ B3L_Particle_t *B3L_GetFreeParticle(scene_t *pScene){
 }
 #endif
 
-static void AddObjToTwoWayList(B3LObj_t *pObj, B3LObj_t **pStart){
+_RAM_FUNC static void AddObjToTwoWayList(B3LObj_t *pObj, B3LObj_t **pStart){
     pObj->next = *pStart;
     *pStart = pObj;
     pObj->privous = pObj;
@@ -1423,11 +1431,11 @@ static void AddObjToTwoWayList(B3LObj_t *pObj, B3LObj_t **pStart){
     }   
 }
 
-u32 B3L_GetFreeObjNum(render_t *pRender){
+_RAM_FUNC u32 B3L_GetFreeObjNum(render_t *pRender){
     return pRender->scene.freeObjNum;
 }
 
-u32 B3L_GetFreeParticleNum(render_t *pRender){
+_RAM_FUNC u32 B3L_GetFreeParticleNum(render_t *pRender){
     #ifdef  B3L_USING_PARTICLE 
     return pRender->scene.freeParticleNum;
     #else
@@ -1435,7 +1443,7 @@ u32 B3L_GetFreeParticleNum(render_t *pRender){
     #endif
 }
 
-B3LObj_t * B3L_GetFreeObj(render_t *pRender){
+_RAM_FUNC B3LObj_t * B3L_GetFreeObj(render_t *pRender){
     B3LObj_t *returnObj;
     if (pRender->scene.pFreeObjs != (B3LObj_t *)NULL){
         pRender->scene.freeObjNum -=1;
@@ -1456,7 +1464,7 @@ B3LObj_t * B3L_GetFreeObj(render_t *pRender){
     }
 }
 
-B3LMeshObj_t *B3L_GetFreeMeshObj(render_t *pRender){
+_RAM_FUNC B3LMeshObj_t *B3L_GetFreeMeshObj(render_t *pRender){
     B3LObj_t *pObj = B3L_GetFreeObj(pRender);
     if (pObj !=  (B3LObj_t *)NULL){
         B3L_SET(pObj->state,MESH_OBJ);
@@ -1465,7 +1473,7 @@ B3LMeshObj_t *B3L_GetFreeMeshObj(render_t *pRender){
     return (B3LMeshObj_t *)pObj;
 }
 
-B3LMeshNoTexObj_t *B3L_GetFreeMeshNoTexObj(render_t *pRender){
+_RAM_FUNC B3LMeshNoTexObj_t *B3L_GetFreeMeshNoTexObj(render_t *pRender){
     B3LObj_t *pObj = B3L_GetFreeObj(pRender);
     if (pObj !=  (B3LObj_t *)NULL){
         B3L_SET(pObj->state,NOTEX_MESH_OBJ);
@@ -1474,7 +1482,7 @@ B3LMeshNoTexObj_t *B3L_GetFreeMeshNoTexObj(render_t *pRender){
     return (B3LMeshNoTexObj_t *)pObj;
 }
 
-B3LPolygonObj_t    *B3L_GetFreePolygonObj(render_t *pRender){
+_RAM_FUNC B3LPolygonObj_t    *B3L_GetFreePolygonObj(render_t *pRender){
     B3LObj_t *pObj = B3L_GetFreeObj(pRender);
     if (pObj !=  (B3LObj_t *)NULL){
         B3L_SET(pObj->state,POLYGON_OBJ);
@@ -1483,7 +1491,7 @@ B3LPolygonObj_t    *B3L_GetFreePolygonObj(render_t *pRender){
     return (B3LPolygonObj_t *)pObj;
 }
 
-B3LParticleGenObj_t  *B3L_GetFreeParticleGeneratorObj(render_t *pRender){
+_RAM_FUNC B3LParticleGenObj_t  *B3L_GetFreeParticleGeneratorObj(render_t *pRender){
     B3LObj_t *pObj = B3L_GetFreeObj(pRender);
     if (pObj !=  (B3LObj_t *)NULL){
         B3L_SET(pObj->state,PARTICLE_GEN_OBJ);
@@ -1496,7 +1504,7 @@ B3LParticleGenObj_t  *B3L_GetFreeParticleGeneratorObj(render_t *pRender){
     return (B3LParticleGenObj_t  *)pObj;
 }
 
-void B3L_AddObjToRenderList(B3LObj_t *pObj, render_t *pRender){
+_RAM_FUNC void B3L_AddObjToRenderList(B3LObj_t *pObj, render_t *pRender){
     //get the statement
     u32 type = (pObj->state & OBJ_TYPE_MASK);
 
@@ -1510,7 +1518,7 @@ void B3L_AddObjToRenderList(B3LObj_t *pObj, render_t *pRender){
     #endif  
 }
 
-void B3L_PopObjFromRenderList(B3LObj_t *pObj, render_t *pRender){
+_RAM_FUNC void B3L_PopObjFromRenderList(B3LObj_t *pObj, render_t *pRender){
     if (pObj->privous != pObj){
         if (pObj->next != (B3LObj_t *)NULL){
             pObj->next->privous = pObj->privous;
@@ -1537,7 +1545,7 @@ void B3L_PopObjFromRenderList(B3LObj_t *pObj, render_t *pRender){
     pObj->privous = (B3LObj_t *)NULL;
 }
 
-void B3L_ReturnObjToInactiveList(B3LObj_t *pObj,  render_t *pRender){
+_RAM_FUNC void B3L_ReturnObjToInactiveList(B3LObj_t *pObj,  render_t *pRender){
     if (pObj->privous != (B3LObj_t *)NULL){ //it is now in the active list
         B3L_PopObjFromRenderList(pObj,  pRender);
     }
@@ -1547,7 +1555,7 @@ void B3L_ReturnObjToInactiveList(B3LObj_t *pObj,  render_t *pRender){
     AddObjToTwoWayList(pObj, &(pRender->scene.pFreeObjs));
 }
 
-void B3L_RenderInit(render_t *pRender,fBuff_t *pFrameBuff){
+_RAM_FUNC void B3L_RenderInit(render_t *pRender,fBuff_t *pFrameBuff){
     pRender->pFrameBuff = pFrameBuff;
     pRender->pZBuff = zBuff;
     pRender->pVectBuff = vectBuff;
@@ -1563,14 +1571,14 @@ void B3L_RenderInit(render_t *pRender,fBuff_t *pFrameBuff){
 /*-----------------------------------------------------------------------------
 Draw functions
 -----------------------------------------------------------------------------*/
-__attribute__((always_inline)) static  inline fBuff_t     GetColorValue(texLUT_t *lut,u8 colorIdx,u32 lightFactor){
+__STATIC_FORCEINLINE fBuff_t     GetColorValue(texLUT_t *lut,u8 colorIdx,u32 lightFactor){
     fBuff_t color;
     color = lut[colorIdx];
     color = GetFinalColor(color,lightFactor);
     return color;
 }
 
-__attribute__((always_inline)) static  inline void     DrawPixel(fBuff_t color,s32 x,s32 y,f32 z,
+__STATIC_FORCEINLINE void     DrawPixel(fBuff_t color,s32 x,s32 y,f32 z,
                                                                         fBuff_t *pFrameBuff,zBuff_t *pZbuff){
         zBuff_t *pCurrentPixelZ = pZbuff + (y*RENDER_RESOLUTION_X) + x;
         fBuff_t *pixel= pFrameBuff + (y*RENDER_X_SHIFT) + x; 
@@ -1581,7 +1589,7 @@ __attribute__((always_inline)) static  inline void     DrawPixel(fBuff_t color,s
         }
 }
 
-__attribute__((always_inline)) static  inline void     DrawPixelWithTest(fBuff_t color,s32 x,s32 y,f32 z,
+__STATIC_FORCEINLINE void     DrawPixelWithTest(fBuff_t color,s32 x,s32 y,f32 z,
                                                                         fBuff_t *pFrameBuff,zBuff_t *pZbuff){
         if ((x<0)||(y<0)||(x>=RENDER_RESOLUTION_X)||(y>=RENDER_RESOLUTION_Y)){
             return;
@@ -1595,7 +1603,7 @@ __attribute__((always_inline)) static  inline void     DrawPixelWithTest(fBuff_t
         }
 }
 
-static void ClearFrameBuff(fBuff_t *pFramebuff,fBuff_t value,u32 lineNum,u32 lineLength,u32 lineSkip){
+_RAM_FUNC static void ClearFrameBuff(fBuff_t *pFramebuff,fBuff_t value,u32 lineNum,u32 lineLength,u32 lineSkip){
 //in stm32, we could use DMA to do this job   
     int32_t i;   
     u32  lineNumDiv16Left = lineLength&0x0000000F;
@@ -1634,7 +1642,7 @@ static void ClearFrameBuff(fBuff_t *pFramebuff,fBuff_t value,u32 lineNum,u32 lin
     #undef Addr
 }
 
-static void ClearZbuff(zBuff_t *pZbuff,u32 length){
+_RAM_FUNC static void ClearZbuff(zBuff_t *pZbuff,u32 length){
 //in stm32, we could use DMA to do this job   
     int32_t i=length&0x0000000F; 
     length = length>>4;  
@@ -1669,7 +1677,7 @@ static void ClearZbuff(zBuff_t *pZbuff,u32 length){
     #undef Addr
 }
 
-static void RenderNoTexMesh(B3LMeshNoTexObj_t *pObj,render_t *pRender, mat4_t *pMat,u32 renderLevel){
+_RAM_FUNC static void RenderNoTexMesh(B3LMeshNoTexObj_t *pObj,render_t *pRender, mat4_t *pMat,u32 renderLevel){
     int32_t i;
     B3L_Mesh_NoTex_t *pMesh= pObj->pMesh;
     vect3_t *pVectSource = ((vect3_t *)(pMesh->pVect));
@@ -1862,7 +1870,7 @@ static void RenderNoTexMesh(B3LMeshNoTexObj_t *pObj,render_t *pRender, mat4_t *p
     }        
 }
 
-static void RenderPolygon(B3LPolygonObj_t *pObj,render_t *pRender, mat4_t *pMat){
+_RAM_FUNC static void RenderPolygon(B3LPolygonObj_t *pObj,render_t *pRender, mat4_t *pMat){
     int32_t i;
     fBuff_t *pFrameBuff =pRender->pFrameBuff;
     zBuff_t *pZBuff =  pRender->pZBuff;
@@ -1906,7 +1914,7 @@ static void RenderPolygon(B3LPolygonObj_t *pObj,render_t *pRender, mat4_t *pMat)
 }
 
 
-static void RenderTexMesh(B3LMeshObj_t *pObj,render_t *pRender, mat4_t *pMat,u32 renderLevel){
+_RAM_FUNC static void RenderTexMesh(B3LMeshObj_t *pObj,render_t *pRender, mat4_t *pMat,u32 renderLevel){
     int32_t i;
     B3L_Mesh_t *pMesh= pObj->pMesh;
     vect3_t *pVectSource = ((vect3_t *)(pMesh->pVect));
@@ -2095,7 +2103,8 @@ static void RenderTexMesh(B3LMeshObj_t *pObj,render_t *pRender, mat4_t *pMat,u32
         }//at least one terminal inside    
     }//end of triangle draw loop        
 }
-static ClipPointNoTex(u32 v0,u32 v1,u32 v2,f32 nearPlane, vect3_t *pVect,mat4_t *pMat,B3L_clip_t *pC0,B3L_clip_t *pC1 ){
+
+_RAM_FUNC static void ClipPointNoTex(u32 v0,u32 v1,u32 v2,f32 nearPlane, vect3_t *pVect,mat4_t *pMat,B3L_clip_t *pC0,B3L_clip_t *pC1 ){
     vect4_t vect0,vect1,vect2;
     Vect3Xmat4(pVect+v0, pMat, &vect0);
     Vect3Xmat4(pVect+v1, pMat, &vect1);
@@ -2110,7 +2119,7 @@ static ClipPointNoTex(u32 v0,u32 v1,u32 v2,f32 nearPlane, vect3_t *pVect,mat4_t 
     
 }
 
-static ClipPoint(u32 v0,u32 v1,u32 v2,u32 i0,u32 i1,u32 i2,f32 nearPlane, vect3_t *pVect,mat4_t *pMat, u8 *pUV,B3L_clip_t *pC0,B3L_clip_t *pC1 ){
+_RAM_FUNC static void ClipPoint(u32 v0,u32 v1,u32 v2,u32 i0,u32 i1,u32 i2,f32 nearPlane, vect3_t *pVect,mat4_t *pMat, u8 *pUV,B3L_clip_t *pC0,B3L_clip_t *pC1 ){
     vect4_t vect0,vect1,vect2;
     Vect3Xmat4(pVect+v0, pMat, &vect0);
     Vect3Xmat4(pVect+v1, pMat, &vect1);
@@ -2134,8 +2143,8 @@ static ClipPoint(u32 v0,u32 v1,u32 v2,u32 i0,u32 i1,u32 i2,f32 nearPlane, vect3_
     pC1->v = mapv0 - factor*(mapv0-mapv2);
 }
 
-__attribute__((always_inline)) static inline void DrawDepthLineNoClip(s32 Ax,s32 Ay,f32 Az,s32 Bx,s32 By,f32 Bz, 
-                                                            texLUT_t color,fBuff_t *pFrameBuff,zBuff_t *pZbuff){
+__STATIC_FORCEINLINE void DrawDepthLineNoClip(s32 Ax,s32 Ay,f32 Az,s32 Bx,s32 By,f32 Bz, 
+                                            texLUT_t color,fBuff_t *pFrameBuff,zBuff_t *pZbuff){
 //todo here~
     s32 steep = abs(Ay - By) > abs(Ax - Bx);
     //fBuff_t drawColor;
@@ -2175,7 +2184,7 @@ __attribute__((always_inline)) static inline void DrawDepthLineNoClip(s32 Ax,s32
   }
 }
 
-__attribute__((always_inline)) static inline void DrawDepthLineClip(s32 Ax,s32 Ay,f32 Az,s32 Bx,s32 By,f32 Bz, 
+__STATIC_FORCEINLINE void DrawDepthLineClip(s32 Ax,s32 Ay,f32 Az,s32 Bx,s32 By,f32 Bz, 
                                                                         texLUT_t color,fBuff_t *pFrameBuff,zBuff_t *pZbuff){
 
     //now A is in the left and B is in the right
@@ -2217,7 +2226,7 @@ __attribute__((always_inline)) static inline void DrawDepthLineClip(s32 Ax,s32 A
     }
 }
 
-__attribute__((always_inline)) static inline void DrawColorHLine_NOCheck(f32 x,s32 y,f32 b, f32 aZ, f32 bZ,
+__STATIC_FORCEINLINE void DrawColorHLine_NOCheck(f32 x,s32 y,f32 b, f32 aZ, f32 bZ,
                                        fBuff_t finalColor, fBuff_t *pFrameBuff,zBuff_t *pZbuff) {
     s32 intx = B3L_RoundingToS(x),inty=y,intb=(B3L_RoundingToS(b));
     f32 invlength;
@@ -2247,7 +2256,7 @@ __attribute__((always_inline)) static inline void DrawColorHLine_NOCheck(f32 x,s
     }    
 }
 
-__attribute__((always_inline)) static inline void DrawColorHLine(f32 x,s32 y,f32 b, f32 aZ, f32 bZ,
+__STATIC_FORCEINLINE void DrawColorHLine(f32 x,s32 y,f32 b, f32 aZ, f32 bZ,
                                        fBuff_t finalColor, fBuff_t *pFrameBuff,zBuff_t *pZbuff) {
     s32 intx = B3L_RoundingToS(x),inty=y,intb=(B3L_RoundingToS(b));
     s32 clipL = 0;
@@ -2290,7 +2299,7 @@ __attribute__((always_inline)) static inline void DrawColorHLine(f32 x,s32 y,f32
     }    
 }
 
-__attribute__((always_inline)) static inline void DrawTexHLine(f32 x,s32 y,f32 b, f32 aZ, f32 bZ,
+__STATIC_FORCEINLINE void DrawTexHLine(f32 x,s32 y,f32 b, f32 aZ, f32 bZ,
 f32 aU,f32 aV,f32 bU,f32 bV, u32 lightFactor, fBuff_t *pFrameBuff,zBuff_t *pZbuff, B3L_texture_t *pTexture) {
     //printf("auv%.2f,%.2f,buv%.2f,%.2f\n",aU,aV,bU,bV);
     s32 intx = B3L_RoundingToS(x),inty=y,intb=(B3L_RoundingToS(b));
@@ -2382,7 +2391,7 @@ f32 aU,f32 aV,f32 bU,f32 bV, u32 lightFactor, fBuff_t *pFrameBuff,zBuff_t *pZbuf
 }
 
 
-__attribute__((always_inline)) static inline void DrawTexHLine_NOCheck(f32 x,s32 y,f32 b, f32 aZ, f32 bZ,
+__STATIC_FORCEINLINE void DrawTexHLine_NOCheck(f32 x,s32 y,f32 b, f32 aZ, f32 bZ,
 f32 aU,f32 aV,f32 bU,f32 bV, u32 lightFactor, fBuff_t *pFrameBuff,zBuff_t *pZbuff, B3L_texture_t *pTexture) {
     //printf("auv%.2f,%.2f,buv%.2f,%.2f\n",aU,aV,bU,bV);
     s32 intx = B3L_RoundingToS(x),inty=y,intb=(B3L_RoundingToS(b));
@@ -2457,7 +2466,7 @@ f32 aU,f32 aV,f32 bU,f32 bV, u32 lightFactor, fBuff_t *pFrameBuff,zBuff_t *pZbuf
     } 
 }
 
-__attribute__((always_inline)) static  inline void  DrawTriTexture_NOCheck(
+__STATIC_FORCEINLINE void  DrawTriTexture_NOCheck(
                                                                         f32 x0,f32 y0,f32 u0,f32 v0,f32 z0,
                                                                         f32 x1,f32 y1,f32 u1,f32 v1,f32 z1,
                                                                         f32 x2,f32 y2,f32 u2,f32 v2,f32 z2,
@@ -2539,7 +2548,7 @@ __attribute__((always_inline)) static  inline void  DrawTriTexture_NOCheck(
     } 
 }
 
-static void  DrawTriTexture_NotInline(
+_RAM_FUNC static void  DrawTriTexture_NotInline(
                                 f32 x0,f32 y0,f32 u0,f32 v0,f32 z0,
                                 f32 x1,f32 y1,f32 u1,f32 v1,f32 z1,
                                 f32 x2,f32 y2,f32 u2,f32 v2,f32 z2,
@@ -2649,7 +2658,7 @@ static void  DrawTriTexture_NotInline(
 }
 
 
-__attribute__((always_inline)) static  inline void  DrawTriTexture(
+__STATIC_FORCEINLINE void  DrawTriTexture(
                                                                         f32 x0,f32 y0,f32 u0,f32 v0,f32 z0,
                                                                         f32 x1,f32 y1,f32 u1,f32 v1,f32 z1,
                                                                         f32 x2,f32 y2,f32 u2,f32 v2,f32 z2,
@@ -2758,7 +2767,7 @@ __attribute__((always_inline)) static  inline void  DrawTriTexture(
     }
 }
 
-__attribute__((always_inline)) static  inline fBuff_t GetFinalColor(fBuff_t color,u32 lightFactor){
+__STATIC_FORCEINLINE fBuff_t GetFinalColor(fBuff_t color,u32 lightFactor){
 #if B3L_IN_SITU_LIGHT_CAL == 0    
     #if FRAME_BUFF_COLOR_TYPE == 0               
         fBuff_t  finalColor = (color&0x00FFFFFF)|(((u32)lightFactor)<<24);
@@ -2788,7 +2797,7 @@ __attribute__((always_inline)) static  inline fBuff_t GetFinalColor(fBuff_t colo
 }
 
 
-__attribute__((always_inline)) static  inline void  DrawTriColor_NOCheck(
+__STATIC_FORCEINLINE void  DrawTriColor_NOCheck(
                                                                         f32 x0,f32 y0,f32 z0,
                                                                         f32 x1,f32 y1,f32 z1,
                                                                         f32 x2,f32 y2,f32 z2,
@@ -2862,7 +2871,7 @@ __attribute__((always_inline)) static  inline void  DrawTriColor_NOCheck(
     }
 }
  
-__attribute__((always_inline)) static  inline void  DrawTriColor(f32 x0,f32 y0,f32 z0,f32 x1,f32 y1,f32 z1,
+__STATIC_FORCEINLINE void  DrawTriColor(f32 x0,f32 y0,f32 z0,f32 x1,f32 y1,f32 z1,
                                                                         f32 x2,f32 y2,f32 z2,
                                                                         u32 renderLevel,u32 lightFactor,fBuff_t color,
                                                                         fBuff_t *pFrameBuff,zBuff_t *pZbuff){
@@ -2946,7 +2955,7 @@ __attribute__((always_inline)) static  inline void  DrawTriColor(f32 x0,f32 y0,f
     }
 }
 
-static void  DrawTriColor_NotInline(f32 x0,f32 y0,f32 z0,f32 x1,f32 y1,f32 z1,
+_RAM_FUNC static void  DrawTriColor_NotInline(f32 x0,f32 y0,f32 z0,f32 x1,f32 y1,f32 z1,
                                     f32 x2,f32 y2,f32 z2,
                                     u32 renderLevel,u32 lightFactor,fBuff_t color,
                                     fBuff_t *pFrameBuff,zBuff_t *pZbuff){
@@ -3037,7 +3046,7 @@ static void  DrawTriColor_NotInline(f32 x0,f32 y0,f32 z0,f32 x1,f32 y1,f32 z1,
 /*-----------------------------------------------------------------------------
 Rotation calculation functions 
 -----------------------------------------------------------------------------*/
-void B3L_EulerToMatrix(euler3_t *pEuler,mat3_t *pMat){
+_RAM_FUNC void B3L_EulerToMatrix(euler3_t *pEuler,mat3_t *pMat){
     f32 byX = pEuler->x;f32 byY = pEuler->y;f32 byZ = pEuler->z;
     f32 sx = B3L_sin(byX);f32 sy = B3L_sin(byY);f32 sz = B3L_sin(byZ);
     f32 cx = B3L_cos(byX);f32 cy = B3L_cos(byY);f32 cz = B3L_cos(byZ);
@@ -3054,7 +3063,7 @@ void B3L_EulerToMatrix(euler3_t *pEuler,mat3_t *pMat){
     #undef M
 
 }
-void B3L_MatrixToEuler(mat3_t *pMat, euler3_t *pEuler){
+_RAM_FUNC void B3L_MatrixToEuler(mat3_t *pMat, euler3_t *pEuler){
     f32 sp = -pMat->m12;
     if (sp <= -1.0f){
         pEuler->x = -0.25f;
@@ -3072,7 +3081,7 @@ void B3L_MatrixToEuler(mat3_t *pMat, euler3_t *pEuler){
     }
 }
 
-void B3L_QuaternionToMatrix(quat4_t *pQuat, mat3_t *pMat){
+_RAM_FUNC void B3L_QuaternionToMatrix(quat4_t *pQuat, mat3_t *pMat){
     f32 x = pQuat->x; f32 y = pQuat->y; f32 z = pQuat->z; f32 w = pQuat->w;
     pMat->m00 = 1.0f - 2.0f*(y*y + z*z);
     pMat->m01 = 2.0f*(x*y - w*z);
@@ -3085,7 +3094,7 @@ void B3L_QuaternionToMatrix(quat4_t *pQuat, mat3_t *pMat){
     pMat->m22 = 1.0f - 2.0f*(x*x + y*y);
 }
 
-void B3L_MatrixToQuaternion(mat3_t *pMat, quat4_t *pQuat){
+_RAM_FUNC void B3L_MatrixToQuaternion(mat3_t *pMat, quat4_t *pQuat){
     f32 fWSM = pMat->m00 + pMat->m11 + pMat->m22;
     f32 fXSM = pMat->m00 - pMat->m11 - pMat->m22;
     f32 fYSM = pMat->m11 - pMat->m00 - pMat->m22;
@@ -3134,7 +3143,7 @@ void B3L_MatrixToQuaternion(mat3_t *pMat, quat4_t *pQuat){
     }
 }
 
-void B3L_EulerToQuaternion(euler3_t *pEuler,quat4_t *pQuat){
+_RAM_FUNC void B3L_EulerToQuaternion(euler3_t *pEuler,quat4_t *pQuat){
     f32 cp = B3L_cos(pEuler->x * 0.5f);f32 ch = B3L_cos(pEuler->y * 0.5f);
     f32 cb = B3L_cos(pEuler->z * 0.5f);f32 sp = B3L_sin(pEuler->x * 0.5f);
     f32 sh = B3L_sin(pEuler->y * 0.5f);f32 sb = B3L_sin(pEuler->z * 0.5f);
@@ -3145,7 +3154,7 @@ void B3L_EulerToQuaternion(euler3_t *pEuler,quat4_t *pQuat){
 }
 
 
-void B3L_QuaternionToEuler(quat4_t *pQuat,euler3_t *pEuler){
+_RAM_FUNC void B3L_QuaternionToEuler(quat4_t *pQuat,euler3_t *pEuler){
     f32 x = pQuat->x;f32 y = pQuat->y;f32 z = pQuat->z;f32 w = pQuat->w;
     f32 sp = -2.0f*(y*z - w*x);
     if (B3L_Absf(sp)>0.9999f){
@@ -3162,7 +3171,7 @@ void B3L_QuaternionToEuler(quat4_t *pQuat,euler3_t *pEuler){
 /*-----------------------------------------------------------------------------
 Quaternion functions
 -----------------------------------------------------------------------------*/
-void B3L_QuaternionInterp(quat4_t *pFrom,quat4_t *pTo,quat4_t *pResult, f32 t){
+_RAM_FUNC void B3L_QuaternionInterp(quat4_t *pFrom,quat4_t *pTo,quat4_t *pResult, f32 t){
     f32 w0 = pFrom->w; f32 x0 = pFrom->x; f32 y0 = pFrom->y; f32 z0 = pFrom->z;
     f32 w1 = pTo->w; f32 x1 = pTo->x; f32 y1 = pTo->y; f32 z1 = pTo->z;
     f32 cosOmega = w0*w1+x0*x1+y0*y1+z0*z1;
@@ -3187,7 +3196,7 @@ void B3L_QuaternionInterp(quat4_t *pFrom,quat4_t *pTo,quat4_t *pResult, f32 t){
     pResult->z = z0*k0 + z1*k1;
 }
 
-void B3L_QuatMult(quat4_t *pL,quat4_t *pR, quat4_t *pResult){
+_RAM_FUNC void B3L_QuatMult(quat4_t *pL,quat4_t *pR, quat4_t *pResult){
     f32 x1 = pL->x;f32 y1 = pL->y;f32 z1 = pL->z;f32 w1 = pL->w;
     f32 x2 = pR->x;f32 y2 = pR->y;f32 z2 = pR->z;f32 w2 = pR->w;
     pResult->x = w1*x2+x1*w2+y1*z2-z1*y2;
@@ -3196,11 +3205,11 @@ void B3L_QuatMult(quat4_t *pL,quat4_t *pR, quat4_t *pResult){
     pResult->w = w1*w2-x1*x2-y1*y2-z1*z2;
 }
 
-f32  B3L_QuatDot(quat4_t *pL,quat4_t *pR){
+_RAM_FUNC f32  B3L_QuatDot(quat4_t *pL,quat4_t *pR){
     return pL->w*pR->w + pL->x*pR->x + pL->y*pR->y +pL->z*pR->z ;
 }
 
-void B3L_CreateQuaternionByAxisAngle(vect3_t *pAxis, f32 angle, quat4_t *pResult){
+_RAM_FUNC void B3L_CreateQuaternionByAxisAngle(vect3_t *pAxis, f32 angle, quat4_t *pResult){
     f32 halfAngle = 0.5f*angle;
     f32 sinh = B3L_sin(halfAngle);
     f32 cosh = B3L_cos(halfAngle);
@@ -3210,7 +3219,7 @@ void B3L_CreateQuaternionByAxisAngle(vect3_t *pAxis, f32 angle, quat4_t *pResult
     pResult->w = cosh;
 }
 
-void B3L_FromToRotation(vect3_t *pFrom, vect3_t *pTo,quat4_t *pResult){
+_RAM_FUNC void B3L_FromToRotation(vect3_t *pFrom, vect3_t *pTo,quat4_t *pResult){
     vect3_t fN;
     vect3_t tN;
     B3L_Vect3Normalize(pFrom,&fN);
@@ -3227,7 +3236,7 @@ void B3L_FromToRotation(vect3_t *pFrom, vect3_t *pTo,quat4_t *pResult){
 }
 
 //create a quaternion that rotates vector a to vector b
-void B3L_LookRotation(vect3_t *pA, vect3_t *pB, vect3_t *pUp, quat4_t *pResult){
+_RAM_FUNC void B3L_LookRotation(vect3_t *pA, vect3_t *pB, vect3_t *pUp, quat4_t *pResult){
     vect3_t aN;
     vect3_t bN;
     vect3_t uN;
@@ -3253,32 +3262,32 @@ void B3L_LookRotation(vect3_t *pA, vect3_t *pB, vect3_t *pUp, quat4_t *pResult){
     B3L_CreateQuaternionByAxisAngle(&ortAxis,rotAngle,pResult);
 }
 
-void B3L_CreateLookAtQuaternion(vect3_t *pFrom, vect3_t *pAt, vect3_t *pUp, quat4_t *pResult){
+_RAM_FUNC void B3L_CreateLookAtQuaternion(vect3_t *pFrom, vect3_t *pAt, vect3_t *pUp, quat4_t *pResult){
     vect3_t toObj;
     B3L_Vect3Sub(pAt,pFrom,&toObj);
     vect3_t zAxis = {0.0f,0.0f,1.0f};
     B3L_LookRotation(&zAxis,&toObj, pUp, pResult);
 }
 
-void B3L_QuatCreateXRotate(quat4_t *pQ,f32 angle){
+_RAM_FUNC void B3L_QuatCreateXRotate(quat4_t *pQ,f32 angle){
     f32 halfAngle = 0.5f*angle;
     f32 cosh = B3L_cos(halfAngle);f32 sinh = B3L_sin(halfAngle);
     pQ->w = cosh;pQ->x = sinh;pQ->y = 0.0f;pQ->z = 0.0f;
 }
 
-void B3L_QuatCreateYRotate(quat4_t *pQ,f32 angle){
+_RAM_FUNC void B3L_QuatCreateYRotate(quat4_t *pQ,f32 angle){
     f32 halfAngle = 0.5f*angle;
     f32 cosh = B3L_cos(halfAngle);f32 sinh = B3L_sin(halfAngle);
     pQ->w = cosh;pQ->x = 0.0f;pQ->y = sinh;pQ->z = 0.0f;
 }
 
-void B3L_QuatCreateZRotate(quat4_t *pQ,f32 angle){
+_RAM_FUNC void B3L_QuatCreateZRotate(quat4_t *pQ,f32 angle){
     f32 halfAngle = 0.5f*angle;
     f32 cosh = B3L_cos(halfAngle);f32 sinh = B3L_sin(halfAngle);
     pQ->w = cosh;pQ->x = 0.0f;pQ->y = 0.0f;pQ->z = sinh;
 }
 
-fBuff_t *B3L_3dRenderAreaShiftCal(fBuff_t *startOfWholeFrameBuff,u32 x, u32 y){
+_RAM_FUNC fBuff_t *B3L_3dRenderAreaShiftCal(fBuff_t *startOfWholeFrameBuff,u32 x, u32 y){
     startOfWholeFrameBuff += y*WHOLE_FRAME_BUFF_WIDTH+x;
     return startOfWholeFrameBuff;
 }
@@ -3292,7 +3301,7 @@ fBuff_t *B3L_3dRenderAreaShiftCal(fBuff_t *startOfWholeFrameBuff,u32 x, u32 y){
     dg = (mg + ((dg * ia) >> 8)); \
     db = (mb + ((db * ia) >> 8)); \
 
-__attribute__((always_inline)) static  inline fBuff_t  LightBlend(u32 inputPixel, u8 r, u8 g, u8 b){
+__STATIC_FORCEINLINE fBuff_t  LightBlend(u32 inputPixel, u8 r, u8 g, u8 b){
     u8 s_r = (inputPixel>>16)&0xFF;
     u8 s_g = (inputPixel>>8)&0xFF;
     u8 s_b = (inputPixel)&0xFF;
@@ -3301,7 +3310,7 @@ __attribute__((always_inline)) static  inline fBuff_t  LightBlend(u32 inputPixel
     return (0xFF000000)|(r<<16)|(g<<8)|(b<<0);
 }
 
-void  B3L_AppliedLightFromAlpha(render_t *pRender){
+_RAM_FUNC void  B3L_AppliedLightFromAlpha(render_t *pRender){
     u32 j = RENDER_RESOLUTION_Y;
     u32 lineDiv16Left = (RENDER_RESOLUTION_X)&0x0000000F;
     fBuff_t *pFBuff = pRender->pFrameBuff;
@@ -3351,7 +3360,7 @@ void  B3L_AppliedLightFromAlpha(render_t *pRender){
     }
 }
 
-__attribute__((always_inline)) static  inline u32  LightBlend4(u16 inputPixel, u8 r, u8 g, u8 b){
+__STATIC_FORCEINLINE u32  LightBlend4(u16 inputPixel, u8 r, u8 g, u8 b){
     u8 s_r = ((inputPixel>>8)&0x0F)<<4;
     u8 s_g = ((inputPixel>>4)&0x0F)<<4;
     u8 s_b = ((inputPixel)&0x0F)<<4;
@@ -3361,7 +3370,7 @@ __attribute__((always_inline)) static  inline u32  LightBlend4(u16 inputPixel, u
     //return (0xFF000000)|(s_r<<16)|(s_g<<8)|(s_b<<0);
 }
 
-void  B3L_AppliedLightFromAlpha4444To8888(render_t *pRender,u32 *pTgetBuff){
+_RAM_FUNC void  B3L_AppliedLightFromAlpha4444To8888(render_t *pRender,u32 *pTgetBuff){
 u32 j = RENDER_RESOLUTION_Y;
     u32 lineDiv16Left = (RENDER_RESOLUTION_X)&0x0000000F;
     fBuff_t *pFBuff = pRender->pFrameBuff;
@@ -3430,13 +3439,13 @@ static volatile bool DMA2DOccupied;
 static volatile uint32_t DMACallbackCounter;
 static fBuff_t B3L_CLEAN_FRAME_COLOR;
 
-static void DMA2DDefaultCallback(void);
-static void Apply_Zoom_ColorTrans_Callback(void);
+_RAM_FUNC static void DMA2DDefaultCallback(void);
+_RAM_FUNC static void Apply_Zoom_ColorTrans_Callback(void);
 
 
-void (*pDMA2DIRQCallback)(void);
+_RAM_FUNC void (*pDMA2DIRQCallback)(void);
 
-void B3L_DMA2D_Init(void){
+_RAM_FUNC void B3L_DMA2D_Init(void){
     DMA2DOccupied = false;
     DMACallbackCounter = 0;
     LL_AHB3_GRP1_EnableClock(LL_AHB3_GRP1_PERIPH_DMA2D);
@@ -3447,124 +3456,124 @@ void B3L_DMA2D_Init(void){
     pDMA2DIRQCallback = DMA2DDefaultCallback;
 }
 
-void DMA2D_IRQHandler(void){
+_RAM_FUNC void DMA2D_IRQHandler(void){
 //clear the flag
     DMA2D->IFCR = (uint32_t)(0x1F);
  //call current callback
     (*pDMA2DIRQCallback)();
 }
 
-static void DMA2DDefaultCallback(void){
+_RAM_FUNC static void DMA2DDefaultCallback(void){
     DMACallbackCounter = 0;   
      
     DMA2D_STOP_WORKING
 }
 
-static void Apply_Zoom_ColorTrans_Callback(void){
+_RAM_FUNC static void Apply_Zoom_ColorTrans_Callback(void){
     switch (DMACallbackCounter){
-  case 0://copy 16bit color to its side pixel
-    //set the transform type
-    MODIFY_REG(DMA2D->CR, DMA2D_CR_MODE, LL_DMA2D_MODE_M2M);
-    //set the input address, type
-    MODIFY_REG(DMA2D->FGPFCCR, DMA2D_FGPFCCR_CM, LL_DMA2D_INPUT_MODE_RGB565);
-    DMA2D->FGMAR = B3L_LCD_BUFF_ADDR+WHOLE_FRAME_BUFF_WIDTH*WHOLE_FRAME_BUFF_HEIGHT*4; 
-    //set the target address, type
-    MODIFY_REG(DMA2D->OPFCCR, DMA2D_OPFCCR_CM, LL_DMA2D_OUTPUT_MODE_RGB565);
-    DMA2D->OMAR = B3L_LCD_BUFF_ADDR+WHOLE_FRAME_BUFF_WIDTH*WHOLE_FRAME_BUFF_HEIGHT*4+2; 
-    
-    //set the shape, 
-    MODIFY_REG(DMA2D->NLR, DMA2D_NLR_PL, (1 << DMA2D_NLR_PL_Pos)); 
-    MODIFY_REG(DMA2D->NLR, DMA2D_NLR_NL, (WHOLE_FRAME_BUFF_WIDTH*WHOLE_FRAME_BUFF_HEIGHT)); 
-    
-    //set the input 1 pixel skip
-    MODIFY_REG(DMA2D->FGOR, DMA2D_FGOR_LO, 1);
-    //set the output 1 pixel skip
-    MODIFY_REG(DMA2D->OOR, DMA2D_OOR_LO, 1);
+        case 0://copy 16bit color to its side pixel
+            //set the transform type
+            MODIFY_REG(DMA2D->CR, DMA2D_CR_MODE, LL_DMA2D_MODE_M2M);
+            //set the input address, type
+            MODIFY_REG(DMA2D->FGPFCCR, DMA2D_FGPFCCR_CM, LL_DMA2D_INPUT_MODE_RGB565);
+            DMA2D->FGMAR = B3L_LCD_BUFF_ADDR+WHOLE_FRAME_BUFF_WIDTH*WHOLE_FRAME_BUFF_HEIGHT*4; 
+            //set the target address, type
+            MODIFY_REG(DMA2D->OPFCCR, DMA2D_OPFCCR_CM, LL_DMA2D_OUTPUT_MODE_RGB565);
+            DMA2D->OMAR = B3L_LCD_BUFF_ADDR+WHOLE_FRAME_BUFF_WIDTH*WHOLE_FRAME_BUFF_HEIGHT*4+2; 
+            
+            //set the shape, 
+            MODIFY_REG(DMA2D->NLR, DMA2D_NLR_PL, (1 << DMA2D_NLR_PL_Pos)); 
+            MODIFY_REG(DMA2D->NLR, DMA2D_NLR_NL, (WHOLE_FRAME_BUFF_WIDTH*WHOLE_FRAME_BUFF_HEIGHT)); 
+            
+            //set the input 1 pixel skip
+            MODIFY_REG(DMA2D->FGOR, DMA2D_FGOR_LO, 1);
+            //set the output 1 pixel skip
+            MODIFY_REG(DMA2D->OOR, DMA2D_OOR_LO, 1);
    
-    break;
-  case 1://copy line to ltdc buffer
-    //set the transform type
-    MODIFY_REG(DMA2D->CR, DMA2D_CR_MODE, LL_DMA2D_MODE_M2M);
-    //set the input address, type
-    MODIFY_REG(DMA2D->FGPFCCR, DMA2D_FGPFCCR_CM, LL_DMA2D_INPUT_MODE_RGB565);
-    DMA2D->FGMAR = B3L_LCD_BUFF_ADDR+WHOLE_FRAME_BUFF_WIDTH*WHOLE_FRAME_BUFF_HEIGHT*4; 
-    //set the shape, 
-    MODIFY_REG(DMA2D->NLR, DMA2D_NLR_PL, ((WHOLE_FRAME_BUFF_WIDTH*2) << DMA2D_NLR_PL_Pos)); 
-    MODIFY_REG(DMA2D->NLR, DMA2D_NLR_NL, (WHOLE_FRAME_BUFF_HEIGHT)); 
-    //set the target address, type
-    MODIFY_REG(DMA2D->OPFCCR, DMA2D_OPFCCR_CM, LL_DMA2D_OUTPUT_MODE_RGB565);
-    DMA2D->OMAR = B3L_LCD_BUFF_ADDR; 
-    //set the input 0 pixel skip
-    MODIFY_REG(DMA2D->FGOR, DMA2D_FGOR_LO, 0);
-    //set the output 320 pixel skip
-    MODIFY_REG(DMA2D->OOR, DMA2D_OOR_LO, WHOLE_FRAME_BUFF_WIDTH*2);
- 
-    break;
-  case 2://copy line again to next
-    //set the transform type
-    MODIFY_REG(DMA2D->CR, DMA2D_CR_MODE, LL_DMA2D_MODE_M2M);
-    //set the input address, type
-    MODIFY_REG(DMA2D->FGPFCCR, DMA2D_FGPFCCR_CM, LL_DMA2D_INPUT_MODE_RGB565);
-    DMA2D->FGMAR = B3L_LCD_BUFF_ADDR; 
-    //set the shape, 
-    MODIFY_REG(DMA2D->NLR, DMA2D_NLR_PL, ((WHOLE_FRAME_BUFF_WIDTH*2) << DMA2D_NLR_PL_Pos)); 
-    MODIFY_REG(DMA2D->NLR, DMA2D_NLR_NL, (WHOLE_FRAME_BUFF_HEIGHT)); 
-    //set the target address, type
-    MODIFY_REG(DMA2D->OPFCCR, DMA2D_OPFCCR_CM, LL_DMA2D_OUTPUT_MODE_RGB565);
-    DMA2D->OMAR = B3L_LCD_BUFF_ADDR + WHOLE_FRAME_BUFF_WIDTH*4; //double pixel and 2 byte per pixel 
-    //set the input 0 pixel skip
-    MODIFY_REG(DMA2D->FGOR, DMA2D_FGOR_LO,WHOLE_FRAME_BUFF_WIDTH*2);
-    //set the output 320 pixel skip
-    MODIFY_REG(DMA2D->OOR, DMA2D_OOR_LO,WHOLE_FRAME_BUFF_WIDTH*2);
-    break;
-  case 3://clear the framebuff
-    MODIFY_REG(DMA2D->CR, DMA2D_CR_MODE, LL_DMA2D_MODE_R2M);
-    //set the reg color
-    DMA2D->FGCOLR = B3L_CLEAN_FRAME_COLOR;
-    //set the shape, 
-    MODIFY_REG(DMA2D->NLR, DMA2D_NLR_PL, (WHOLE_FRAME_BUFF_WIDTH << DMA2D_NLR_PL_Pos)); 
-    MODIFY_REG(DMA2D->NLR, DMA2D_NLR_NL, (WHOLE_FRAME_BUFF_HEIGHT)); 
-    
-    //set the target address, type
-    MODIFY_REG(DMA2D->OPFCCR, DMA2D_OPFCCR_CM, LL_DMA2D_OUTPUT_MODE_ARGB8888);
-    DMA2D->OMAR = B3L_FRAMEBUFF_ADDR ; 
+            break;
+        case 1://copy line to ltdc buffer
+            //set the transform type
+            MODIFY_REG(DMA2D->CR, DMA2D_CR_MODE, LL_DMA2D_MODE_M2M);
+            //set the input address, type
+            MODIFY_REG(DMA2D->FGPFCCR, DMA2D_FGPFCCR_CM, LL_DMA2D_INPUT_MODE_RGB565);
+            DMA2D->FGMAR = B3L_LCD_BUFF_ADDR+WHOLE_FRAME_BUFF_WIDTH*WHOLE_FRAME_BUFF_HEIGHT*4; 
+            //set the shape, 
+            MODIFY_REG(DMA2D->NLR, DMA2D_NLR_PL, ((WHOLE_FRAME_BUFF_WIDTH*2) << DMA2D_NLR_PL_Pos)); 
+            MODIFY_REG(DMA2D->NLR, DMA2D_NLR_NL, (WHOLE_FRAME_BUFF_HEIGHT)); 
+            //set the target address, type
+            MODIFY_REG(DMA2D->OPFCCR, DMA2D_OPFCCR_CM, LL_DMA2D_OUTPUT_MODE_RGB565);
+            DMA2D->OMAR = B3L_LCD_BUFF_ADDR; 
+            //set the input 0 pixel skip
+            MODIFY_REG(DMA2D->FGOR, DMA2D_FGOR_LO, 0);
+            //set the output 320 pixel skip
+            MODIFY_REG(DMA2D->OOR, DMA2D_OOR_LO, WHOLE_FRAME_BUFF_WIDTH*2);
+        
+            break;
+        case 2://copy line again to next
+            //set the transform type
+            MODIFY_REG(DMA2D->CR, DMA2D_CR_MODE, LL_DMA2D_MODE_M2M);
+            //set the input address, type
+            MODIFY_REG(DMA2D->FGPFCCR, DMA2D_FGPFCCR_CM, LL_DMA2D_INPUT_MODE_RGB565);
+            DMA2D->FGMAR = B3L_LCD_BUFF_ADDR; 
+            //set the shape, 
+            MODIFY_REG(DMA2D->NLR, DMA2D_NLR_PL, ((WHOLE_FRAME_BUFF_WIDTH*2) << DMA2D_NLR_PL_Pos)); 
+            MODIFY_REG(DMA2D->NLR, DMA2D_NLR_NL, (WHOLE_FRAME_BUFF_HEIGHT)); 
+            //set the target address, type
+            MODIFY_REG(DMA2D->OPFCCR, DMA2D_OPFCCR_CM, LL_DMA2D_OUTPUT_MODE_RGB565);
+            DMA2D->OMAR = B3L_LCD_BUFF_ADDR + WHOLE_FRAME_BUFF_WIDTH*4; //double pixel and 2 byte per pixel 
+            //set the input 0 pixel skip
+            MODIFY_REG(DMA2D->FGOR, DMA2D_FGOR_LO,WHOLE_FRAME_BUFF_WIDTH*2);
+            //set the output 320 pixel skip
+            MODIFY_REG(DMA2D->OOR, DMA2D_OOR_LO,WHOLE_FRAME_BUFF_WIDTH*2);
+            break;
+        case 3://clear the framebuff
+            MODIFY_REG(DMA2D->CR, DMA2D_CR_MODE, LL_DMA2D_MODE_R2M);
+            //set the reg color
+            DMA2D->FGCOLR = B3L_CLEAN_FRAME_COLOR;
+            //set the shape, 
+            MODIFY_REG(DMA2D->NLR, DMA2D_NLR_PL, (WHOLE_FRAME_BUFF_WIDTH << DMA2D_NLR_PL_Pos)); 
+            MODIFY_REG(DMA2D->NLR, DMA2D_NLR_NL, (WHOLE_FRAME_BUFF_HEIGHT)); 
+            
+            //set the target address, type
+            MODIFY_REG(DMA2D->OPFCCR, DMA2D_OPFCCR_CM, LL_DMA2D_OUTPUT_MODE_ARGB8888);
+            DMA2D->OMAR = B3L_FRAMEBUFF_ADDR ; 
 
-    //set the output 0 pixel skip
-    MODIFY_REG(DMA2D->OOR, DMA2D_OOR_LO,0);
-    
-    break;
-  case 4:
-    //clear z buff
-    MODIFY_REG(DMA2D->CR, DMA2D_CR_MODE, LL_DMA2D_MODE_R2M);
-    #if Z_BUFF_LEVEL == 2
-    //set the reg color
-    DMA2D->FGCOLR = 0x3f800000; //1.0f
-    //set the shape, 
-    MODIFY_REG(DMA2D->OPFCCR, DMA2D_OPFCCR_CM, LL_DMA2D_OUTPUT_MODE_ARGB8888);
-    #elif Z_BUFF_LEVEL == 1
-    DMA2D->FGCOLR = 0xFFFF;
-    //set the shape, 
-    MODIFY_REG(DMA2D->OPFCCR, DMA2D_OPFCCR_CM, LL_DMA2D_OUTPUT_MODE_RGB565); 
-    #elif Z_BUFF_LEVEL == 0
-    DMA2D->FGCOLR = 0xFF;
-    //set the shape, 
-    MODIFY_REG(DMA2D->OPFCCR, DMA2D_OPFCCR_CM, LL_DMA2D_OUTPUT_MODE_L8);     
-    #endif
-    MODIFY_REG(DMA2D->NLR, DMA2D_NLR_PL, ((WHOLE_FRAME_BUFF_WIDTH) << DMA2D_NLR_PL_Pos)); 
-    MODIFY_REG(DMA2D->NLR, DMA2D_NLR_NL, (WHOLE_FRAME_BUFF_HEIGHT));
-    
-    DMA2D->OMAR = (u32)zBuff; 
-    //set the output 0 pixel skip
-    MODIFY_REG(DMA2D->OOR, DMA2D_OOR_LO,0); 
-    pDMA2DIRQCallback = DMA2DDefaultCallback; 
-    break;
-  }
+            //set the output 0 pixel skip
+            MODIFY_REG(DMA2D->OOR, DMA2D_OOR_LO,0);
+            
+            break;
+        case 4:
+            //clear z buff
+            MODIFY_REG(DMA2D->CR, DMA2D_CR_MODE, LL_DMA2D_MODE_R2M);
+            #if Z_BUFF_LEVEL == 2
+            //set the reg color
+            DMA2D->FGCOLR = 0x3f800000; //1.0f
+            //set the shape, 
+            MODIFY_REG(DMA2D->OPFCCR, DMA2D_OPFCCR_CM, LL_DMA2D_OUTPUT_MODE_ARGB8888);
+            #elif Z_BUFF_LEVEL == 1
+            DMA2D->FGCOLR = 0xFFFF;
+            //set the shape, 
+            MODIFY_REG(DMA2D->OPFCCR, DMA2D_OPFCCR_CM, LL_DMA2D_OUTPUT_MODE_RGB565); 
+            #elif Z_BUFF_LEVEL == 0
+            DMA2D->FGCOLR = 0xFF;
+            //set the shape, 
+            MODIFY_REG(DMA2D->OPFCCR, DMA2D_OPFCCR_CM, LL_DMA2D_OUTPUT_MODE_L8);     
+            #endif
+            MODIFY_REG(DMA2D->NLR, DMA2D_NLR_PL, ((WHOLE_FRAME_BUFF_WIDTH) << DMA2D_NLR_PL_Pos)); 
+            MODIFY_REG(DMA2D->NLR, DMA2D_NLR_NL, (WHOLE_FRAME_BUFF_HEIGHT));
+            
+            DMA2D->OMAR = (u32)zBuff; 
+            //set the output 0 pixel skip
+            MODIFY_REG(DMA2D->OOR, DMA2D_OOR_LO,0); 
+            pDMA2DIRQCallback = DMA2DDefaultCallback; 
+            break;
+    }
   DMACallbackCounter++;
   //start the next dma2d process
   DMA2D->CR |= DMA2D_CR_START;
 }
 
-void  B3L_DMA2DAppliedLightAndUpScale(u32 *addr,u32 wholeWidth,u32 wholeheight,u32 invLightColor){
+_RAM_FUNC void  B3L_DMA2DAppliedLightAndUpScale(u32 *addr,u32 wholeWidth,u32 wholeheight,u32 invLightColor){
     SCB_CleanInvalidateDCache_by_Addr(addr, wholeWidth * wholeheight * 4);
     //check the resource lock
     while(B3L_DMA2DIsOccupied()){};
@@ -3592,7 +3601,7 @@ void  B3L_DMA2DAppliedLightAndUpScale(u32 *addr,u32 wholeWidth,u32 wholeheight,u
     DMA2D->CR |= DMA2D_CR_START;
 }
 
-void B3L_DMA2DAppliedLightTo565(u32 *addr,u32 wholeWidth,u32 wholeheight,u32 invLightColor){
+_RAM_FUNC void B3L_DMA2DAppliedLightTo565(u32 *addr,u32 wholeWidth,u32 wholeheight,u32 invLightColor){
     #if (FRAME_BUFF_COLOR_TYPE  == 1) 
     SCB_CleanInvalidateDCache_by_Addr(addr, wholeWidth * wholeheight * 2);
     MODIFY_REG(DMA2D->FGPFCCR, DMA2D_FGPFCCR_CM, LL_DMA2D_INPUT_MODE_ARGB4444);
@@ -3631,13 +3640,13 @@ void B3L_DMA2DAppliedLightTo565(u32 *addr,u32 wholeWidth,u32 wholeheight,u32 inv
     DMA2D->CR |= DMA2D_CR_START;
 }
 
-bool  B3L_DMA2DOcupied(void){
+_RAM_FUNC bool  B3L_DMA2DOcupied(void){
     return DMA2DOccupied;
 }
 #endif
 
 //public draw functions
-void B3L_DrawPixel_ZCheck(render_t *pRender,fBuff_t color,s32 x,s32 y,f32 z){
+_RAM_FUNC void B3L_DrawPixel_ZCheck(render_t *pRender,fBuff_t color,s32 x,s32 y,f32 z){
     zBuff_t *pZbuff = pRender->pZBuff;
     fBuff_t *pFrameBuff = pRender->pFrameBuff;
     zBuff_t *pCurrentPixelZ = pZbuff + (y*RENDER_RESOLUTION_X) + x;

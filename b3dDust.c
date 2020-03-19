@@ -10,13 +10,15 @@
 dust_t starDust[128];
 
 #if B3L_ARM  == 1
-__attribute__((always_inline)) static  inline u32   SatToU8(u32 in){
+__STATIC_FORCEINLINE u32   SatToU8(u32 in){
     u32 result;
-    __ASM ("usat %0,#8,%1" : "=t"(result) : "t"(in));
+    __ASM ("usat %0, %1, %2" : "=r" (result) :  "I" (8), "r" (in) ); 
     return result; 
 }
+
+
 #else
-__attribute__((always_inline)) static  inline u32   SatToU8(u32 in){
+__STATIC_FORCEINLINE u32   SatToU8(u32 in){
     const uint32_t max = ((1U << 8) - 1U);
     if (in > max){
         return max;
@@ -25,7 +27,7 @@ __attribute__((always_inline)) static  inline u32   SatToU8(u32 in){
     }
 }
 #endif
-__attribute__((always_inline)) static  inline void  Vect3Xmat4WithTestToScreen4(vect3_t *pV, mat4_t *pMat, screen4_t *pResult){
+__STATIC_FORCEINLINE void  Vect3Xmat4WithTestToScreen4(vect3_t *pV, mat4_t *pMat, screen4_t *pResult){
     f32 x = pV->x; f32 y = pV->y; f32 z = pV->z;
     f32 rx,ry,rz,rw;
     u32 testResult=0;

@@ -1,7 +1,7 @@
 #ifndef __B3D_LIB_CFG_H__
 #define __B3D_LIB_CFG_H__
 
-/*Config area----------------------------------------------------------------*/
+/*Hardware config area-------------------------------------------------------*/
 
 
 #define  B3L_ARM                0
@@ -10,21 +10,22 @@
 //the in situ light calculation will use the light fact to calculate the pixel rgb value,
 //if it is 0, we will use alpha channel to store the light value and do the shade after rendering
 
-#define  B3L_IN_SITU_LIGHT_CAL      0
-
-#define  B3L_DO_NEAR_PLANE_CLIP     0
-
-#define B3L_CLIP_NEAR_Z         0.1f
+#define _RAM_FUNC   __attribute__((long_call,section(".itcm")))
 
 #if B3L_DMA2D ==  1
 #define B3L_LCD_BUFF_ADDR     0xXXXXXXXX
 #define B3L_FRAMEBUFF_ADDR    0xXXXXXXXX
 #endif
-
+/*Config area----------------------------------------------------------------*/
 #define  B3L_DEBUG              0
 
 //smallest update cycles in ms
 #define B3L_UPDATE_CYCLE       25
+
+// calculate the light effect directly when rasting triangles
+#define  B3L_IN_SITU_LIGHT_CAL      0
+// do the near plane clip, otherwise it will skip these triangles
+#define  B3L_DO_NEAR_PLANE_CLIP     0
 
 //vect buff size limited the max vectors in single obj
 #define VECT_BUFF_SIZE          512

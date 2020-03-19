@@ -230,7 +230,7 @@ void B3L_InitBoxObjPolygon(B3LPolygonObj_t *pObj,f32 size){
 
 }
 
-__attribute__((always_inline)) static  inline void Vect3_Scale(vect3_t *pSource,f32 factor,vect3_t *pResult){
+__STATIC_FORCEINLINE void Vect3_Scale(vect3_t *pSource,f32 factor,vect3_t *pResult){
     f32 x = pSource->x; f32 y = pSource->y; f32 z = pSource->z;
     pResult->x = x*factor;
     pResult->y = y*factor;
@@ -302,10 +302,10 @@ void    B3L_DefaultParticleUpdFunc(u32 time,B3LParticleGenObj_t *pSelf,mat3_t *p
 #ifdef WIN32 
 #define __attribute__(A)
 #endif
-__attribute__((always_inline)) static  inline s32   B3L_RoundingToU(f32 in){
+__STATIC_FORCEINLINE s32   B3L_RoundingToU(f32 in){
     return (u32)roundf(in); 
 }
-__attribute__((always_inline)) static  inline u32   SatToU16(u32 in){
+__STATIC_FORCEINLINE u32   SatToU16(u32 in){
     const uint32_t max = ((1U << 16) - 1U);
     if (in > max){
         return max;
@@ -314,7 +314,7 @@ __attribute__((always_inline)) static  inline u32   SatToU16(u32 in){
     }
 }
 
-__attribute__((always_inline)) static  inline u32   SatToU8(u32 in){
+__STATIC_FORCEINLINE u32   SatToU8(u32 in){
     const uint32_t max = ((1U << 8) - 1U);
     if (in > max){
         return max;
@@ -322,7 +322,7 @@ __attribute__((always_inline)) static  inline u32   SatToU8(u32 in){
         return in;
     }
 }
-__attribute__((always_inline)) static  inline zBuff_t CalZbuffValue(f32 z){
+__STATIC_FORCEINLINE zBuff_t CalZbuffValue(f32 z){
              #if  (Z_BUFF_LEVEL == 0) 
             u32 tempZ = B3L_RoundingToU(z*255.0f);
             u8  compZ = SatToU8(tempZ);
