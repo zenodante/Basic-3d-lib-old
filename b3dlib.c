@@ -91,7 +91,8 @@ static bool Vect3InClipSpace(vect3_t *pV, mat4_t *pMat);
 static bool BoundBoxTest(f32 *pMaxMin,mat4_t *pMat);
 __attribute__((always_inline)) static  inline bool     TriangleFaceToViewer_f(f32 x0, f32 y0, f32 x1, f32 y1, f32 x2, f32 y2);
 static ClipPoint(u32 v0,u32 v1,u32 v2,u32 i0,u32 i1,u32 i2, f32 nearPlane, vect3_t *pVect,mat4_t *pMat, u8 *pUV,B3L_clip_t *pC0,B3L_clip_t *pC1 );
- /*-----------------------------------------------------------------------------
+static ClipPointNoTex(u32 v0,u32 v1,u32 v2,f32 nearPlane, vect3_t *pVect,mat4_t *pMat,B3L_clip_t *pC0,B3L_clip_t *pC1 );
+/*-----------------------------------------------------------------------------
 Draw functions
 -----------------------------------------------------------------------------*/ 
 __attribute__((always_inline)) static  inline fBuff_t  GetFinalColor(fBuff_t color,u32 lightFactor);
@@ -111,6 +112,12 @@ static void  DrawTriTexture_NotInline(
                                 f32 x1,f32 y1,f32 u1,f32 v1,f32 z1,
                                 f32 x2,f32 y2,f32 u2,f32 v2,f32 z2,
                                 u32 renderLevel,u32 lightFactor,B3L_texture_t *pTexture,
+                                fBuff_t *pFrameBuff,zBuff_t *pZbuff);
+static void     DrawTriColor_NotInline(
+                                f32 x0,f32 y0,f32 z0,
+                                f32 x1,f32 y1,f32 z1,
+                                f32 x2,f32 y2,f32 z2,
+                                u32 renderLevel,u32 lightFactor,fBuff_t color,
                                 fBuff_t *pFrameBuff,zBuff_t *pZbuff);
 __attribute__((always_inline)) static  inline void     DrawTriTexture_NOCheck(
                                                                         f32 x0,f32 y0,f32 u0,f32 v0,f32 z0,
@@ -1784,7 +1791,69 @@ static void RenderNoTexMesh(B3LMeshNoTexObj_t *pObj,render_t *pRender, mat4_t *p
 #if B3L_DO_NEAR_PLANE_CLIP == 1
                 else{
                     switch(clipCheck){
-                        
+                        case 1:  //vect 0 outside
+                            ClipPointNoTex(vect0Idx,vect1Idx,vect2Idx,nearPlane,((vect3_t *)(pMesh->pVect)),pMat,&c0,&c1);
+                            DrawTriColor_NotInline(x1,y1,pVectTarget[vect1Idx].z,
+                                                     x2,y2,pVectTarget[vect2Idx].z,
+                                                     c0.x,c0.y,0.0f,
+                                                      renderLevel,lightValue,color,
+                                                        pFrameBuff,pZBuff);
+                            DrawTriColor_NotInline(x2,y2,pVectTarget[vect2Idx].z,
+                                                     c0.x,c0.y,0.0f,
+                                                     c1.x,c1.y,0.0f,
+                                                      renderLevel,lightValue,color,
+                                                    pFrameBuff,pZBuff);
+                            break;
+                        case 6: //vect 0 inside
+                            ClipPointNoTex(vect0Idx,vect1Idx,vect2Idx,nearPlane,((vect3_t *)(pMesh->pVect)),pMat,&c0,&c1);
+                            DrawTriColor_NotInline( x0,y0,pVectTarget[vect0Idx].z,
+                                                      c0.x,c0.y,0.0f,
+                                                      c1.x,c1.y,0.0f,
+                                                       renderLevel,lightValue,color,
+                                                        pFrameBuff,pZBuff);
+                            break;
+                        case 5: //vect 1 inside
+                            ClipPointNoTex(vect1Idx,vect0Idx,vect2Idx,nearPlane,((vect3_t *)(pMesh->pVect)),pMat,&c0,&c1);
+                            DrawTriColor_NotInline( x1,y1,pVectTarget[vect1Idx].z,
+                                                      c0.x,c0.y,0.0f,
+                                                      c1.x,c1.y,0.0f,
+                                                       renderLevel,lightValue,color,
+                                                      pFrameBuff,pZBuff);
+                            break;
+                        case 2:  //vect 1 outside
+                            ClipPointNoTex(vect1Idx,vect0Idx,vect2Idx,nearPlane,((vect3_t *)(pMesh->pVect)),pMat,&c0,&c1);
+                            DrawTriColor_NotInline(x0,y0,pVectTarget[vect0Idx].z,
+                                                     x2,y2,pVectTarget[vect2Idx].z,
+                                                     c0.x,c0.y,0.0f,
+                                                      renderLevel,lightValue,color,
+                                                     pFrameBuff,pZBuff);
+                            DrawTriColor_NotInline(x2,y2,pVectTarget[vect2Idx].z,
+                                                     c0.x,c0.y,0.0f,
+                                                     c1.x,c1.y,0.0f,
+                                                      renderLevel,lightValue,color,
+                                                     pFrameBuff,pZBuff);
+                            break;
+                        case 3://vect 2 inside
+                            ClipPointNoTex(vect2Idx,vect0Idx,vect1Idx,nearPlane,((vect3_t *)(pMesh->pVect)),pMat,&c0,&c1);
+                            DrawTriColor_NotInline( x2,y2,(f32)pVectTarget[vect2Idx].z,
+                                                      c0.x,c0.y,0.0f,
+                                                      c1.x,c1.y,0.0f,
+                                                       renderLevel,lightValue,color,
+                                                      pFrameBuff,pZBuff);
+                            break;
+                        case 4://vect 2 outside
+                            ClipPointNoTex(vect2Idx,vect0Idx,vect1Idx,nearPlane,((vect3_t *)(pMesh->pVect)),pMat,&c0,&c1);
+                            DrawTriColor_NotInline(x0,y0,pVectTarget[vect0Idx].z,
+                                                     x1,y1,pVectTarget[vect1Idx].z,
+                                                     c0.x,c0.y,0.0f,
+                                                      renderLevel,lightValue,color,
+                                                pFrameBuff,pZBuff);
+                            DrawTriColor_NotInline(x1,y1,pVectTarget[vect1Idx].z,
+                                                     c0.x,c0.y,0.0f,
+                                                     c1.x,c1.y,0.0f,
+                                                      renderLevel,lightValue,color,
+                                                     pFrameBuff,pZBuff);
+                            break;
                     }
                 }
 #endif         
@@ -2025,6 +2094,20 @@ static void RenderTexMesh(B3LMeshObj_t *pObj,render_t *pRender, mat4_t *pMat,u32
             }//end of not fully inside clip space
         }//at least one terminal inside    
     }//end of triangle draw loop        
+}
+static ClipPointNoTex(u32 v0,u32 v1,u32 v2,f32 nearPlane, vect3_t *pVect,mat4_t *pMat,B3L_clip_t *pC0,B3L_clip_t *pC1 ){
+    vect4_t vect0,vect1,vect2;
+    Vect3Xmat4(pVect+v0, pMat, &vect0);
+    Vect3Xmat4(pVect+v1, pMat, &vect1);
+    Vect3Xmat4(pVect+v2, pMat, &vect2);
+    f32 rwFactor = 1.0f/nearPlane;
+    f32 factor = (vect0.w - nearPlane)/(vect0.w - vect1.w);
+    pC0->x = HALF_RESOLUTION_X + HALF_RESOLUTION_X*(vect0.x- factor*(vect0.x-vect1.x))*rwFactor;
+    pC0->y = HALF_RESOLUTION_Y - HALF_RESOLUTION_Y*(vect0.y- factor*(vect0.y-vect1.y))*rwFactor;
+    factor = (vect0.w - nearPlane)/(vect0.w - vect2.w);
+    pC1->x = HALF_RESOLUTION_X + HALF_RESOLUTION_X*(vect0.x- factor*(vect0.x-vect2.x))*rwFactor;
+    pC1->y = HALF_RESOLUTION_Y - HALF_RESOLUTION_Y*(vect0.y- factor*(vect0.y-vect2.y))*rwFactor;
+    
 }
 
 static ClipPoint(u32 v0,u32 v1,u32 v2,u32 i0,u32 i1,u32 i2,f32 nearPlane, vect3_t *pVect,mat4_t *pMat, u8 *pUV,B3L_clip_t *pC0,B3L_clip_t *pC1 ){
@@ -2862,6 +2945,92 @@ __attribute__((always_inline)) static  inline void  DrawTriColor(f32 x0,f32 y0,f
         }
     }
 }
+
+static void  DrawTriColor_NotInline(f32 x0,f32 y0,f32 z0,f32 x1,f32 y1,f32 z1,
+                                    f32 x2,f32 y2,f32 z2,
+                                    u32 renderLevel,u32 lightFactor,fBuff_t color,
+                                    fBuff_t *pFrameBuff,zBuff_t *pZbuff){
+
+    fBuff_t finalColor = GetFinalColor(color,lightFactor);
+    s32 y,last;
+    if(y0 > y1){
+        _swap_f32_t(y0,y1);_swap_f32_t(x0,x1);_swap_f32_t(z0,z1); 
+    }
+    if (y1 > y2) {
+        _swap_f32_t(y2,y1);_swap_f32_t(x2,x1);_swap_f32_t(z2,z1);  
+    }
+    if(y0 > y1){
+        _swap_f32_t(y0,y1);_swap_f32_t(x0,x1);_swap_f32_t(z0,z1);    
+    }
+    s32 inty0 = B3L_RoundingToS(y0),inty1 = B3L_RoundingToS(y1),inty2 = B3L_RoundingToS(y2);
+    if(inty0 == inty2) { // Handle awkward all-on-same-line case as its own thing
+        return;
+    }
+    f32 dy01 = 1.0f/(inty1 - inty0);f32 dy02 = 1.0f/(inty2 - inty0);f32 dy12 = 1.0f/(inty2 - inty1);
+    f32 dx01 = (x1 - x0)*dy01;f32 dx02 = (x2 - x0)*dy02;f32 dx12 = (x2 - x1)*dy12;
+    f32 dz01 = (z1 - z0)*dy01;f32 dz02 = (z2 - z0)*dy02;f32 dz12 = (z2 - z1)*dy12;
+    f32  aZ=z0+dz01;f32  bZ=z0+dz02;f32  a=x0+dx01;f32  b=x0+dx02;
+    last = inty1-1;
+    y = inty0+1;
+    f32 deltaY;
+    if (last>=RENDER_RESOLUTION_Y){
+            last = RENDER_RESOLUTION_Y -1;
+    }
+    if (y<0){
+        deltaY = (f32)(-y);
+        y = 0;
+        a += deltaY*dx01;aZ +=deltaY*dz01;
+        b += deltaY*dx02;bZ +=deltaY*dz02;
+    }
+    if(a<b){
+        for(y; y<=last; y++) {
+            DrawColorHLine(a,y,b,aZ,bZ,finalColor,pFrameBuff,pZbuff);
+            a += dx01;aZ += dz01;
+            b += dx02;bZ += dz02;  
+        }
+    }else{
+        for(y; y<=last; y++) {
+            DrawColorHLine(b,y,a,bZ,aZ,finalColor,pFrameBuff,pZbuff);
+            a += dx01;aZ += dz01;
+            b += dx02;bZ += dz02;  
+        }
+    }
+
+    y= inty2;
+    last = inty1; 
+    
+    if (y == last){
+        deltaY= (f32)(inty1-inty0);
+        a = x2;aZ=z2;
+        b=x1;bZ= z0+dz02*deltaY;
+    }else{
+        a = x2;b=x2;aZ=z2;bZ= z2;
+    }  
+    if (last<0){
+        last = 0;
+    }
+    if (y>=RENDER_RESOLUTION_Y){
+        y=RENDER_RESOLUTION_Y - 1;
+        deltaY = (f32)(inty2 - y);
+        a -= deltaY*dx02;aZ -=deltaY*dz02;
+        b -= deltaY*dx12;bZ -=deltaY*dz12;
+    }
+    if((a-dx02)<(b-dx12)){
+        for (y;y>=last;y--){
+            DrawColorHLine(a,y,b,aZ,bZ,finalColor,pFrameBuff,pZbuff);
+            a -= dx02;aZ -= dz02;
+            b -= dx12;bZ -= dz12;
+        }
+    }else{
+        for (y;y>=last;y--){
+            DrawColorHLine(b,y,a,bZ,aZ,finalColor,pFrameBuff,pZbuff);
+            a -= dx02;aZ -= dz02;
+            b -= dx12;bZ -= dz12;
+        }
+    }
+}
+
+
 
 
 
