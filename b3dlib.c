@@ -1718,6 +1718,11 @@ static void RenderNoTexMesh(B3LMeshNoTexObj_t *pObj,render_t *pRender, mat4_t *p
         lightValue=pRender->lvl1Light;
     } 
 //draw tri loop
+#if B3L_DO_NEAR_PLANE_CLIP == 1
+    B3L_clip_t  c0,c1;
+    f32 nearPlane = pRender->nearPlane;
+#endif
+    mat3_t *rotateMat =  &(pObj->mat);
     for (i=pMesh->triNum -1;i>=0;i--){
         //pTriRenderState[i]=0;
         vect0Idx = pTriIdx[i*3];
@@ -1750,7 +1755,7 @@ static void RenderNoTexMesh(B3LMeshNoTexObj_t *pObj,render_t *pRender, mat4_t *p
         if(inSpaceCheck){// at least one point inside the clip space
             if (renderLevel==0){
                 //Norm3Xmat4Normalize(pVectSource+i, pMat, &normalVect); 
-                B3L_Vect3MulMat3(pVectSource+i, &(pObj->mat),&normalVect);
+                B3L_Vect3MulMat3(pVectSource+i, rotateMat,&normalVect);
                 //dot multi light and normalvect to get the light factor
                 normalDotLight = normalVect.x*lightX + normalVect.y*lightY + normalVect.z*lightZ;
                 //normalDotLight is in the range -1.0f to 1.0f
@@ -1776,7 +1781,13 @@ static void RenderNoTexMesh(B3LMeshNoTexObj_t *pObj,render_t *pRender, mat4_t *p
                     x2,y2,pVectTarget[vect2Idx].z,renderLevel,lightValue,color,
                     pFrameBuff,pZBuff);
                 }
-                
+#if B3L_DO_NEAR_PLANE_CLIP == 1
+                else{
+                    switch(clipCheck){
+                        
+                    }
+                }
+#endif         
             }
         }    
     }        
