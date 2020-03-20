@@ -471,6 +471,21 @@ extern _RAM_FUNC B3LParticleGenObj_t  *B3L_GetFreeParticleGeneratorObj(render_t 
 extern _RAM_FUNC void                 B3L_AddObjToRenderList(B3LObj_t *pObj, render_t *pRender);
 extern _RAM_FUNC void                 B3L_PopObjFromRenderList(B3LObj_t *pObj, render_t *pRender);
 extern _RAM_FUNC void                 B3L_ReturnObjToInactiveList(B3LObj_t *pObj,  render_t *pRender);
+
+#define  SET_OBJ_VISIABLE(pObj)           B3L_SET((pObj)->state,OBJ_VISUALIZABLE)
+#define  SET_OBJ_INVISIABLE(pObj)         B3L_CLR((pObj)->state,OBJ_VISUALIZABLE)
+#define  SET_OBJ_BACKFACE_CULLING         B3L_SET((pObj)->state,OBJ_BACKFACE_CULLING)
+#define  SET_OBJ_NOT_BACKFACE_CULLING     B3L_CLR((pObj)->state,OBJ_BACKFACE_CULLING)
+#define  SET_OBJ_FIX_RENDER_LEVEL(n)      B3L_SET((pObj)->state,OBJ_IGNORE_RENDER_LEVEL);\
+                                          ((pObj)->state=((pObj)->state&(~OBJ_RENDER_LEVEL_MASK))|((n)<<OBJ_FIX_RENDER_LEVEL_SHIFT))
+#define  SET_OBJ_FIX_LIGHT_FACT(m)        B3L_SET((pObj)->state,OBJ_IGNORE_RENDER_LEVEL);\
+                                          B3L_SET((pObj)->state,OBJ_SPECIAL_LIGHT_VALUE);\
+                                          ((pObj)->state=((pObj)->state&(~OBJ_RENDER_LEVEL_MASK))|((1)<<OBJ_FIX_RENDER_LEVEL_SHIFT));\
+                                          ((pObj)->state=((pObj)->state&(~OBJ_SPECIAL_LIGHT_MASK))|((m)<<OBJ_SPECIAL_LIGHT_SHIFT))
+#define  CHANGE_OBJ_FIX_LIGHT_VALUE(m)    ((pObj)->state=((pObj)->state&(~OBJ_SPECIAL_LIGHT_MASK))|((m)<<OBJ_SPECIAL_LIGHT_SHIFT))
+
+#define  SET_PARTICLE_GENERATOR_ACTIVE    B3L_SET((pObj)->state,OBJ_PARTICLE_ACTIVE)
+#define  SET_PARTICLE_GENERATOR_INACTIVE  B3L_CLR((pObj)->state,OBJ_PARTICLE_ACTIVE)
 /*-----------------------------------------------------------------------------
 Target rotate control functions
 -----------------------------------------------------------------------------*/
