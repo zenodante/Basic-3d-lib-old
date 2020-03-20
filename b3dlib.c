@@ -2341,8 +2341,9 @@ f32 aU,f32 aV,f32 bU,f32 bV, u32 lightFactor, fBuff_t *pFrameBuff,zBuff_t *pZbuf
     u8  *uvData = pTexture->pData;
     texLUT_t *lut = pTexture->pLUT;
     u8  colorIdx = 0;
-    //fBuff_t color;
+#if B3L_TRANSPARENT_COLOR_IN_UVMAP == 1
     u8 transColorIdx = pTexture->transColorIdx;
+#endif
     zBuff_t compZ;
     switch(pTexture->type){
         case LUT16:
@@ -2354,9 +2355,11 @@ f32 aU,f32 aV,f32 bU,f32 bV, u32 lightFactor, fBuff_t *pFrameBuff,zBuff_t *pZbuf
                 colorIdx = uvData[intv*(uvSize>>1) + (intu>>1)];
                 colorIdx = colorIdx>>(4*(intu & 0x01));
                 colorIdx = colorIdx&0x0F;
+#if B3L_TRANSPARENT_COLOR_IN_UVMAP == 1
                 if (colorIdx == transColorIdx){
                     continue;
-                }                
+                }          
+#endif      
                 *pCurrentPixelZ = compZ;
                 *pixel = GetColorValue(lut,colorIdx,lightFactor);          
             }
@@ -2374,9 +2377,11 @@ f32 aU,f32 aV,f32 bU,f32 bV, u32 lightFactor, fBuff_t *pFrameBuff,zBuff_t *pZbuf
                 intu = (uint32_t)u;
                 intv = (uint32_t)v;  
                 colorIdx = uvData[intv*uvSize + intu];
+#if B3L_TRANSPARENT_COLOR_IN_UVMAP == 1
                 if (colorIdx == transColorIdx){
                     continue;
                 }
+#endif
                 *pCurrentPixelZ = compZ;
                 *pixel = GetColorValue(lut,colorIdx,lightFactor);           
             }
@@ -2418,7 +2423,9 @@ f32 aU,f32 aV,f32 bU,f32 bV, u32 lightFactor, fBuff_t *pFrameBuff,zBuff_t *pZbuf
     texLUT_t *lut = pTexture->pLUT;
     u8  colorIdx = 0;
     //fBuff_t color;
+#if B3L_TRANSPARENT_COLOR_IN_UVMAP == 1
     u8 transColorIdx = pTexture->transColorIdx;
+#endif
     zBuff_t compZ;
     switch(pTexture->type){
         case LUT16:
@@ -2430,9 +2437,11 @@ f32 aU,f32 aV,f32 bU,f32 bV, u32 lightFactor, fBuff_t *pFrameBuff,zBuff_t *pZbuf
                 colorIdx = uvData[intv*(uvSize>>1) + (intu>>1)];
                 colorIdx = colorIdx>>(4*(intu & 0x01));
                 colorIdx = colorIdx&0x0F;
+#if B3L_TRANSPARENT_COLOR_IN_UVMAP == 1
                 if (colorIdx == transColorIdx){
                     continue;
-                }                
+                }  
+#endif              
                 *pCurrentPixelZ = compZ;
                 *pixel = GetColorValue(lut,colorIdx,lightFactor);          
             }
@@ -2450,9 +2459,11 @@ f32 aU,f32 aV,f32 bU,f32 bV, u32 lightFactor, fBuff_t *pFrameBuff,zBuff_t *pZbuf
                 intu = (uint32_t)u;
                 intv = (uint32_t)v;  
                 colorIdx = uvData[intv*uvSize + intu];
+#if B3L_TRANSPARENT_COLOR_IN_UVMAP == 1
                 if (colorIdx == transColorIdx){
                     continue;
                 }
+#endif
                 *pCurrentPixelZ = compZ;
                 *pixel = GetColorValue(lut,colorIdx,lightFactor);           
             }

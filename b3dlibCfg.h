@@ -22,11 +22,16 @@
 //smallest update cycles in ms
 #define B3L_UPDATE_CYCLE       25
 
-// calculate the light effect directly when rasting triangles
+// calculate the light effect directly when rasting triangles, or set to 0 to take
+//advantage the hardware for alpha blending(like DMA2d in stm32 chip)
 #define  B3L_IN_SITU_LIGHT_CAL      0
-// do the near plane clip, otherwise it will skip these triangles
+// do the near plane clip, otherwise it will skip these triangles, set the 0 could 
+//speedup the rendering
 #define  B3L_DO_NEAR_PLANE_CLIP     0
-
+// if set the transparent color then the triangle drawing function will
+//check every pixel color for transparent value matching. However it will slow down 
+//the whole rendering process
+#define  B3L_TRANSPARENT_COLOR_IN_UVMAP     0
 //vect buff size limited the max vectors in single obj
 #define VECT_BUFF_SIZE          512
 //obj buff size limited the max objs in a scene 

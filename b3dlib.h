@@ -451,26 +451,26 @@ typedef void (*B3L_DrawFunc_t)(B3L_Particle_t *, screen4_t *,fBuff_t *,zBuff_t *
 /*-----------------------------------------------------------------------------
 Render functions
 -----------------------------------------------------------------------------*/
-extern _RAM_FUNC void     B3L_RenderInit(render_t *pRender,fBuff_t *pFrameBuff);
-extern _RAM_FUNC void     B3L_RenderScence(render_t *pRender); //draw work 
-extern _RAM_FUNC void     B3L_ResetScene(scene_t *pScene); //reset all the scene resource
-extern _RAM_FUNC void     B3L_NewRenderStart(render_t *pRender,fBuff_t color); //clear buffs
-extern _RAM_FUNC void     B3L_Update(render_t *pRender,u32 time); //update particles etc
+extern _RAM_FUNC void B3L_RenderInit(render_t *pRender,fBuff_t *pFrameBuff);
+extern _RAM_FUNC void B3L_RenderScence(render_t *pRender); //draw work 
+extern _RAM_FUNC void B3L_ResetScene(scene_t *pScene); //reset all the scene resource
+extern _RAM_FUNC void B3L_NewRenderStart(render_t *pRender,fBuff_t color); //clear buffs
+extern _RAM_FUNC void B3L_Update(render_t *pRender,u32 time); //update particles etc
 /*-----------------------------------------------------------------------------
 Render obj functions
 -----------------------------------------------------------------------------*/
-extern _RAM_FUNC u32                  B3L_GetFreeObjNum(render_t *pRender);
-extern _RAM_FUNC B3LObj_t             *B3L_GetFreeObj(render_t *pRender);
-extern _RAM_FUNC B3LMeshObj_t         *B3L_GetFreeMeshObj(render_t *pRender);
-extern _RAM_FUNC B3LMeshNoTexObj_t    *B3L_GetFreeMeshNoTexObj(render_t *pRender);
-extern _RAM_FUNC B3LPolygonObj_t      *B3L_GetFreePolygonObj(render_t *pRender);
+extern _RAM_FUNC u32                 B3L_GetFreeObjNum(render_t *pRender);
+extern _RAM_FUNC B3LObj_t            *B3L_GetFreeObj(render_t *pRender);
+extern _RAM_FUNC B3LMeshObj_t        *B3L_GetFreeMeshObj(render_t *pRender);
+extern _RAM_FUNC B3LMeshNoTexObj_t   *B3L_GetFreeMeshNoTexObj(render_t *pRender);
+extern _RAM_FUNC B3LPolygonObj_t     *B3L_GetFreePolygonObj(render_t *pRender);
 
 #ifdef B3L_USING_PARTICLE
-extern _RAM_FUNC B3LParticleGenObj_t  *B3L_GetFreeParticleGeneratorObj(render_t *pRender);
+extern _RAM_FUNC B3LParticleGenObj_t *B3L_GetFreeParticleGeneratorObj(render_t *pRender);
 #endif
-extern _RAM_FUNC void                 B3L_AddObjToRenderList(B3LObj_t *pObj, render_t *pRender);
-extern _RAM_FUNC void                 B3L_PopObjFromRenderList(B3LObj_t *pObj, render_t *pRender);
-extern _RAM_FUNC void                 B3L_ReturnObjToInactiveList(B3LObj_t *pObj,  render_t *pRender);
+extern _RAM_FUNC void B3L_AddObjToRenderList(B3LObj_t *pObj, render_t *pRender);
+extern _RAM_FUNC void B3L_PopObjFromRenderList(B3LObj_t *pObj, render_t *pRender);
+extern _RAM_FUNC void B3L_ReturnObjToInactiveList(B3LObj_t *pObj,  render_t *pRender);
 
 #define  SET_OBJ_VISIABLE(pObj)           B3L_SET((pObj)->state,OBJ_VISUALIZABLE)
 #define  SET_OBJ_INVISIABLE(pObj)         B3L_CLR((pObj)->state,OBJ_VISUALIZABLE)
@@ -489,27 +489,27 @@ extern _RAM_FUNC void                 B3L_ReturnObjToInactiveList(B3LObj_t *pObj
 /*-----------------------------------------------------------------------------
 Target rotate control functions
 -----------------------------------------------------------------------------*/
-extern _RAM_FUNC void     B3L_RotateObjInOX(quat4_t *pQuat,f32 angle);
-extern _RAM_FUNC void     B3L_RotateObjInOY(quat4_t *pQuat,f32 angle);
-extern _RAM_FUNC void     B3L_RotateObjInOZ(quat4_t *pQuat,f32 angle);
-extern _RAM_FUNC void     B3L_RotateObjInWX(quat4_t *pQuat,f32 angle);
-extern _RAM_FUNC void     B3L_RotateObjInWY(quat4_t *pQuat,f32 angle);
-extern _RAM_FUNC void     B3L_RotateObjInWZ(quat4_t *pQuat,f32 angle);
-#define         SET_OBJ_ROTATE_BY_EULER(pObj,pEuler)          B3L_EulerToQuaternion(pEuler,&((pObj)->transform.quaternion);\
+extern _RAM_FUNC void B3L_RotateObjInOX(quat4_t *pQuat,f32 angle);
+extern _RAM_FUNC void B3L_RotateObjInOY(quat4_t *pQuat,f32 angle);
+extern _RAM_FUNC void B3L_RotateObjInOZ(quat4_t *pQuat,f32 angle);
+extern _RAM_FUNC void B3L_RotateObjInWX(quat4_t *pQuat,f32 angle);
+extern _RAM_FUNC void B3L_RotateObjInWY(quat4_t *pQuat,f32 angle);
+extern _RAM_FUNC void B3L_RotateObjInWZ(quat4_t *pQuat,f32 angle);
+#define  SET_OBJ_ROTATE_BY_EULER(pObj,pEuler)          B3L_EulerToQuaternion(pEuler,&((pObj)->transform.quaternion);\
                                                                         B3L_SET((pObj)->state,OBJ_NEED_MATRIX_UPDATE)
-#define         ROTATE_IN_BODY_X(pObj,angle)                  B3L_RotateObjInOX(&((pObj)->transform.quaternion),angle);\
+#define  ROTATE_IN_BODY_X(pObj,angle)                  B3L_RotateObjInOX(&((pObj)->transform.quaternion),angle);\
                                                                         B3L_SET((pObj)->state,OBJ_NEED_MATRIX_UPDATE)
-#define         ROTATE_IN_BODY_Y(pObj,angle)                  B3L_RotateObjInOY(&((pObj)->transform.quaternion),angle);\
+#define  ROTATE_IN_BODY_Y(pObj,angle)                  B3L_RotateObjInOY(&((pObj)->transform.quaternion),angle);\
                                                                         B3L_SET((pObj)->state,OBJ_NEED_MATRIX_UPDATE)
-#define         ROTATE_IN_BODY_Z(pObj,angle)                  B3L_RotateObjInOZ(&((pObj)->transform.quaternion),angle);\
+#define  ROTATE_IN_BODY_Z(pObj,angle)                  B3L_RotateObjInOZ(&((pObj)->transform.quaternion),angle);\
                                                                         B3L_SET((pObj)->state,OBJ_NEED_MATRIX_UPDATE)
-#define         ROTATE_IN_WORLD_X(pObj,angle)                 B3L_RotateObjInWX(&((pObj)->transform.quaternion),angle);\
+#define  ROTATE_IN_WORLD_X(pObj,angle)                 B3L_RotateObjInWX(&((pObj)->transform.quaternion),angle);\
                                                                         B3L_SET((pObj)->state,OBJ_NEED_MATRIX_UPDATE)
-#define         ROTATE_IN_WORLD_Y(pObj,angle)                 B3L_RotateObjInWY(&((pObj)->transform.quaternion),angle);\
+#define  ROTATE_IN_WORLD_Y(pObj,angle)                 B3L_RotateObjInWY(&((pObj)->transform.quaternion),angle);\
                                                                         B3L_SET((pObj)->state,OBJ_NEED_MATRIX_UPDATE)
-#define         ROTATE_IN_WORLD_Z(pObj,angle)                 B3L_RotateObjInWZ(&((pObj)->transform.quaternion),angle);\
+#define  ROTATE_IN_WORLD_Z(pObj,angle)                 B3L_RotateObjInWZ(&((pObj)->transform.quaternion),angle);\
                                                                         B3L_SET((pObj)->state,OBJ_NEED_MATRIX_UPDATE)
-#define         SYNC_ROTATION_STATE_NOW(pObj)                 if(B3L_TEST((pObj)->state,OBJ_NEED_QUAT_UPDATE)){\
+#define  SYNC_ROTATION_STATE_NOW(pObj)                 if(B3L_TEST((pObj)->state,OBJ_NEED_QUAT_UPDATE)){\
                                                                    B3L_MatrixToQuaternion(&((pObj)->mat),&((pObj)->transform.quaternion));\
                                                                    B3L_CLR((pObj)->state,OBJ_NEED_QUAT_UPDATE);}\
                                                               else if(B3L_TEST((pObj)->state,OBJ_NEED_MATRIX_UPDATE)){\
@@ -519,109 +519,109 @@ extern _RAM_FUNC void     B3L_RotateObjInWZ(quat4_t *pQuat,f32 angle);
 Camera functions
 -----------------------------------------------------------------------------*/
 // you could use obj rotate macros for camera also
-extern _RAM_FUNC void     B3L_InitCamera(render_t *pRender);
-extern _RAM_FUNC void     B3L_SetOrthographicProject(render_t *pRender);
-extern _RAM_FUNC void     B3L_SetPerspectiveProject(render_t *pRender);//default mode
+extern _RAM_FUNC void B3L_InitCamera(render_t *pRender);
+extern _RAM_FUNC void B3L_SetOrthographicProject(render_t *pRender);
+extern _RAM_FUNC void B3L_SetPerspectiveProject(render_t *pRender);//default mode
 //call after you reset the aspect ratio, focus length, near/far plane, project mode 
-extern _RAM_FUNC void     B3L_UpdateClipMatrix(render_t *pRender);
-extern _RAM_FUNC void     B3L_CamSetFocusLengthByFOV(render_t *pRender, f32 fov);
-extern _RAM_FUNC void     B3L_CameraMoveTo(vect3_t position,camera_t *pCam);
-extern _RAM_FUNC void     B3L_CameraLookAt(camera_t *pCam, vect3_t *pAt,vect3_t *pUp);
-extern _RAM_FUNC void     B3L_CamStopTrack(camera_t *pCam);
-extern _RAM_FUNC void     B3L_CamStartTrack(camera_t *pCam);
-extern _RAM_FUNC void     B3L_CamInitTrack(camera_t *pCam,B3LObj_t *pObj,f32 camX,f32 camY,f32 camZ,f32 lookAtX,f32 lookAtY,f32 lookAtZ);
+extern _RAM_FUNC void B3L_UpdateClipMatrix(render_t *pRender);
+extern _RAM_FUNC void B3L_CamSetFocusLengthByFOV(render_t *pRender, f32 fov);
+extern _RAM_FUNC void B3L_CameraMoveTo(vect3_t position,camera_t *pCam);
+extern _RAM_FUNC void B3L_CameraLookAt(camera_t *pCam, vect3_t *pAt,vect3_t *pUp);
+extern _RAM_FUNC void B3L_CamStopTrack(camera_t *pCam);
+extern _RAM_FUNC void B3L_CamStartTrack(camera_t *pCam);
+extern _RAM_FUNC void B3L_CamInitTrack(camera_t *pCam,B3LObj_t *pObj,f32 camX,f32 camY,f32 camZ,f32 lookAtX,f32 lookAtY,f32 lookAtZ);
 /*-----------------------------------------------------------------------------
 Light functions
 -----------------------------------------------------------------------------*/
-extern _RAM_FUNC void     B3L_ResetLight(light_t *pLight);
-extern _RAM_FUNC void     B3L_SetLightType(render_t *pRender,lightType_e type);
-extern _RAM_FUNC void     B3L_SetLightVect(render_t *pRender, f32 x,f32 y,f32 z);
+extern _RAM_FUNC void B3L_ResetLight(light_t *pLight);
+extern _RAM_FUNC void B3L_SetLightType(render_t *pRender,lightType_e type);
+extern _RAM_FUNC void B3L_SetLightVect(render_t *pRender, f32 x,f32 y,f32 z);
 /*-----------------------------------------------------------------------------
 Math functions
 -----------------------------------------------------------------------------*/
-extern _RAM_FUNC f32      B3L_sin(f32 in);
-extern _RAM_FUNC f32      B3L_cos(f32 in);
-extern _RAM_FUNC f32      B3L_asin(f32 in);
-extern _RAM_FUNC f32      B3L_atan2(f32 y,f32 x);
-extern _RAM_FUNC void     B3L_SetSeed(u32 seed);
-extern _RAM_FUNC u32      B3L_Random(void); 
-extern _RAM_FUNC u32      B3L_Rnd(u32 range);
-#define         B3L_MIN(a,b)      ((a) >= (b) ? (b) : (a))
-#define         B3L_MAX(a,b)      ((a) >= (b) ? (a) : (b))
+extern _RAM_FUNC f32  B3L_sin(f32 in);
+extern _RAM_FUNC f32  B3L_cos(f32 in);
+extern _RAM_FUNC f32  B3L_asin(f32 in);
+extern _RAM_FUNC f32  B3L_atan2(f32 y,f32 x);
+extern _RAM_FUNC void B3L_SetSeed(u32 seed);
+extern _RAM_FUNC u32  B3L_Random(void); 
+extern _RAM_FUNC u32  B3L_Rnd(u32 range);
+#define B3L_MIN(a,b)      ((a) >= (b) ? (b) : (a))
+#define B3L_MAX(a,b)      ((a) >= (b) ? (a) : (b))
 /*-----------------------------------------------------------------------------
 Vector functions
 -----------------------------------------------------------------------------*/
-extern _RAM_FUNC vect2_t  B3L_Vect2(f32 x,f32 y);
-extern _RAM_FUNC vect3_t  B3L_Vect3(f32 x,f32 y,f32 z);
-extern _RAM_FUNC vect4_t  B3L_Vect4(f32 x,f32 y,f32 z,f32 w);
-#define         B3L_VECT2_SET(v,vx,vy)         v.x=vx;v.y=vy
-#define         B3L_VECT3_SET(v,vx,vy,vz)      v.x=vx;v.y=vy;v.z=vz
-#define         B3L_VECT4_SET(v,vx,vy,vz,vw)   v.x=vx;v.y=vy;v.z=vz;v.w=vw
-extern _RAM_FUNC f32      B3L_Vec2Length(vect2_t *pV);
-extern _RAM_FUNC void     B3L_Vect2Normalize(vect2_t *pV, vect2_t *pResult);
-extern _RAM_FUNC f32      B3L_Vect3Length(vect3_t *pV);
-extern _RAM_FUNC void     B3L_Vect3Normalize(vect3_t *pV,vect3_t *pResult);
-extern _RAM_FUNC void     B3L_Vect3Add(vect3_t *pVa,vect3_t *pVb,vect3_t *pResult);
-extern _RAM_FUNC void     B3L_Vect3Sub(vect3_t *pVa,vect3_t *pVb,vect3_t *pResult);
-extern _RAM_FUNC f32      B3L_Vect3Dot(vect3_t *pA, vect3_t *pB);
-extern _RAM_FUNC void     B3L_Vect3Cross(vect3_t *pA, vect3_t *pB, vect3_t *pResult);
-extern _RAM_FUNC void     B3L_Vect3Interp(vect3_t *pVa,vect3_t *pVb,vect3_t *pResult,f32 t);
-extern _RAM_FUNC void     B3L_Vect3Scale(vect3_t *pV,f32 scale,vect3_t *pResult);
+extern _RAM_FUNC vect2_t B3L_Vect2(f32 x,f32 y);
+extern _RAM_FUNC vect3_t B3L_Vect3(f32 x,f32 y,f32 z);
+extern _RAM_FUNC vect4_t B3L_Vect4(f32 x,f32 y,f32 z,f32 w);
+#define B3L_VECT2_SET(v,vx,vy)         v.x=vx;v.y=vy
+#define B3L_VECT3_SET(v,vx,vy,vz)      v.x=vx;v.y=vy;v.z=vz
+#define B3L_VECT4_SET(v,vx,vy,vz,vw)   v.x=vx;v.y=vy;v.z=vz;v.w=vw
+extern _RAM_FUNC f32  B3L_Vec2Length(vect2_t *pV);
+extern _RAM_FUNC void B3L_Vect2Normalize(vect2_t *pV, vect2_t *pResult);
+extern _RAM_FUNC f32  B3L_Vect3Length(vect3_t *pV);
+extern _RAM_FUNC void B3L_Vect3Normalize(vect3_t *pV,vect3_t *pResult);
+extern _RAM_FUNC void B3L_Vect3Add(vect3_t *pVa,vect3_t *pVb,vect3_t *pResult);
+extern _RAM_FUNC void B3L_Vect3Sub(vect3_t *pVa,vect3_t *pVb,vect3_t *pResult);
+extern _RAM_FUNC f32  B3L_Vect3Dot(vect3_t *pA, vect3_t *pB);
+extern _RAM_FUNC void B3L_Vect3Cross(vect3_t *pA, vect3_t *pB, vect3_t *pResult);
+extern _RAM_FUNC void B3L_Vect3Interp(vect3_t *pVa,vect3_t *pVb,vect3_t *pResult,f32 t);
+extern _RAM_FUNC void B3L_Vect3Scale(vect3_t *pV,f32 scale,vect3_t *pResult);
 /*-----------------------------------------------------------------------------
 Rotation convert functions
 -----------------------------------------------------------------------------*/
-extern _RAM_FUNC void     B3L_EulerToMatrix(euler3_t *pEuler,mat3_t *pMat);
-extern _RAM_FUNC void     B3L_MatrixToEuler(mat3_t *pMat, euler3_t *pEuler);
-extern _RAM_FUNC void     B3L_QuaternionToMatrix(quat4_t *pQuat, mat3_t *pMat);
-extern _RAM_FUNC void     B3L_MatrixToQuaternion(mat3_t *pMat, quat4_t *pQuat);
-extern _RAM_FUNC void     B3L_EulerToQuaternion(euler3_t *pEuler,quat4_t *pQuat);
-extern _RAM_FUNC void     B3L_QuaternionToEuler(quat4_t *pQuat,euler3_t *pEuler);
+extern _RAM_FUNC void B3L_EulerToMatrix(euler3_t *pEuler,mat3_t *pMat);
+extern _RAM_FUNC void B3L_MatrixToEuler(mat3_t *pMat, euler3_t *pEuler);
+extern _RAM_FUNC void B3L_QuaternionToMatrix(quat4_t *pQuat, mat3_t *pMat);
+extern _RAM_FUNC void B3L_MatrixToQuaternion(mat3_t *pMat, quat4_t *pQuat);
+extern _RAM_FUNC void B3L_EulerToQuaternion(euler3_t *pEuler,quat4_t *pQuat);
+extern _RAM_FUNC void B3L_QuaternionToEuler(quat4_t *pQuat,euler3_t *pEuler);
 /*-----------------------------------------------------------------------------
 Quaternion functions
 -----------------------------------------------------------------------------*/
-#define         SET_IDENTITY_P_QUAT(a)       (a)->x=0.0f;(a)->y=0.0f;(a)->z=0.0f;(a)->w=1.0f
-extern _RAM_FUNC void     B3L_QuatMult(quat4_t *pL,quat4_t *pR, quat4_t *pResult);
-extern _RAM_FUNC f32      B3L_QuatDot(quat4_t *pL,quat4_t *pR);
-extern _RAM_FUNC void     B3L_CreateQuaternionByAxisAngle(vect3_t *pAxis, f32 angle, quat4_t *pResult);
-extern _RAM_FUNC void     B3L_FromToRotation(vect3_t *pFrom, vect3_t *pTo,quat4_t *pResult);
-extern _RAM_FUNC void     B3L_LookRotation(vect3_t *pA, vect3_t *pB, vect3_t *pUp, quat4_t *pResult);
-extern _RAM_FUNC void     B3L_CreateLookAtQuaternion(vect3_t *pFrom, vect3_t *pAt, vect3_t *pUp, quat4_t *pResult);
-extern _RAM_FUNC void     B3L_QuatCreateXRotate(quat4_t *pQ,f32 angle);
-extern _RAM_FUNC void     B3L_QuatCreateYRotate(quat4_t *pQ,f32 angle);
-extern _RAM_FUNC void     B3L_QuatCreateZRotate(quat4_t *pQ,f32 angle);
-extern _RAM_FUNC void     B3L_QuaternionInterp(quat4_t *pFrom,quat4_t *pTo,quat4_t *pResult, f32 t);
+#define SET_IDENTITY_P_QUAT(a)       (a)->x=0.0f;(a)->y=0.0f;(a)->z=0.0f;(a)->w=1.0f
+extern _RAM_FUNC void B3L_QuatMult(quat4_t *pL,quat4_t *pR, quat4_t *pResult);
+extern _RAM_FUNC f32  B3L_QuatDot(quat4_t *pL,quat4_t *pR);
+extern _RAM_FUNC void B3L_CreateQuaternionByAxisAngle(vect3_t *pAxis, f32 angle, quat4_t *pResult);
+extern _RAM_FUNC void B3L_FromToRotation(vect3_t *pFrom, vect3_t *pTo,quat4_t *pResult);
+extern _RAM_FUNC void B3L_LookRotation(vect3_t *pA, vect3_t *pB, vect3_t *pUp, quat4_t *pResult);
+extern _RAM_FUNC void B3L_CreateLookAtQuaternion(vect3_t *pFrom, vect3_t *pAt, vect3_t *pUp, quat4_t *pResult);
+extern _RAM_FUNC void B3L_QuatCreateXRotate(quat4_t *pQ,f32 angle);
+extern _RAM_FUNC void B3L_QuatCreateYRotate(quat4_t *pQ,f32 angle);
+extern _RAM_FUNC void B3L_QuatCreateZRotate(quat4_t *pQ,f32 angle);
+extern _RAM_FUNC void B3L_QuaternionInterp(quat4_t *pFrom,quat4_t *pTo,quat4_t *pResult, f32 t);
 
 /*-----------------------------------------------------------------------------
 Particle functions
 -----------------------------------------------------------------------------*/
 #ifdef B3L_USING_PARTICLE
-extern _RAM_FUNC B3L_Particle_t       *B3L_GetFreeParticle(scene_t *pScene);
-extern _RAM_FUNC u32                  B3L_GetFreeParticleNum(render_t *pRender);
-extern _RAM_FUNC void                 B3L_ReturnParticleToPool(B3L_Particle_t *pParticle,scene_t *pScene);
-extern _RAM_FUNC void                 B3L_AddParticleToGenerator(B3L_Particle_t *pParticle,B3LParticleGenObj_t  *pGenerator);
-extern _RAM_FUNC void                 B3L_UpdateAllParticlesStatesInGen(render_t *pRender,B3LParticleGenObj_t *pGen,
+extern _RAM_FUNC B3L_Particle_t *B3L_GetFreeParticle(scene_t *pScene);
+extern _RAM_FUNC u32  B3L_GetFreeParticleNum(render_t *pRender);
+extern _RAM_FUNC void B3L_ReturnParticleToPool(B3L_Particle_t *pParticle,scene_t *pScene);
+extern _RAM_FUNC void B3L_AddParticleToGenerator(B3L_Particle_t *pParticle,B3LParticleGenObj_t  *pGenerator);
+extern _RAM_FUNC void B3L_UpdateAllParticlesStatesInGen(render_t *pRender,B3LParticleGenObj_t *pGen,
                                                               u32 deltaTime,vect3_t *pForce);
-#define                     B3L_SET_PARTICLE_POSITION(pP,px,py,pz)   pP->position.x=px;pP->position.y=py;pP->position.z=pz                                                                                                
-#define                     B3L_SET_PARTICLE_DELTA(pP,dx,dy,dz)      pP->delta.x=dx;pP->delta.y=dy;pP->delta.z=dz                                                                                                
+#define B3L_SET_PARTICLE_POSITION(pP,px,py,pz)   pP->position.x=px;pP->position.y=py;pP->position.z=pz                                                                                                
+#define B3L_SET_PARTICLE_DELTA(pP,dx,dy,dz)      pP->delta.x=dx;pP->delta.y=dy;pP->delta.z=dz                                                                                                
 #endif  //end of  B3L_USING_PARTICLE
 /*-----------------------------------------------------------------------------
 Matrix functions
 -----------------------------------------------------------------------------*/
-extern _RAM_FUNC void     B3L_InitUnitMat3(mat3_t *pMat);
-extern _RAM_FUNC void     B3L_Mat3XRotate(mat3_t *pMat,f32 angle);
-extern _RAM_FUNC void     B3L_Mat3YRotate(mat3_t *pMat,f32 angle);
-extern _RAM_FUNC void     B3L_Mat3ZRotate(mat3_t *pMat,f32 angle);
-extern _RAM_FUNC void     B3L_CreateO2WMat(mat3_t *pRMat, vect3_t *pTranslation, vect3_t *pScale, mat4_t *pResult);
-extern _RAM_FUNC void     B3L_InitMat4One(mat4_t *pMat);
-extern _RAM_FUNC void     B3L_TransposeMat4(mat4_t *pMat);
-extern _RAM_FUNC void     B3L_Mat4XMat4(mat4_t *pMat1,mat4_t *pMat2, mat4_t *pMat3);
-extern _RAM_FUNC void     B3L_Mat3MultMat3ABB(mat3_t *pMatA,mat3_t *pMatB);
-extern _RAM_FUNC void     B3L_Mat3MultMat3ABA(mat3_t *pMatA,mat3_t *pMatB);
-extern _RAM_FUNC void     B3L_MakeScaleMatrix(f32 scaleX,f32 scaleY,f32 scaleZ,mat4_t *pMat);
-extern _RAM_FUNC void     B3L_MakeTranslationMat(f32 offsetX,f32 offsetY,f32 offsetZ,mat4_t *pMat);
-extern _RAM_FUNC void     B3L_MakeO2CMatrix(mat3_t *pRMat,vect3_t *pScale,vect3_t *pTrans,mat4_t *pCamMat, mat4_t *pResult);
-extern _RAM_FUNC void     B3L_Vect3MulMat3(vect3_t *pV, mat3_t *pMat, vect3_t *pResult);
-extern _RAM_FUNC void     B3L_Point3MulMat4(vect3_t *pV, mat4_t *pMat, vect3_t *pResult);
+extern _RAM_FUNC void B3L_InitUnitMat3(mat3_t *pMat);
+extern _RAM_FUNC void B3L_Mat3XRotate(mat3_t *pMat,f32 angle);
+extern _RAM_FUNC void B3L_Mat3YRotate(mat3_t *pMat,f32 angle);
+extern _RAM_FUNC void B3L_Mat3ZRotate(mat3_t *pMat,f32 angle);
+extern _RAM_FUNC void B3L_CreateO2WMat(mat3_t *pRMat, vect3_t *pTranslation, vect3_t *pScale, mat4_t *pResult);
+extern _RAM_FUNC void B3L_InitMat4One(mat4_t *pMat);
+extern _RAM_FUNC void B3L_TransposeMat4(mat4_t *pMat);
+extern _RAM_FUNC void B3L_Mat4XMat4(mat4_t *pMat1,mat4_t *pMat2, mat4_t *pMat3);
+extern _RAM_FUNC void B3L_Mat3MultMat3ABB(mat3_t *pMatA,mat3_t *pMatB);
+extern _RAM_FUNC void B3L_Mat3MultMat3ABA(mat3_t *pMatA,mat3_t *pMatB);
+extern _RAM_FUNC void B3L_MakeScaleMatrix(f32 scaleX,f32 scaleY,f32 scaleZ,mat4_t *pMat);
+extern _RAM_FUNC void B3L_MakeTranslationMat(f32 offsetX,f32 offsetY,f32 offsetZ,mat4_t *pMat);
+extern _RAM_FUNC void B3L_MakeO2CMatrix(mat3_t *pRMat,vect3_t *pScale,vect3_t *pTrans,mat4_t *pCamMat, mat4_t *pResult);
+extern _RAM_FUNC void B3L_Vect3MulMat3(vect3_t *pV, mat3_t *pMat, vect3_t *pResult);
+extern _RAM_FUNC void B3L_Point3MulMat4(vect3_t *pV, mat4_t *pMat, vect3_t *pResult);
 /*-----------------------------------------------------------------------------
 Resolution helper functions
 -----------------------------------------------------------------------------*/
@@ -629,33 +629,28 @@ extern _RAM_FUNC fBuff_t *B3L_3dRenderAreaShiftCal(fBuff_t *startOfWholeFrameBuf
 /*-----------------------------------------------------------------------------
 After effect functions
 -----------------------------------------------------------------------------*/
-extern _RAM_FUNC void                 B3L_AppliedLightFromAlpha(render_t *pRender);
-extern _RAM_FUNC void                 B3L_AppliedLightFromAlpha4444To8888(render_t *pRender,u32 *pTgetBuff);
+extern _RAM_FUNC void B3L_AppliedLightFromAlpha(render_t *pRender);
+extern _RAM_FUNC void B3L_AppliedLightFromAlpha4444To8888(render_t *pRender,u32 *pTgetBuff);
 #if  B3L_DMA2D  == 1
 //Call by flip function
 //irq config
 #define B3L_DMA2D_IRQ_PRIORITY        2U
 #define B3L_DMA2D_IRQ_SUB_PRIORITY    0U
 //call init during the init phase
-extern _RAM_FUNC void                 B3L_DMA2D_Init(void);
+extern _RAM_FUNC void B3L_DMA2D_Init(void);
 //call replace the flip()
-extern _RAM_FUNC void                 B3L_DMA2DAppliedLightAndUpScale(u32 *addr,u32 wholeWidth,u32 wholeheight,u32 invLightColor);
-extern _RAM_FUNC void                 B3L_DMA2DAppliedLightTo565(u32 *addr,u32 wholeWidth,u32 wholeheight,u32 invLightColor);
+extern _RAM_FUNC void B3L_DMA2DAppliedLightAndUpScale(u32 *addr,u32 wholeWidth,u32 wholeheight,u32 invLightColor);
+extern _RAM_FUNC void B3L_DMA2DAppliedLightTo565(u32 *addr,u32 wholeWidth,u32 wholeheight,u32 invLightColor);
 //test before every render
-extern _RAM_FUNC bool                 B3L_DMA2DOcupied(void);
+extern _RAM_FUNC bool B3L_DMA2DOcupied(void);
 //irq handler 
-extern _RAM_FUNC void                 DMA2D_IRQHandler(void);
+extern _RAM_FUNC void DMA2D_IRQHandler(void);
 #endif
 /*-----------------------------------------------------------------------------
 Draw functions
 -----------------------------------------------------------------------------*/
 extern _RAM_FUNC void B3L_DrawPixel_ZCheck(render_t *pRender,fBuff_t color,s32 x,s32 y,f32 z);
-//extern void     B3L_SetFont();
-//extern void     B3L_SetFrontColor();
-//extern void     B3L_SetBackColor();
-//extern void     B3L_PrintStr();
-//extern void     B3L_DrawLine();
-//extern void     B3L_Draw
+
 
 
 
