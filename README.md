@@ -8,7 +8,7 @@
 This is a 3d lib for fast texture mapping 3d game on a mcu. Most in C with some asm functions to take advantage the cortex m fpu and SIMD.
 Currently only texture mapping triangle drawing worked.
 
-You could find configs in the b3dlib.h file, currently 32bit framebuff and 32bit z buff mode has been tested.
+You could find configs in the b3dlibCfg.h file for all settings.
 
 At init phase, call B3L_RenderInit(&B3Lrender,(fBuff_t *)pFramebuffAddr); to init the lib
 
@@ -16,12 +16,13 @@ At the Render phase, call B3L_NewRenderStart( &B3Lrender) and B3L_RenderScence(&
 
 All the obj in the lib should in the scene list. Only those in the render.scene.pActiveObjs list will be drawed. The per-defined objs buff number is defined in the h file.
 
-Todo:
 - [x] Texture mapping triangle drawing
 - [ ] 2d Sprite drawing
 - [x] Polygon drawing
-- [x] 3d particles drawing, now first version is done
+- [x] 3d particles 
 - [x] fast flat color triangle drawing
+- [x] Near plane clip option
+- [x] ARGB8888, ARGB4444 and LA8 framebuff mode
 
 Model swapping system to manage the model loading from nor flash into sram buff.
 Python scripts to convert obj model file to raw hex file which could be easily loaded into sram area.
