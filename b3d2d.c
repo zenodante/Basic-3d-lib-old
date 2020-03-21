@@ -54,22 +54,46 @@ __STATIC_FORCEINLINE void B3L_RastLineOnTiltmap_Repeat(fBuff_t *pFBuff,B3L_tiltM
     u8 *uvData = pUVmap->pData;
     u8 colorIdx;
     texLUT_t *pLUT = pUVmap->pLUT;
-    while(width --){  
-        if (tiltX<0){tiltX += tiltMapXPixel;}
-        if (tiltX>=tiltMapXPixel){tiltX -= tiltMapXPixel;}
-        if (tiltY<0){tiltY += tiltMapYPixel;}
-        if (tiltY>=tiltMapYPixel){tiltY -= tiltMapYPixel;}
-        intTiltX = B3L_RoundingToS(tiltX);
-        intTiltY = B3L_RoundingToS(tiltY);
-        //get the XY position color value
-        tiltIndex = pTiltMapData[(intTiltX>>3)+(intTiltY>>3)*tiltMapX];
-        //cal the uv map data offset
-        colorIdx = uvData[((tiltIndex>>4)*128*8)+(tiltIndex&0x0f)*8+(intTiltX&0x07)+(intTiltY&0x07)*128];
-        color = pLUT[colorIdx];
-        *pDrawPixel = color;
-        tiltX +=stepX;
-        tiltY +=stepY;
-        pDrawPixel++;
-    }
+    if (pUVmap->type == LUT256){
+        while(width --){  
+            if (tiltX<0){tiltX += tiltMapXPixel;}
+            if (tiltX>=tiltMapXPixel){tiltX -= tiltMapXPixel;}
+            if (tiltY<0){tiltY += tiltMapYPixel;}
+            if (tiltY>=tiltMapYPixel){tiltY -= tiltMapYPixel;}
+            intTiltX = B3L_RoundingToS(tiltX);
+            intTiltY = B3L_RoundingToS(tiltY);
+            //get the XY position color value
+            tiltIndex = pTiltMapData[(intTiltX>>3)+(intTiltY>>3)*tiltMapX];
+            //cal the uv map data offset
 
+            colorIdx = uvData[((tiltIndex>>4)*128*8)+(tiltIndex&0x0f)*8+(intTiltX&0x07)+(intTiltY&0x07)*128];
+            color = pLUT[colorIdx];
+            *pDrawPixel = color;
+            tiltX +=stepX;
+            tiltY +=stepY;
+            pDrawPixel++;
+        }
+    }else if (pUVmap->type == LUT16){
+         while(width --){  
+            if (tiltX<0){tiltX += tiltMapXPixel;}
+            if (tiltX>=tiltMapXPixel){tiltX -= tiltMapXPixel;}
+            if (tiltY<0){tiltY += tiltMapYPixel;}
+            if (tiltY>=tiltMapYPixel){tiltY -= tiltMapYPixel;}
+            intTiltX = B3L_RoundingToS(tiltX);
+            intTiltY = B3L_RoundingToS(tiltY);
+            //get the XY position color value
+            tiltIndex = pTiltMapData[(intTiltX>>3)+(intTiltY>>3)*tiltMapX];
+            //cal the uv map data offset
+            colorIdx = uvData[((tiltIndex>>4)*64*8)+(tiltIndex&0x0f)*4+((intTiltX&0x07)>>1)+(intTiltY&0x07)*64];
+            if(intTiltX&0x01){
+                color = pLUT[colorIdx>>4];
+            }else{
+                color = pLUT[colorIdx&0x0F];
+            }
+            *pDrawPixel = color;
+            tiltX +=stepX;
+            tiltY +=stepY;
+            pDrawPixel++;
+        }
+    }
 }
